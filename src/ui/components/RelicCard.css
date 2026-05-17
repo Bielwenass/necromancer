@@ -1,0 +1,387 @@
+/* ── RelicCard ──────────────────────────────────────────────────── */
+
+.relic-stage {
+  display: block;
+  position: relative;
+  perspective: 900px;
+  user-select: none;
+}
+
+.relic-stage[data-variant="inventory"] {
+  cursor: pointer;
+}
+
+/* outer rarity glow — behind the card */
+.relic-glow {
+  position: absolute;
+  inset: -24%;
+  pointer-events: none;
+  border-radius: 50%;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+/* the card itself */
+.relic-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 320 / 460;
+  border-radius: 11px;
+  overflow: hidden;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 80ms linear, box-shadow 0.3s ease;
+  border: 1px solid color-mix(in srgb, var(--rarity-color, #a8a39a) 55%, transparent);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+
+/* dark velvet substrate */
+.rc-base {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--rarity-deep, #3a352e) 100%, black) 0%,
+    color-mix(in srgb, var(--rarity-deep, #3a352e) 75%, black) 55%,
+    color-mix(in srgb, var(--rarity-deep, #3a352e) 88%, black) 100%
+  );
+}
+
+/* ── iridescence stack ──────────────────────────────────────────── */
+.rc-foil-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  transition: opacity 0.3s;
+}
+
+.rc-foil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.rc-foil-spectrum {
+  background: var(--foil-bg, transparent);
+  mix-blend-mode: color-dodge;
+  opacity: 0.65;
+}
+
+.rc-foil-bars {
+  background-size: 260% 260%;
+  background-position: calc(50% + var(--bar-x, 0%)) calc(50% + var(--bar-y, 0%));
+  mix-blend-mode: overlay;
+  filter: blur(0.4px);
+}
+
+.rc-foil-sparkle {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='460'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='1.8' numOctaves='1' seed='4'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 16 -12'/></filter><rect width='100%' height='100%' filter='url(%23s)'/></svg>");
+  background-size: 100% 100%;
+  mix-blend-mode: plus-lighter;
+  -webkit-mask: radial-gradient(
+    circle 38% at var(--mx, 50%) var(--my, 50%),
+    rgba(0,0,0,1) 0%,
+    rgba(0,0,0,0.4) 55%,
+    transparent 100%);
+          mask: radial-gradient(
+    circle 38% at var(--mx, 50%) var(--my, 50%),
+    rgba(0,0,0,1) 0%,
+    rgba(0,0,0,0.4) 55%,
+    transparent 100%);
+}
+
+.rc-foil-burst {
+  background: radial-gradient(
+    circle 30% at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 220, 240, 0.25) 25%,
+    rgba(180, 220, 255, 0.10) 55%,
+    transparent 100%);
+  mix-blend-mode: plus-lighter;
+  filter: blur(2px);
+}
+
+/* noise overlay — SVG turbulence baked into a data URI */
+.rc-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+/* SVG frame decoration */
+.rc-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--rarity-color, #a8a39a);
+}
+
+/* edge shimmer — high-rarity pulse */
+.rc-edge-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid transparent;
+}
+
+@keyframes rc-edge-pulse {
+  0%, 100% { border-color: transparent; box-shadow: none; opacity: 0.5; }
+  50% {
+    border-color: var(--rarity-color, #a8a39a);
+    box-shadow:
+      inset 0 0 14px rgba(255, 255, 255, 0.07),
+      0 0 14px var(--rarity-color, #a8a39a);
+    opacity: 0.9;
+  }
+}
+
+.relic-card[data-edge-anim="1"] .rc-edge-shimmer {
+  animation: rc-edge-pulse 2.8s ease-in-out infinite;
+}
+
+/* ── content ────────────────────────────────────────────────────── */
+.rc-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 7% 6%;
+  color: var(--rarity-color, #a8a39a);
+}
+
+.rc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3%;
+  flex-shrink: 0;
+}
+
+.rc-head-l {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.rc-glyph {
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+.rc-type {
+  font-family: var(--f-mono, monospace);
+  font-size: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-1, #cfc7b8);
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-rarity-tag {
+  font-family: var(--f-display, serif);
+  font-size: 0.48em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rarity-color, #a8a39a);
+  opacity: 0.9;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* art placeholder */
+.rc-art {
+  position: relative;
+  flex: 0 0 34%;
+  background: color-mix(in srgb, var(--rarity-deep, #3a352e) 65%, black);
+  border: 1px solid color-mix(in srgb, var(--rarity-color, #a8a39a) 18%, transparent);
+  margin-bottom: 3%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rc-art-stripes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--rarity-color, #a8a39a);
+  opacity: 0.3;
+}
+
+.rc-art-cross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.rc-art-cross span {
+  position: absolute;
+  background: var(--rarity-color, #a8a39a);
+  opacity: 0.18;
+}
+
+.rc-art-cross span:first-child {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.rc-art-cross span:last-child {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.rc-art-label {
+  font-family: var(--f-mono, monospace);
+  font-size: 0.42em;
+  letter-spacing: 0.2em;
+  color: var(--rarity-color, #a8a39a);
+  opacity: 0.5;
+  position: absolute;
+  bottom: 5%;
+  left: 5%;
+}
+
+.rc-art-sigil {
+  font-family: var(--f-display, serif);
+  font-size: 2.4em;
+  color: var(--rarity-color, #a8a39a);
+  opacity: 0.2;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.06em;
+}
+
+/* title block */
+.rc-title {
+  margin-bottom: 3%;
+  flex-shrink: 0;
+}
+
+.rc-name {
+  font-family: var(--f-display, serif) !important;
+  color: #e8dcc0 !important;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  margin: 0 !important;
+  font-weight: 500;
+}
+
+.rc-flavor {
+  font-family: var(--f-body, serif);
+  font-size: 1em;
+  font-style: italic;
+  color: var(--accent-1, #cfc7b8);
+  opacity: 0.6;
+  margin-top: 3%;
+  line-height: 1.45;
+}
+
+/* stats footer */
+.rc-foot {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.rc-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 3% 0;
+}
+
+.rc-stats li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1.5% 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--rarity-color, #a8a39a) 12%, transparent);
+}
+
+.rc-stats li:last-child {
+  border-bottom: none;
+}
+
+.rc-stat-k {
+  font-family: var(--f-mono, monospace);
+  color: var(--accent-1, #cfc7b8);
+  letter-spacing: 0.08em;
+  flex: 1;
+}
+
+.rc-stat-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--rarity-color, #a8a39a);
+  opacity: 0.4;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.rc-stat-v {
+  font-family: var(--f-mono, monospace);
+  color: var(--rarity-color, #a8a39a);
+  letter-spacing: 0.04em;
+}
+
+.rc-serial {
+  font-family: var(--f-mono, monospace);
+  font-size: 0.8em;
+  color: var(--accent-2, #7e7669);
+  letter-spacing: 0.18em;
+  opacity: 0.55;
+}
+
+/* specular / rim lights */
+.rc-gloss {
+  position: absolute; inset: 0;
+  mix-blend-mode: soft-light;
+  z-index: 9;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.rc-rim {
+  position: absolute; inset: 0;
+  mix-blend-mode: screen;
+  z-index: 10;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+/* ── selected state ─────────────────────────────────────────────── */
+.relic-stage[data-selected="1"] .relic-card {
+  box-shadow:
+    0 0 0 2px var(--rarity-color, #a8a39a),
+    0 4px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* ── inventory variant: condensed layout ────────────────────────── */
+.relic-stage[data-variant="inventory"] .rc-art {
+  flex-basis: 44%;
+}
+
+.relic-stage[data-variant="inventory"] .rc-flavor,
+.relic-stage[data-variant="inventory"] .rc-stats,
+.relic-stage[data-variant="inventory"] .rc-serial {
+  display: none;
+}

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun install *)",
+      "Bash(bunx tsc *)",
+      "Bash(bun run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(npx vite *)",
+      "Bash(bun --version)",
+      "Bash(/home/grunt/.bun/bin/bun run *)",
+      "Bash(curl -s http://localhost:5174/src/demo/DemoHarness.tsx)",
+      "Bash(curl -s 'http://localhost:5174/')"
+    ]
+  }
+}

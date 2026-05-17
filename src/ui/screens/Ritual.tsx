@@ -1,0 +1,26 @@
+import { TopBar } from '../components/TopBar';
+import { TabBar } from '../components/TabBar';
+import type { TabId } from '../components/TabBar';
+import { RitualPanel } from './RitualPanel';
+import { PullHistoryPanel } from './PullHistoryPanel';
+
+interface RitualProps {
+  onTabChange: (tab: TabId) => void;
+}
+
+export function Ritual({ onTabChange }: RitualProps) {
+  return (
+    <div className="necro">
+      <TopBar />
+      <div className="stage h-[calc(100%-120px)]" style={{ position: 'relative' }}>
+        <PullHistoryPanel />
+        <div style={{ flex: 1, display: 'flex' }}>
+          <RitualPanel poolId="bone" />
+          <RitualPanel poolId="soul" />
+          <RitualPanel poolId="forbidden" />
+        </div>
+      </div>
+      <TabBar active="ritual" onTabChange={onTabChange} />
+    </div>
+  );
+}
