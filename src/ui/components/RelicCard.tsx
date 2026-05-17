@@ -15,6 +15,8 @@ type RarityConfig = {
   glowMul: number;
   foilMul: number;
   edgeAnim: boolean;
+  /** How much rarity-tinted iridescence leaks through the card back. 0-1. */
+  backShimmer: number;
 };
 
 const RARITIES: Record<Rarity, RarityConfig> = {
@@ -28,6 +30,7 @@ const RARITIES: Record<Rarity, RarityConfig> = {
     glowMul: 0.20,
     foilMul: 0.15,
     edgeAnim: false,
+    backShimmer: 0.0,
   },
   uncommon: {
     label: 'Uncommon',
@@ -36,9 +39,10 @@ const RARITIES: Record<Rarity, RarityConfig> = {
     deep: '#1f3a26',
     accents: ['#b6d4a6', '#5a8b66'],
     foilHues: [90, 140, 180],
-    glowMul: 0.50,
-    foilMul: 0.26,
+    glowMul: 0.55,
+    foilMul: 0.32,
     edgeAnim: false,
+    backShimmer: 0.75,
   },
   rare: {
     label: 'Rare',
@@ -47,9 +51,10 @@ const RARITIES: Record<Rarity, RarityConfig> = {
     deep: '#15243c',
     accents: ['#a8c8ef', '#4d75ad'],
     foilHues: [180, 220, 270],
-    glowMul: 0.63,
-    foilMul: 0.45,
+    glowMul: 0.7,
+    foilMul: 0.55,
     edgeAnim: true,
+    backShimmer: 0.45,
   },
   epic: {
     label: 'Epic',
@@ -57,23 +62,23 @@ const RARITIES: Record<Rarity, RarityConfig> = {
     color: '#b083d6',
     deep: '#2c1a3d',
     accents: ['#d9b8f0', '#7e54a6'],
-    foilHues: [260, 350, 300],
+    foilHues: [260, 300, 220],
     glowMul: 0.85,
     foilMul: 0.75,
     edgeAnim: true,
+    backShimmer: 0.65,
   },
   legendary: {
     label: 'Legendary',
     glyph: '✺',
     color: '#e08a6a',
     deep: '#3a1612',
-    accents: ['#f7c1a0', '#c86249'],
-    foilHues: [30, 60, 30, 80, 60, 20,],
-    // foilHues: [10, 20],
-    // foilHues: [20, 30, 70, 60, 90],
+    accents: ['#f4b894', '#b8543a'],
+    foilHues: [30, 60, 30, 80, 60, 20],
     glowMul: 1.05,
     foilMul: 1.0,
     edgeAnim: true,
+    backShimmer: 0.75,
   },
 };
 
@@ -101,6 +106,10 @@ export interface RelicCardTweaks {
   noise: number;
   idleDrift: boolean;
   edgeShimmer: boolean;
+  /** Total ms for the back→front flip animation. */
+  revealDuration: number;
+  /** 0–1 multiplier on rarity backShimmer (iridescence visible through the back). */
+  backShimmer: number;
 }
 
 const DEFAULT_TWEAKS: RelicCardTweaks = {
@@ -108,9 +117,11 @@ const DEFAULT_TWEAKS: RelicCardTweaks = {
   glow: 0.1,
   foil: 0.6,
   gloss: 0.1,
-  noise: 0.8,
+  noise: 0.6,
   idleDrift: true,
   edgeShimmer: true,
+  revealDuration: 950,
+  backShimmer: 0.2,
 };
 
 const VARIANT_TWEAKS: Record<'pull' | 'inventory', Partial<RelicCardTweaks>> = {
@@ -143,6 +154,77 @@ function buildBars(hues: number[], sat: number, light: number): string {
   return `repeating-linear-gradient(115deg, ${bars.join(', ')})`;
 }
 
+// ── card back ────────────────────────────────────────────────────
+// Same silhouette across rarities to preserve the gacha mystery.
+// Higher rarities leak iridescence through the back as a hype tell.
+function RelicCardBack({ R, backShimmer }: { R: RarityConfig; backShimmer: number }) {
+  const backFoil = buildFoil(R.foilHues, 0.18, 72, 25);
+  return (
+    <div className="rc-back" aria-hidden>
+      <div className="rc-face-inner">
+        <div className="rc-back-base" />
+        {backShimmer > 0 && (
+          <div className="rc-back-foil" style={{
+            opacity: backShimmer * 0.7,
+            backgroundImage: backFoil,
+          }} />
+        )}
+        <svg className="rc-back-seal" viewBox="0 0 320 460" preserveAspectRatio="xMidYMid meet">
+          <g transform="translate(160 230)">
+            <circle r="98" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeWidth="0.6" />
+            <circle r="86" fill="none" stroke="currentColor" strokeOpacity="0.75" strokeWidth="0.6" />
+            <circle r="68" fill="none" stroke="currentColor" strokeOpacity="0.4" strokeWidth="0.5"
+                    strokeDasharray="1.5 3" />
+            <circle r="44" fill="none" stroke="currentColor" strokeOpacity="0.6" strokeWidth="0.5" />
+            <circle r="32" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="0.5"
+                    strokeDasharray="0.5 2" />
+            {[0, 90, 180, 270].map((a) => (
+              <g key={a} transform={`rotate(${a})`}>
+                <line x1="0" y1="-98" x2="0" y2="-86" stroke="currentColor"
+                      strokeOpacity="0.85" strokeWidth="0.8" />
+                <circle cx="0" cy="-92" r="1.2" fill="currentColor" fillOpacity="0.7" />
+              </g>
+            ))}
+            {[...Array(12)].map((_, i) => i % 3 === 0 ? null : (
+              <g key={i} transform={`rotate(${i * 30})`}>
+                <line x1="0" y1="-95" x2="0" y2="-88" stroke="currentColor"
+                      strokeOpacity="0.45" strokeWidth="0.5" />
+              </g>
+            ))}
+            <g opacity="0.55">
+              {[...Array(6)].map((_, i) => {
+                const a1 = (i * 60 - 90) * Math.PI / 180;
+                const a2 = ((i + 2) * 60 - 90) * Math.PI / 180;
+                const r = 40;
+                return (
+                  <line key={i}
+                        x1={Math.cos(a1) * r} y1={Math.sin(a1) * r}
+                        x2={Math.cos(a2) * r} y2={Math.sin(a2) * r}
+                        stroke="currentColor" strokeOpacity="0.6" strokeWidth="0.4" />
+                );
+              })}
+            </g>
+            <circle r="6" fill="none" stroke="currentColor" strokeOpacity="0.9" strokeWidth="0.6" />
+            <circle r="1.6" fill="currentColor" fillOpacity="0.85" />
+          </g>
+        </svg>
+        <svg className="rc-frame" viewBox="0 0 320 460" preserveAspectRatio="none" aria-hidden>
+          <rect x="6"  y="6"  width="308" height="448" rx="10" fill="none" stroke="currentColor" strokeOpacity="0.55" strokeWidth="0.8" />
+          <rect x="11" y="11" width="298" height="438" rx="7"  fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="0.5" />
+          {([[16, 16], [304, 16], [16, 444], [304, 444]] as [number, number][]).map(([x, y], i) => (
+            <g key={i} transform={`translate(${x} ${y}) rotate(${i * 90})`}>
+              <path d="M -8 0 L 0 0 L 0 -8" fill="none" stroke="currentColor" strokeOpacity="0.8" strokeWidth="0.9" />
+            </g>
+          ))}
+        </svg>
+        <div className="rc-noise" style={{ opacity: 0.4 }} />
+        <div className="rc-back-text rc-back-text-top">NECROMANCER</div>
+        <div className="rc-back-text rc-back-text-bot">RELIC · BOUND</div>
+      </div>
+    </div>
+  );
+}
+
 // ── component ────────────────────────────────────────────────────
 export interface RelicCardProps {
   relic: Relic;
@@ -151,27 +233,43 @@ export interface RelicCardProps {
   selected?: boolean;
   tweaks?: Partial<RelicCardTweaks>;
   onClick?: () => void;
+  /** When true, play the flip-reveal (back → front) animation on mount. */
+  revealing?: boolean;
+  /** Ms to wait before starting the flip. Use to stagger multi-card pulls. */
+  revealDelay?: number;
+  /** Fired after the reveal animation finishes. */
+  onRevealComplete?: () => void;
 }
 
-export function RelicCard({ relic, variant = 'pull', selected = false, tweaks: tweakOverrides, onClick }: RelicCardProps) {
+type Phase = 'hidden' | 'flipping' | 'revealed';
+
+export function RelicCard({
+  relic, variant = 'pull', selected = false, tweaks: tweakOverrides, onClick,
+  revealing = false, revealDelay = 0, onRevealComplete,
+}: RelicCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+  const timersRef = useRef<number[]>([]);
   const [hovered, setHovered] = useState(false);
+  // Tri-state. When `revealing` is false we skip the animation entirely and
+  // land directly in 'revealed' — the card just appears face-up.
+  const [phase, setPhase] = useState<Phase>(revealing ? 'hidden' : 'revealed');
 
-  const isLarge = variant === "pull";
+  const isLarge = variant === 'pull';
   const R = RARITIES[relic.rarity];
   const base = RELIC_BASES.find(b => b.id === relic.baseId);
 
   const tweaks: RelicCardTweaks = { ...DEFAULT_TWEAKS, ...VARIANT_TWEAKS[variant], ...tweakOverrides };
-  const glow  = tweaks.glow  * R.glowMul;
-  const foil  = tweaks.foil  * R.foilMul;
+  const glow = tweaks.glow * R.glowMul;
+  const foil = tweaks.foil * R.foilMul;
+  const dur  = tweaks.revealDuration;
 
-  // Derive display data from game Relic
+  // Display data
   const name      = base?.name ?? relic.baseId;
   const flavor    = base?.description ? `"${base.description}"` : '';
   const slotKey   = base?.slot ?? 'crypt';
   const setLabel  = base?.set ? ' · ' + base?.set : '';
-  const slotLabel = `${slotKey.charAt(0).toUpperCase()}${slotKey.slice(1)}`
+  const slotLabel = `${slotKey.charAt(0).toUpperCase()}${slotKey.slice(1)}`;
   const artLabel  = SLOT_ART_LABELS[slotKey] ?? 'RELIC';
   const sigil     = RARITY_SIGIL[relic.rarity];
   const serial    = `REL-${relic.id.replace(/\D/g, '').slice(0, 4).padStart(4, '0')}`;
@@ -197,27 +295,56 @@ export function RelicCard({ relic, variant = 'pull', selected = false, tweaks: t
   // Reset pose when rarity or tilt changes
   useEffect(() => { setPose(0, 0); }, [relic.rarity, tweaks.tilt]);
 
-  // Idle drift when not hovered
+  // Set CSS var for animation duration so keyframes scale.
   useEffect(() => {
-    if (!tweaks.idleDrift || hovered) return;
+    cardRef.current?.parentElement?.style.setProperty('--reveal-duration', `${dur}ms`);
+  }, [dur, phase]);
+
+  // Drive the reveal sequence whenever `revealing` flips on.
+  useEffect(() => {
+    timersRef.current.forEach(window.clearTimeout);
+    timersRef.current = [];
+    if (!revealing) { setPhase('revealed'); return; }
+    setPhase('hidden');
+    // Two animation frames so the browser commits 'hidden' state (back facing
+    // camera) before the keyframes start — otherwise the flip starts mid-air.
+    const start = window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setPhase('flipping'));
+      });
+    }, revealDelay);
+    const end = window.setTimeout(() => {
+      setPhase('revealed');
+      onRevealComplete?.();
+    }, revealDelay + dur + 40);
+    timersRef.current = [start, end];
+    return () => { timersRef.current.forEach(window.clearTimeout); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealing, revealDelay, dur]);
+
+  // Idle drift only when fully revealed and not hovered.
+  useEffect(() => {
+    if (!tweaks.idleDrift || hovered || phase !== 'revealed') return;
     const t0 = performance.now();
     const tick = (now: number) => {
       const t = (now - t0) / 1000;
-      setPose(Math.sin(t * 0.4) * 0.18, Math.cos(t * 0.31) * 0.12);
+      setPose(Math.sin(t * 0.4) * 0.69, Math.cos(t * 0.31) * 0.45);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [tweaks.idleDrift, hovered, relic.rarity, tweaks.tilt]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tweaks.idleDrift, hovered, relic.rarity, tweaks.tilt, phase]);
 
   const onMove = (e: React.MouseEvent) => {
+    if (phase !== 'revealed') return;
     const r = cardRef.current!.getBoundingClientRect();
     setPose((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
   };
 
   const onLeave = () => {
     setHovered(false);
-    setPose(0, 0);
+    if (phase === 'revealed') setPose(0, 0);
   };
 
   const barsBg = buildBars(R.foilHues, 0.22, 70);
@@ -228,7 +355,8 @@ export function RelicCard({ relic, variant = 'pull', selected = false, tweaks: t
       data-rarity={relic.rarity}
       data-variant={variant}
       data-selected={selected ? '1' : '0'}
-      onMouseEnter={() => setHovered(true)}
+      data-phase={phase}
+      onMouseEnter={() => phase === 'revealed' && setHovered(true)}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       onClick={onClick}
@@ -237,6 +365,11 @@ export function RelicCard({ relic, variant = 'pull', selected = false, tweaks: t
       <div className="relic-glow" style={{
         opacity: glow * (hovered ? 1.0 : 0.55),
         background: `radial-gradient(closest-side, ${R.color}, transparent 70%)`,
+      }} />
+
+      {/* mid-flip light burst */}
+      <div className="rc-flash" style={{
+        background: `radial-gradient(closest-side, #b8b8b8ac, ${R.color} 35%, transparent 75%)`,
       }} />
 
       <div
@@ -251,107 +384,113 @@ export function RelicCard({ relic, variant = 'pull', selected = false, tweaks: t
           '--accent-2':     R.accents[1],
         } as React.CSSProperties}
       >
-        <div className="rc-base" />
+        {/* BACK FACE */}
+        <RelicCardBack R={R} backShimmer={R.backShimmer * tweaks.backShimmer} />
 
-        {/* iridescence stack */}
-        <div className="rc-foil-wrap" style={{ opacity: foil * (hovered ? 1.0 : 0.55) }}>
-          <div className="rc-foil rc-foil-spectrum" />
-          <div className="rc-foil rc-foil-bars" style={{ backgroundImage: barsBg }} />
-          <div className="rc-foil rc-foil-sparkle" />
-          <div className="rc-foil rc-foil-burst" />
-        </div>
+        {/* FRONT FACE */}
+        <div className="rc-front">
+          <div className="rc-face-inner">
+            <div className="rc-base" />
 
-        <div className="rc-noise" style={{ opacity: tweaks.noise }} />
-
-        {/* frame decoration */}
-        <svg className="rc-frame" viewBox="0 0 320 460" preserveAspectRatio="none" aria-hidden>
-          <rect x="6"  y="6"  width="308" height="448" rx="10" fill="none" stroke="var(--accent-1)" strokeOpacity="0.55" strokeWidth="0.8" />
-          <rect x="11" y="11" width="298" height="438" rx="7"  fill="none" stroke="var(--accent-1)" strokeOpacity="0.18" strokeWidth="0.5" />
-          {([[16, 16], [304, 16], [16, 444], [304, 444]] as [number, number][]).map(([x, y], i) => (
-            <g key={i} transform={`translate(${x} ${y}) rotate(${i * 90})`}>
-              <path d="M -8 0 L 0 0 L 0 -8" fill="none" stroke="var(--accent-1)" strokeOpacity="0.8" strokeWidth="0.9" />
-            </g>
-          ))}
-          <g transform="translate(160 16)" opacity="0.55">
-            <line x1="-40" y1="0" x2="-8"  y2="0" stroke="var(--accent-1)" strokeWidth="0.6" />
-            <line x1="8"   y1="0" x2="40"  y2="0" stroke="var(--accent-1)" strokeWidth="0.6" />
-            <circle cx="0" cy="0" r="2.2" fill="none" stroke="var(--accent-1)" strokeWidth="0.8" />
-            <circle cx="0" cy="0" r="0.6" fill="var(--accent-1)" />
-          </g>
-          <g transform="translate(160 444)" opacity="0.45">
-            <line x1="-30" y1="0" x2="-6" y2="0" stroke="var(--accent-1)" strokeWidth="0.5" />
-            <line x1="6"   y1="0" x2="30" y2="0" stroke="var(--accent-1)" strokeWidth="0.5" />
-            <path d="M -6 -3 L 0 0 L 6 -3 L 0 3 Z" fill="var(--accent-1)" fillOpacity="0.7" />
-          </g>
-        </svg>
-
-        <div className="rc-edge-shimmer" />
-
-        {/* content */}
-        <div className="rc-content">
-          <header className="rc-head">
-            <div className="rc-head-l">
-              <span className="rc-glyph">{R.glyph}</span>
-              <span className="rc-type">{slotLabel}</span>
-              {isLarge && <span className="rc-type">{setLabel}</span>}
+            {/* iridescence stack */}
+            <div className="rc-foil-wrap" style={{ opacity: foil * (hovered ? 1.0 : 0.55) }}>
+              <div className="rc-foil rc-foil-spectrum" />
+              <div className="rc-foil rc-foil-bars" style={{ backgroundImage: barsBg }} />
+              <div className="rc-foil rc-foil-sparkle" />
+              <div className="rc-foil rc-foil-burst" />
             </div>
-            {isLarge && <span className="rc-rarity-tag">{R.label}</span>}
-          </header>
 
-          <div className="rc-art">
-            <svg className="rc-art-stripes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-              <defs>
-                <pattern id={`stripes-${relic.id}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.4" />
-                </pattern>
-              </defs>
-              <rect width="100" height="100" fill={`url(#stripes-${relic.id})`} />
-            </svg>
-            <div className="rc-art-cross"><span /><span /></div>
-            <span className="rc-art-label">{artLabel}</span>
-            <span className="rc-art-sigil">{sigil}</span>
-          </div>
+            <div className="rc-noise" style={{ opacity: tweaks.noise }} />
 
-          <div className="rc-title">
-            <h2 className={`rc-name text-md ${isLarge ? 'text-2xl' : ''}`}>{name}</h2>
-            {flavor && <p className="rc-flavor">{flavor}</p>}
-          </div>
-
-          <footer className="rc-foot">
-            <ul className="rc-stats">
-              {stats.map((s, i) => (
-                <li key={i}>
-                  <span className="rc-stat-k">{s.k}</span>
-                  <span className="rc-stat-dot" />
-                  <span className="rc-stat-v">{s.v}</span>
-                </li>
+            {/* frame decoration */}
+            <svg className="rc-frame" viewBox="0 0 320 460" preserveAspectRatio="none" aria-hidden>
+              <rect x="6"  y="6"  width="308" height="448" rx="10" fill="none" stroke="currentColor" strokeOpacity="0.55" strokeWidth="0.8" />
+              <rect x="11" y="11" width="298" height="438" rx="7"  fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="0.5" />
+              {([[16, 16], [304, 16], [16, 444], [304, 444]] as [number, number][]).map(([x, y], i) => (
+                <g key={i} transform={`translate(${x} ${y}) rotate(${i * 90})`}>
+                  <path d="M -8 0 L 0 0 L 0 -8" fill="none" stroke="currentColor" strokeOpacity="0.8" strokeWidth="0.9" />
+                </g>
               ))}
-            </ul>
-            <div className="rc-serial">№ {serial}</div>
-          </footer>
+              <g transform="translate(160 16)" opacity="0.55">
+                <line x1="-40" y1="0" x2="-8"  y2="0" stroke="currentColor" strokeWidth="0.6" />
+                <line x1="8"   y1="0" x2="40"  y2="0" stroke="currentColor" strokeWidth="0.6" />
+                <circle cx="0" cy="0" r="2.2" fill="none" stroke="currentColor" strokeWidth="0.8" />
+                <circle cx="0" cy="0" r="0.6" fill="currentColor" />
+              </g>
+              <g transform="translate(160 444)" opacity="0.45">
+                <line x1="-30" y1="0" x2="-6" y2="0" stroke="currentColor" strokeWidth="0.5" />
+                <line x1="6"   y1="0" x2="30" y2="0" stroke="currentColor" strokeWidth="0.5" />
+                <path d="M -6 -3 L 0 0 L 6 -3 L 0 3 Z" fill="currentColor" fillOpacity="0.7" />
+              </g>
+            </svg>
+
+            <div className="rc-edge-shimmer" />
+
+            {/* content */}
+            <div className="rc-content">
+              <header className="rc-head">
+                <div className="rc-head-l">
+                  <span className="rc-glyph">{R.glyph}</span>
+                  <span className="rc-type">{slotLabel}</span>
+                  {isLarge && <span className="rc-type">{setLabel}</span>}
+                </div>
+                {isLarge && <span className="rc-rarity-tag">{R.label}</span>}
+              </header>
+
+              <div className="rc-art">
+                <svg className="rc-art-stripes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                  <defs>
+                    <pattern id={`stripes-${relic.id}`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                      <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.4" />
+                    </pattern>
+                  </defs>
+                  <rect width="100" height="100" fill={`url(#stripes-${relic.id})`} />
+                </svg>
+                <div className="rc-art-cross"><span /><span /></div>
+                <span className="rc-art-label">{artLabel}</span>
+                <span className="rc-art-sigil">{sigil}</span>
+              </div>
+
+              <div className="rc-title">
+                <h2 className={`rc-name text-md ${isLarge ? 'text-2xl' : ''}`}>{name}</h2>
+                {flavor && <p className="rc-flavor">{flavor}</p>}
+              </div>
+
+              <footer className="rc-foot">
+                <ul className="rc-stats">
+                  {stats.map((s, i) => (
+                    <li key={i}>
+                      <span className="rc-stat-k">{s.k}</span>
+                      <span className="rc-stat-dot" />
+                      <span className="rc-stat-v">{s.v}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="rc-serial">№ {serial}</div>
+              </footer>
+            </div>
+
+            {/* specular gloss */}
+            <div className="rc-gloss" style={{
+              opacity: tweaks.gloss * (hovered ? 1.0 : 0.4),
+              background: `radial-gradient(
+                circle at var(--mx) var(--my),
+                rgba(255,255,255,0.55) 0%,
+                rgba(255,255,255,0.10) 18%,
+                transparent 42%
+              )`,
+            }} />
+            <div className="rc-rim" style={{
+              opacity: tweaks.gloss * 0.6 * (hovered ? 1 : 0),
+              background: `radial-gradient(
+                ellipse 60% 60% at var(--mx) var(--my),
+                transparent 55%,
+                rgba(255,255,255,0.18) 75%,
+                transparent 100%
+              )`,
+            }} />
+          </div>
         </div>
-
-        {/* specular gloss — tracks cursor */}
-        <div className="rc-gloss" style={{
-          opacity: tweaks.gloss * (hovered ? 1.0 : 0.4),
-          background: `radial-gradient(
-            circle at var(--mx) var(--my),
-            rgba(255,255,255,0.55) 0%,
-            rgba(255,255,255,0.10) 18%,
-            transparent 42%
-          )`,
-        }} />
-
-        {/* rim light on edge nearest cursor */}
-        <div className="rc-rim" style={{
-          opacity: tweaks.gloss * 0.6 * (hovered ? 1 : 0),
-          background: `radial-gradient(
-            ellipse 60% 60% at var(--mx) var(--my),
-            transparent 55%,
-            rgba(255,255,255,0.18) 75%,
-            transparent 100%
-          )`,
-        }} />
       </div>
     </div>
   );

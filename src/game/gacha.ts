@@ -39,9 +39,9 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
   },
   forbidden: {
     odds: [
-      { rarity: 'rare', weight: 30 },
-      { rarity: 'epic', weight: 50 },
-      { rarity: 'legendary', weight: 20 },
+      { rarity: 'rare', weight: 75 },
+      { rarity: 'epic', weight: 20 },
+      { rarity: 'legendary', weight: 5 },
     ],
     pityRarity: 'legendary',
     pityInterval: 50,

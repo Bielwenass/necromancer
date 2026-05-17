@@ -1,33 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { Relic } from '../../game/types';
 import { RelicCard } from '../components/RelicCard';
 
-const FIRST_DELAY_MS = 400;
 const STAGGER_MS = 500;
 
 export function RevealOverlay({ relics, onClose }: { relics: Relic[]; onClose: () => void }) {
-  const [revealedCount, setRevealedCount] = useState(0);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const allRevealed = revealedCount >= relics.length;
+  const [skipped, setSkipped] = useState(false);
+  const completedRef = useRef(0);
+  const [allRevealed, setAllRevealed] = useState(false);
 
-  useEffect(() => {
-    relics.forEach((_, i) => {
-      const id = setTimeout(
-        () => setRevealedCount(i + 1),
-        FIRST_DELAY_MS + i * STAGGER_MS,
-      );
-      timersRef.current.push(id);
-    });
-    return () => timersRef.current.forEach(clearTimeout);
-  }, []);
-
-  const skipAll = () => {
-    timersRef.current.forEach(clearTimeout);
-    setRevealedCount(relics.length);
+  const onRevealComplete = () => {
+    completedRef.current += 1;
+    if (completedRef.current >= relics.length) setAllRevealed(true);
   };
 
-  const cardW = 280;
-  const cardH = Math.round(cardW * 460 / 320);
+  const skipAll = () => {
+    setSkipped(true);
+    setAllRevealed(true);
+  };
 
   return (
     <div style={{
@@ -51,26 +41,17 @@ export function RevealOverlay({ relics, onClose }: { relics: Relic[]; onClose: (
       </div>
 
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1600, zIndex: 1 }}>
-        {relics.map((relic, i) => {
-          const isRevealed = i < revealedCount;
-          return isRevealed ? (
-            <div key={relic.id} style={{ width: cardW }}>
-              <RelicCard relic={relic} variant="pull" />
-            </div>
-          ) : (
-            <div
-              key={relic.id}
-              style={{
-                width: cardW, height: cardH,
-                border: '1px solid var(--rule-strong)',
-                background: 'var(--bg-panel)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              <div style={{ width: 24, height: 56, border: '1px solid var(--rule)', opacity: 0.5 }} />
-            </div>
-          );
-        })}
+        {relics.map((relic, i) => (
+          <div key={relic.id} style={{ width: 280 }}>
+            <RelicCard
+              relic={relic}
+              variant="pull"
+              revealing={!skipped}
+              revealDelay={i * STAGGER_MS}
+              onRevealComplete={onRevealComplete}
+            />
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 32, zIndex: 1 }}>
