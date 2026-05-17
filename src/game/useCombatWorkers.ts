@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from './store';
-import { DUNGEON_ENEMY_DEFS, buildAttackerConfig, COMBAT_W, COMBAT_H } from '../combat/dungeonCombat';
-
+import { buildAttackerConfig, COMBAT_W, COMBAT_H } from '../combat/dungeonCombat';
+import { DUNGEON_DEFS } from './dungeons';
 
 export function useCombatWorkers() {
   const resolveFight = useGameStore(s => s.resolveFight);
@@ -34,7 +34,7 @@ export function useCombatWorkers() {
       if (workers.has(squad.id)) continue;
       if (squad.fightSeed === undefined || !squad.targetDungeonId) continue;
 
-      const enemyDef = DUNGEON_ENEMY_DEFS[squad.targetDungeonId];
+      const enemyDef = DUNGEON_DEFS[squad.targetDungeonId].enemies;
       if (!enemyDef) continue;
 
       // Snapshot derived at fight-start so bonuses don't shift mid-fight
@@ -49,7 +49,7 @@ export function useCombatWorkers() {
         surgeDamageMultiplier: derived.surgeDamageMultiplier,
       });
       const defenderConfig = {
-        ...enemyDef,
+        units: enemyDef,
         spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
       };
 

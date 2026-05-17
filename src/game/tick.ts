@@ -14,7 +14,7 @@ const SURGE_MAX_CHARGES = 3;
 const TICKS_PER_DAY = 1200;  // 2 minutes per in-game day
 
 export function generateLoot(dungeonId: string, clearCount: number, surgeYield: number, dropRateBonus: number): Partial<Resources> {
-  const def = DUNGEON_DEFS.find(d => d.id === dungeonId);
+  const def = DUNGEON_DEFS[dungeonId];
   if (!def) return {};
 
   const clearBonus = 1 + Math.log(clearCount + 1) * 0.2;
@@ -52,7 +52,7 @@ export function gameTick(state: GameState): Partial<GameState> {
     const updated = { ...squad, currentHp: { ...squad.currentHp }, composition: { ...squad.composition } };
 
     if (squad.state === 'traveling') {
-      const def = DUNGEON_DEFS.find(d => d.id === squad.targetDungeonId);
+      const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
       const speedMult = derived.surgeSpeedMultiplier;
       updated.position += (1 / def.travelTimeTicks) * speedMult;
@@ -72,7 +72,7 @@ export function gameTick(state: GameState): Partial<GameState> {
       // The visual simulation in CombatWindow is the fight — outcome is applied
       // via store.resolveFight() when the engine reports a winner.
     } else if (squad.state === 'returning') {
-      const def = DUNGEON_DEFS.find(d => d.id === squad.targetDungeonId);
+      const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
       const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadReturnSpeedBonus);
       updated.position -= (1 / def.travelTimeTicks) * speedMult;

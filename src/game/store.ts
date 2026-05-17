@@ -25,7 +25,7 @@ function nextSquadId(): string {
 }
 
 function buildInitialState(): GameState {
-  const dungeonStates = DUNGEON_DEFS.map(def => makeDungeonState(def, def.id === 'paupers-tomb'));
+  const dungeonStates = Object.values(DUNGEON_DEFS).map(def => makeDungeonState(def, def.id === 'paupers-tomb'));
 
   const state: Omit<GameState, 'derived'> = {
     resources: { bones: 200, coins: 0, souls: 0, dust: 0, corpses: 0 },
@@ -191,7 +191,7 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
 
         const dungeonId = squad.targetDungeonId!;
         const dungeonState = prev.dungeons.find(d => d.id === dungeonId);
-        const def = DUNGEON_DEFS.find(d => d.id === dungeonId);
+        const def = DUNGEON_DEFS[dungeonId];
         if (!dungeonState || !def) return prev;
 
         if (winner !== 'a') {

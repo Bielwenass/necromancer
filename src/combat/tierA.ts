@@ -18,19 +18,19 @@ export function spawnUnitsA(
   const units: UnitA[] = [];
   let id = idStart;
   const { x, y, w, h } = config.spawnArea;
-  for (const [type, count] of Object.entries(config.composition)) {
-    const stats = config.stats[type];
-    if (!stats) continue;
-    for (let i = 0; i < count; i++) {
+  for (const unit of config.units) {
+    for (let i = 0; i < unit.amount; i++) {
       units.push({
         id: id++,
-        type,
+        type: unit.name,
         x: x + rand() * w,
         y: y + rand() * h,
         vx: 0,
         vy: 0,
-        hp: stats.hp,
-        maxHp: stats.hp,
+        hp: unit.stats.hp,
+        maxHp: unit.stats.hp,
+        dmg: unit.stats.dmg,
+        speed: unit.stats.speed,
         side,
       });
     }
@@ -57,7 +57,6 @@ export function getTotalCountA(state: TierAState, side: Side): number {
 
 export function tickTierA(
   state: TierAState,
-  configs: Record<Side, SideConfig>,
   dt: number,
   events: EventQueue,
   t: number,
@@ -91,8 +90,6 @@ export function tickTierA(
 
   for (let i = 0; i < units.length; i++) {
     const u = units[i];
-    const stats = configs[u.side]?.stats[u.type];
-    if (!stats) continue;
 
     // Query neighbors — wide enough for cohesion and local seek
     const neighbors = hash.queryRadius(u.x, u.y, cfg.cohesionRadius);
@@ -182,7 +179,7 @@ export function tickTierA(
 
     // Combat: attack nearest enemy within attackRadius
     if (nearestEnemyId !== -1 && nearestEnemyDist2 < cfg.attackRadius * cfg.attackRadius) {
-      const dmg = (stats.dmg ?? 1) * dt;
+      const dmg = (u.dmg ?? 1) * dt;
       damageBuffer.set(nearestEnemyId, (damageBuffer.get(nearestEnemyId) ?? 0) + dmg);
     }
   }
@@ -190,9 +187,7 @@ export function tickTierA(
   // Apply acceleration and integrate
   for (let i = 0; i < units.length; i++) {
     const u = units[i];
-    const stats = configs[u.side]?.stats[u.type];
-    if (!stats) continue;
-    const maxSpeed = stats.speed * cfg.speedScale;
+    const maxSpeed = u.speed * cfg.speedScale;
 
     u.vx += accX[i] * dt;
     u.vy += accY[i] * dt;

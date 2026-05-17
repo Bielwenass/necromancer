@@ -16,7 +16,7 @@ const SQUAD_NAMES = [
 ];
 
 export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
-  const def = DUNGEON_DEFS.find(d => d.id === dungeonId);
+  const def = DUNGEON_DEFS[dungeonId];
   const units = useGameStore(s => s.units);
   const derived = useGameStore(s => s.derived);
   const squads = useGameStore(s => s.squads);

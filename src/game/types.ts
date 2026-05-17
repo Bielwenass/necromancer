@@ -62,16 +62,24 @@ export interface Squad {
   manualRecall?: boolean;
 }
 
+export type EnemyDef = {
+  name: string;
+  amount: number;
+  color: string;
+  stats: { hp: number; dmg: number; speed: number };
+};
+
 export interface DungeonDef {
   id: string;
   name: string;
-  tier: 1 | 2 | 3;
+  tier: 1 | 2 | 3 | 4;
+  enemies: EnemyDef[],
   lootTable: { bonesMin: number; bonesMax: number; coinsMin: number; coinsMax: number; soulChance: number; corpseMin: number; corpseMax: number };
   travelTimeTicks: number;
-  position: { x: number; y: number };
   unlockCondition: string | null;
   kind: 'ruin' | 'tower' | 'skull';
 }
+
 
 export interface DungeonState {
   id: string;

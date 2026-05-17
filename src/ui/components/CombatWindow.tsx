@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { CombatEngine } from '../../combat/engine';
-import { COMBAT_W, COMBAT_H, DUNGEON_ENEMY_DEFS, buildAttackerConfig } from '../../combat/dungeonCombat';
+import { COMBAT_W, COMBAT_H, buildAttackerConfig } from '../../combat/dungeonCombat';
 import type { SideConfig } from '../../combat/types';
 import type { Squad, DungeonDef } from '../../game/types';
 import { useGameStore } from '../../game/store';
@@ -15,10 +15,10 @@ export function CombatWindow({ squad, def }: { squad: Squad; def: DungeonDef }) 
   const reportedRef = useRef(false);
 
   useEffect(() => {
-    const enemyDef = DUNGEON_ENEMY_DEFS[def.id];
-    const defenderConfig: SideConfig | null = enemyDef
-      ? { ...enemyDef, spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 } }
-      : null;
+    const defenderConfig: SideConfig | null = {
+      units: def.enemies,
+      spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
+    }
 
     const derived = useGameStore.getState().derived;
     const attackerConfig = buildAttackerConfig(squad.composition, {

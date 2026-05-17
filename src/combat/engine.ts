@@ -1,4 +1,4 @@
-import type { Side, Tier, SideConfig, EngineOptions, CombatEvent, DeathFlash } from './types';
+import type { Side, SideConfig, EngineOptions, CombatEvent, DeathFlash } from './types';
 import { EventQueue } from './events';
 import { type TierAState, createTierAState, spawnUnitsA, tickTierA, getCountsA, getTotalCountA } from './tierA';
 import { renderFrame } from './renderer';
@@ -41,6 +41,7 @@ export class CombatEngine {
     for (const side of ['a', 'b'] as Side[]) {
       const config = this.configs[side];
       if (!config) continue;
+      console.log(config)
       const result = spawnUnitsA(config, side, this.nextId, this.rand);
       this.tierAState.units.push(...result.units);
       this.nextId = result.nextId;
@@ -60,7 +61,6 @@ export class CombatEngine {
 
     tickTierA(
       this.tierAState,
-      this.configs as Record<Side, SideConfig>,
       dt,
       this.events,
       this.t,
@@ -103,8 +103,6 @@ export class CombatEngine {
   }
 
   drainEvents(): CombatEvent[] { return this.events.drain(); }
-
-  getCurrentTier(): Record<Side, Tier> { return { a: 'A', b: 'A' }; }
 
   getWinner(): Side | 'draw' | null { return this.winner; }
 

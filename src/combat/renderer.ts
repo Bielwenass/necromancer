@@ -20,7 +20,7 @@ export function renderFrame(
   for (const unit of units) {
     const sideConfig = configs[unit.side];
     if (!sideConfig) continue;
-    const color = sideConfig.color[unit.type] ?? '#888';
+    const color = sideConfig.units.find(e => e.name === unit.type)?.color ?? '#888';
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(unit.x, unit.y, rcfg.dotRadius, 0, Math.PI * 2);

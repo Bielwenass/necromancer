@@ -11,6 +11,7 @@ import { formatTime } from '../theme';
 import { useState, useEffect } from 'react';
 import { DungeonCard, squadColor, squadHpPct } from './DungeonCard';
 import { UnitReserve } from './UnitReserve';
+import { DungeonDef } from '../../game/types';
 
 interface CryptMapProps {
   onTabChange: (tab: TabId) => void;
@@ -46,9 +47,9 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
         {/* Dungeon List */}
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           {(() => {
-            const visible: typeof DUNGEON_DEFS = [];
+            const visible: DungeonDef[] = [];
             let foundLocked = false;
-            for (const def of DUNGEON_DEFS) {
+            for (const def of Object.values(DUNGEON_DEFS)) {
               const ds = dungeons.find(d => d.id === def.id);
               if (!ds) continue;
               if (ds.unlocked) { visible.push(def); }
@@ -99,7 +100,7 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
             if (!watchedSquadId) return null;
             const watchedSquad = squads.find(s => s.id === watchedSquadId && s.state === 'fighting');
             if (!watchedSquad?.targetDungeonId) return null;
-            const dungeonDef = DUNGEON_DEFS.find(d => d.id === watchedSquad.targetDungeonId);
+            const dungeonDef = DUNGEON_DEFS[watchedSquad.targetDungeonId];
             if (!dungeonDef) return null;
             return (
               <div style={{ borderBottom: '1px solid var(--rule)', background: '#0A0A0F', flexShrink: 0 }}>
@@ -126,7 +127,7 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
                 </div>
               )}
               {squads.map((squad, i) => {
-                const def = squad.targetDungeonId ? DUNGEON_DEFS.find(d => d.id === squad.targetDungeonId) : null;
+                const def = squad.targetDungeonId ? DUNGEON_DEFS[squad.targetDungeonId] : null;
                 const hpPct = squadHpPct(squad);
                 const totalUnits = squad.composition.skeleton + squad.composition.zombie + squad.composition.wraith;
                 const color = squadColor(squad);
