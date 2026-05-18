@@ -141,9 +141,9 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                   </div>
                   { ['skeleton', 'zombie', 'wraith'].includes(group.unitType ?? '') && (
                     <div className="flex flex-col">
-                      <div>HP: {`${derived[group.unitType].hpFlat} (+${Math.floor(derived[group.unitType].hpFlat * derived[group.unitType].hpBonus)})`} </div>
-                      <div>Damage: {`${derived[group.unitType].dmgFlat} (+${Math.floor(derived[group.unitType].dmgFlat * derived[group.unitType].dmgBonus)})`} </div>
-                      <div>Speed: {`${derived[group.unitType].speedFlat} (+${Math.floor(derived[group.unitType].speedFlat * derived[group.unitType].speedBonus)})`} </div>
+                      <div>HP: {`${Math.floor(derived[group.unitType].hpFlat)} (+${Math.floor(derived[group.unitType].hpFlat * derived[group.unitType].hpBonus)})`} </div>
+                      <div>Damage: {`${Math.floor(derived[group.unitType].dmgFlat)} (+${Math.floor(derived[group.unitType].dmgFlat * derived[group.unitType].dmgBonus)})`} </div>
+                      <div>Speed: {`${Math.floor(derived[group.unitType].speedFlat * 100) / 100} (+${Math.floor(derived[group.unitType].speedFlat * derived[group.unitType].speedBonus * 100) / 100})`} </div>
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 10 }}>

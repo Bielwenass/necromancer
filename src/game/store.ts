@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GameState, SlotId, PoolId, UnitType, Rarity } from './types';
+import { CombatEngine } from '../combat/engine';
 import { gameTick, generateLoot, SURGE_COOLDOWN, SURGE_DURATION } from './tick';
 import { recomputeDerived, canPurchaseUpgrade, UPGRADE_NODES } from './upgrades';
 import { executePull, POOL_CONFIGS } from './gacha';
@@ -46,11 +47,18 @@ function buildInitialState(): GameState {
       sessionTotals: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
       lastPulledRelics: null,
     },
-    meta: { tickCount: 0, dayCount: 0, version: 1 },
+    meta: { tickCount: 0, dayCount: 0, version: 1, lastTickAt: Date.now() },
   };
 
   const derived = recomputeDerived(state as GameState);
   return { ...state, derived } as GameState;
+}
+
+interface StoreRuntime {
+  combatEngines: Map<string, CombatEngine>;
+  addCombatEngine: (squadId: string, engine: CombatEngine) => void;
+  removeCombatEngine: (squadId: string) => void;
+  clearCombatEngines: () => void;
 }
 
 interface StoreActions {
@@ -81,21 +89,20 @@ let tickAccumulator = 0;
 const TICK_MS = 100;
 let saveCounter = 0;
 
-export const useGameStore = create<GameState & StoreActions>()((set, get) => {
+export const useGameStore = create<GameState & StoreActions & StoreRuntime>()((set, get) => {
   // Attempt to load saved game
   const rawSaved = loadGame();
-  // Migrate: retreat any squad interrupted mid-fight (fighting state cannot be resumed).
   if (rawSaved?.squads) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rawSaved.squads = rawSaved.squads.map((s: any) => {
-      if (s.state !== 'fighting') return s;
-      return { ...s, state: 'returning', position: 1.0, pendingLoot: null };
-    });
     // Sync counter so new squads don't collide with persisted IDs.
     for (const s of rawSaved.squads as Array<{ id: string }>) {
       const m = /^S-(\d+)$/.exec(s.id);
       if (m) squadIdCounter = Math.max(squadIdCounter, parseInt(m[1], 10));
     }
+  }
+  // Ensure lastTickAt is always defined (old saves won't have it).
+  if (rawSaved?.meta) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rawSaved.meta as any).lastTickAt = (rawSaved.meta as any).lastTickAt ?? Date.now();
   }
   const baseState = rawSaved ? { ...buildInitialState(), ...rawSaved, derived: undefined } as unknown as GameState : buildInitialState();
   const initialDerived = recomputeDerived(baseState);
@@ -103,6 +110,23 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
 
   return {
     ...initialState,
+
+    combatEngines: new Map<string, CombatEngine>(),
+    addCombatEngine: (squadId: string, engine: CombatEngine) => {
+      set(prev => {
+        const m = new Map(prev.combatEngines);
+        m.set(squadId, engine);
+        return { combatEngines: m };
+      });
+    },
+    removeCombatEngine: (squadId: string) => {
+      set(prev => {
+        const m = new Map(prev.combatEngines);
+        m.delete(squadId);
+        return { combatEngines: m };
+      });
+    },
+    clearCombatEngines: () => set({ combatEngines: new Map<string, CombatEngine>() }),
 
     tick: (deltaMs: number) => {
       tickAccumulator += deltaMs;

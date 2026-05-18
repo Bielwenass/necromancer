@@ -54,7 +54,7 @@ export const RELIC_BASES: RelicBase[] = [
     slot: 'crypt',
     slotIds: ['C1', 'C2', 'C3'],
     mainAffixId: 'squadSizeBonus',
-    mainAffixRange: [5, 15],
+    mainAffixRange: [7, 30],
     minorAffixPool: ['squadSizeBonus', 'coinYield', 'boneYield', 'surgeDuration', 'dispatchBonus'],
     glyph: 'crown',
     description: 'A crown of empty sockets. The wearer commands more dead.',
@@ -278,7 +278,7 @@ export const AFFIX_DEFS: Record<string, { label: string; unit: string; range: [n
   // ── Squad / dispatch (Crypt slot) ──────────────────────────────
   squadTravelSpeed:   { label: 'Squad Travel Speed',      unit: '%', range: [5, 25], implemented: true,
                         description: 'Squads move faster to and from dungeons.' },
-  squadSizeBonus:     { label: 'Squad Size',              unit: '',  range: [1, 3],  implemented: true,
+  squadSizeBonus:     { label: 'Squad Size',              unit: '%',  range: [5, 25],  implemented: true,
                         description: 'Increases max squad size while equipped.' },
   dispatchBonus:      { label: 'Dispatch Bonus',          unit: '%', range: [10, 25], implemented: false,
                         description: 'First 10s after squad arrival: bonus damage. IMPLEMENT in combat state.' },

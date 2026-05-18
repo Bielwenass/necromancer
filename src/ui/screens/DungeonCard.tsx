@@ -42,7 +42,8 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
     ? formatTime(Math.round(activeSquad.position * def.travelTimeTicks))
     : null;
 
-  const clearMult = 1 + Math.sqrt(ds.clearCount + 1) * 0.1;
+  const clearMult = (1 + Math.sqrt(ds.clearCount + 1) * 0.07);
+  const clearMultDisplay = clearMult.toFixed(2);
 
   return (
     <div
@@ -81,7 +82,7 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
               {ds.clearCount > 0 && (
                 <>
                   <span style={{ color: 'var(--c-coin)' }}>{ds.clearCount}× cleared</span>
-                  <span>x{(1 + Math.log(ds.clearCount + 1) * 0.2).toFixed(2)} clear mult</span>
+                  <span>x{clearMultDisplay} clear mult</span>
                 </>
               )}
             </div>

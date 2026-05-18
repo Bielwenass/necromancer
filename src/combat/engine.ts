@@ -1,9 +1,27 @@
 import type { Side, SideConfig, EngineOptions, CombatEvent, DeathFlash } from './types';
 import { EventQueue } from './events';
-import { type TierAState, createTierAState, spawnUnitsA, tickTierA, getCountsA, getTotalCountA } from './tierA';
+import { type TierAState, type PerfStats, createTierAState, spawnUnitsA, tickTierA, getCountsA, getTotalCountA } from './tierA';
 import { renderFrame } from './renderer';
 import { COMBAT_CONFIG } from './config';
 import { mulberry32 } from './prng';
+
+export interface EngineStats extends PerfStats {
+  numTicks: number;
+  simTimeMs: number;
+  wallTimeMs: number;
+}
+
+function createEmptyStats(): EngineStats {
+  return {
+    numTicks: 0,
+    simTimeMs: 0,
+    wallTimeMs: 0,
+    hashBuildMs: 0,
+    accelMs: 0,
+    collisionMs: 0,
+    damageMs: 0,
+  };
+}
 
 export class CombatEngine {
   private width: number;
@@ -17,6 +35,9 @@ export class CombatEngine {
   private winner: Side | 'draw' | null = null;
   private nextId: number = 1;
   private rand: () => number;
+
+  // INSTRUMENTATION: per-engine performance counters. Reset on start().
+  public stats: EngineStats = createEmptyStats();
 
   constructor(options: EngineOptions) {
     this.width = options.width;
@@ -37,6 +58,7 @@ export class CombatEngine {
     this.t = 0;
     this.winner = null;
     this.nextId = 1;
+    this.stats = createEmptyStats();
 
     for (const side of ['a', 'b'] as Side[]) {
       const config = this.configs[side];
@@ -55,6 +77,7 @@ export class CombatEngine {
 
   tick(deltaMs: number): void {
     if (!this.running || this.winner !== null) return;
+    const wallStart = performance.now();
     const dt = deltaMs / 1000;
     this.t += deltaMs;
 
@@ -65,6 +88,7 @@ export class CombatEngine {
       this.t,
       this.width,
       this.height,
+      this.stats,
     );
 
     for (const ev of this.events.drainFlash()) {
@@ -88,6 +112,10 @@ export class CombatEngine {
       this.winner = 'a';
       this.events.emit({ type: 'battle_end', winner: 'a', t: this.t });
     }
+
+    this.stats.numTicks++;
+    this.stats.simTimeMs += deltaMs;
+    this.stats.wallTimeMs += performance.now() - wallStart;
   }
 
   render(ctx: CanvasRenderingContext2D): void {

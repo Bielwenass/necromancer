@@ -11,7 +11,7 @@ export function generateLoot(dungeonId: string, clearCount: number, surgeYield: 
   const def = DUNGEON_DEFS[dungeonId];
   if (!def) return {};
 
-  const clearBonus = 1 + Math.sqrt(clearCount + 1) * 0.1;
+  const clearBonus = 1 + Math.sqrt(clearCount + 1) * 0.07;
   const yieldMult = surgeYield;
   const lt = def.lootTable;
 
@@ -151,7 +151,7 @@ export function gameTick(state: GameState): Partial<GameState> {
   result.dungeons = checkUnlockConditions(result.dungeons);
 
   // ── 8. Day count ─────────────────────────────────────────────
-  const newMeta = { ...state.meta, tickCount: state.meta.tickCount + 1 };
+  const newMeta = { ...state.meta, tickCount: state.meta.tickCount + 1, lastTickAt: Date.now() };
   newMeta.dayCount = Math.floor(newMeta.tickCount / TICKS_PER_DAY);
 
   return {

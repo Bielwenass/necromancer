@@ -175,6 +175,7 @@ export interface GameState {
     tickCount: number;
     dayCount: number;
     version: number;
+    lastTickAt: number;
   };
   derived: {
     bonesPerTick: number;

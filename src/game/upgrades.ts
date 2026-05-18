@@ -10,7 +10,7 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
 
   // Start with base values
   let bonesPerTick = 0;
-  let bonesPassiveBonus = 0;
+  let bonesPassiveMult = 1;
   let coinsPerTick = 0;
   let soulsPerTick = 0;
   let boneYieldBonus = 0;
@@ -66,7 +66,7 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
       case 's5a': maxActiveSquads += 1; break;
       case 's5b': break; // Reanimation — handled in tick
       case 's6': maxActiveSquads += 2; maxSquadSize += 3; break;
-      case 's7': skeletonDamageBonus += 0.25; skeletonHpBonus += 0.25; zombieDamageBonus += 0.25; zombieHpBonus += 0.25; wraithDamageBonus += 0.25; wraithHpBonus += 0.25; bonesPassiveBonus *= 2; break;
+      case 's7': skeletonDamageBonus += 0.25; skeletonHpBonus += 0.25; zombieDamageBonus += 0.25; zombieHpBonus += 0.25; wraithDamageBonus += 0.25; wraithHpBonus += 0.25; bonesPassiveMult *= 2; break;
       case 'c0': autoDeploy = true; break;
       case 'c1a': skeletonDamageBonus += 0.10; zombieDamageBonus += 0.10; wraithDamageBonus += 0.10; break;
       case 'c1b': skeletonDamageBonus += 0.20; zombieDamageBonus += 0.20; wraithDamageBonus += 0.20; skeletonHpBonus -= 0.10; zombieHpBonus -= 0.10; wraithHpBonus -= 0.10; break;
@@ -80,17 +80,17 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
       case 'c6': maxActiveSquads += 1; skeletonDamageBonus += 0.10; zombieDamageBonus += 0.10; wraithDamageBonus += 0.10; skeletonHpBonus += 0.10; zombieHpBonus += 0.10; wraithHpBonus += 0.10; break;
       case 'c7': skeletonDamageBonus += 0.25; zombieDamageBonus += 0.25; wraithDamageBonus += 0.25; break;
       case 'n0': soulHarvestBonus += 0.5; break;
-      case 'n1a': boneSurgeActive = true; bonesPassiveBonus *= 1.5; break;
+      case 'n1a': boneSurgeActive = true; bonesPassiveMult *= 1.5; break;
       case 'n1b': zombieDamageBonus += 0.15; break;
       case 'n2': break; // death aura — in combat
       case 'n3a': corpseYieldBonus += 0.20; break;
       case 'n3b': soulHarvestBonus += 0.5; break; // approximated
       case 'n4a': break; // phylactery — free pulls
       case 'n4b': break; // lich form — surge charges
-      case 'n5a': bonesPassiveBonus *= 1.25; boneYieldBonus += 0.30; break;
+      case 'n5a': bonesPassiveMult *= 1.25; boneYieldBonus += 0.30; break;
       case 'n5b': rarityBoostActive = true; break;
-      case 'n6': boneYieldBonus += 0.10; bonesPassiveBonus *= 1.05; break;
-      case 'n7': bonesPassiveBonus *= 3; break;
+      case 'n6': boneYieldBonus += 0.10; bonesPassiveMult *= 1.05; break;
+      case 'n7': bonesPassiveMult *= 3; break;
     }
   }
 
@@ -160,12 +160,12 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
 
   // Apply surge to passive resources
   if (surgeYieldMultiplier > 1) {
-    bonesPassiveBonus *= surgeYieldMultiplier;
+    bonesPassiveMult *= surgeYieldMultiplier;
   }
 
 
   return {
-    bonesPerTick: gardenBonesPerTick * (1 + bonesPassiveBonus),
+    bonesPerTick: gardenBonesPerTick * (bonesPassiveMult),
     coinsPerTick,
     soulsPerTick,
     boneYieldBonus,

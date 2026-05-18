@@ -1,82 +1,58 @@
 import { useEffect, useRef } from 'react';
-import { CombatEngine } from '../../combat/engine';
-import { COMBAT_W, COMBAT_H, buildAttackerConfig } from '../../combat/dungeonCombat';
-import type { SideConfig } from '../../combat/types';
+import type { CombatEngine } from '../../combat/engine';
 import type { Squad, DungeonDef } from '../../game/types';
 import { useGameStore } from '../../game/store';
+import { COMBAT_W, COMBAT_H } from '../../combat/dungeonCombat';
 
-export function CombatWindow({ squad, def }: { squad: Squad; def: DungeonDef }) {
-  const resolveFight = useGameStore(s => s.resolveFight);
+export function CombatWindow({ squad, def: _def }: { squad: Squad; def: DungeonDef }) {
+  const storeEngine = useGameStore(s => s.combatEngines.get(squad.id));
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<CombatEngine | null>(null);
   const rafRef = useRef<number>(0);
-  const lastTsRef = useRef<number>(0);
-  const restartPendingRef = useRef(false);
-  const reportedRef = useRef(false);
+  const engineRef = useRef<CombatEngine | null>(null);
+  const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Keep local ref alive after engine is removed from store (for visual replay).
   useEffect(() => {
-    const defenderConfig: SideConfig | null = {
-      units: def.enemies,
-      spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
-    }
-
-    const derived = useGameStore.getState().derived;
-    const attackerConfig = buildAttackerConfig(squad.composition, derived);
-
-    const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed: squad.fightSeed });
-    engine.setSide('a', attackerConfig);
-    if (defenderConfig) engine.setSide('b', defenderConfig);
-    engine.start();
-
-    // Fast-forward to match the worker's current position in the fight
-    if (squad.fightStartWallTime) {
-      const speed = derived.combatSpeedMultiplier;
-      const elapsed = (Date.now() - squad.fightStartWallTime) * speed;
-      const FIXED_DT = 16;
-      const catchUpTicks = Math.floor(elapsed / FIXED_DT);
-      for (let i = 0; i < catchUpTicks && engine.getWinner() === null; i++) {
-        engine.tick(FIXED_DT);
+    if (storeEngine) {
+      engineRef.current = storeEngine;
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
       }
     }
+  }, [storeEngine]);
 
-    engineRef.current = engine;
-    lastTsRef.current = 0;
-    restartPendingRef.current = false;
-    reportedRef.current = false;
+  // RAF render loop — persists for the lifetime of the component.
+  useEffect(() => {
+    const lastTsRef = { current: 0 };
+    const squadId = squad.id;
 
-    function loop(ts: number) {
+    function loop(ts: number): void {
       const eng = engineRef.current;
       const canvas = canvasRef.current;
-      if (!eng || !canvas) { rafRef.current = requestAnimationFrame(loop); return; }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { rafRef.current = requestAnimationFrame(loop); return; }
+      const ctx = canvas?.getContext('2d');
 
-      if (lastTsRef.current === 0) lastTsRef.current = ts;
-      const speed = useGameStore.getState().derived.combatSpeedMultiplier;
-      const dt = Math.min(ts - lastTsRef.current, 50) * speed;
-      lastTsRef.current = ts;
-
-      eng.tick(dt);
-      eng.render(ctx);
-
-      const winner = eng.getWinner();
-      if (winner !== null && !restartPendingRef.current) {
-        restartPendingRef.current = true;
-
-        // Report outcome to game state on the first completion only.
-        if (!reportedRef.current) {
-          reportedRef.current = true;
-          const survivorsByType = eng.getCounts()['a'];
-          resolveFight(squad.id, winner, survivorsByType);
+      if (eng && ctx) {
+        // Tick only during visual replay (engine removed from store map by lifecycle hook).
+        if (!useGameStore.getState().combatEngines.has(squadId)) {
+          if (lastTsRef.current === 0) lastTsRef.current = ts;
+          const speed = useGameStore.getState().derived.combatSpeedMultiplier;
+          const dt = Math.min(ts - lastTsRef.current, 50) * speed;
+          lastTsRef.current = ts;
+          eng.tick(dt);
+        } else {
+          lastTsRef.current = ts;
         }
 
-        setTimeout(() => {
-          if (engineRef.current) {
-            engineRef.current.start();
+        eng.render(ctx);
+
+        if (eng.getWinner() !== null && !restartTimeoutRef.current) {
+          restartTimeoutRef.current = setTimeout(() => {
+            eng.start();
             lastTsRef.current = 0;
-            restartPendingRef.current = false;
-          }
-        }, 1500);
+            restartTimeoutRef.current = null;
+          }, 1500);
+        }
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -85,9 +61,9 @@ export function CombatWindow({ squad, def }: { squad: Squad; def: DungeonDef }) 
     rafRef.current = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(rafRef.current);
-      engineRef.current = null;
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     };
-  }, [squad.id, def.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <canvas
