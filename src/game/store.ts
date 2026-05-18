@@ -150,7 +150,7 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
         const totalUnits = Object.values(squad.composition).reduce((s, n) => s + n, 0);
         if (totalUnits === 0) return prev;
 
-        const derived = prev.derived;
+        // const derived = prev.derived;
         // const hpBonuses = {
         //   skeleton: 1 + derived.skeletonHpBonus,
         //   zombie: 1 + derived.zombieHpBonus,

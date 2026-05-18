@@ -5,6 +5,13 @@ import { SpatialHash } from './spatialHash';
 
 export type TierAState = { units: UnitA[] };
 
+export interface PerfStats {
+  hashBuildMs: number;
+  accelMs: number;
+  collisionMs: number;
+  damageMs: number;
+}
+
 export function createTierAState(): TierAState {
   return { units: [] };
 }
@@ -62,10 +69,34 @@ export function tickTierA(
   t: number,
   width: number,
   height: number,
+  stats?: PerfStats,
 ): void {
   const cfg = COMBAT_CONFIG.tierA;
   const units = state.units;
   if (units.length === 0) return;
+
+  // Hoist cfg fields into locals and precompute squared radii.
+  // Squared comparisons let us defer Math.sqrt() inside the neighbor loop
+  // to only the branches that actually need d for normalization.
+  const sepR = cfg.separationRadius;
+  const sepR2 = sepR * sepR;
+  const alignR2 = cfg.alignmentRadius * cfg.alignmentRadius;
+  const cohR = cfg.cohesionRadius;
+  const cohR2 = cohR * cohR;
+  const seekR = cfg.seekRadius;
+  const seekR2 = seekR * seekR;
+  const sepWeight = cfg.separationWeight;
+  const enemySepWeight = cfg.enemySeparationWeight;
+  const alignWeight = cfg.alignmentWeight;
+  const cohWeight = cfg.cohesionWeight;
+  const seekWeight = cfg.seekWeight;
+  const attackR2 = cfg.attackRadius * cfg.attackRadius;
+  const maxAccel = cfg.maxAccel;
+  const maxAccel2 = maxAccel * maxAccel;
+  const speedScale = cfg.speedScale;
+
+  // ── Phase 1: spatial hash build + centroid ──────────────────
+  const p1Start = stats ? performance.now() : 0;
 
   // Build spatial hash
   const hash = new SpatialHash<UnitA>(cfg.spatialCellSize);
@@ -82,6 +113,11 @@ export function tickTierA(
     centroid[u.side].count++;
   }
 
+  if (stats) stats.hashBuildMs += performance.now() - p1Start;
+
+  // ── Phase 2: accelerations + integration ────────────────────
+  const p2Start = stats ? performance.now() : 0;
+
   const damageBuffer = new Map<number, number>();
 
   // Accelerations to accumulate
@@ -90,9 +126,10 @@ export function tickTierA(
 
   for (let i = 0; i < units.length; i++) {
     const u = units[i];
+    const ux = u.x, uy = u.y, uid = u.id, uside = u.side, uvx = u.vx, uvy = u.vy;
 
     // Query neighbors — wide enough for cohesion and local seek
-    const neighbors = hash.queryRadius(u.x, u.y, cfg.cohesionRadius);
+    const neighbors = hash.queryRadius(ux, uy, cohR);
 
     // Direct-accumulation acceleration (separation applied inline, not averaged)
     let ax = 0, ay = 0;
@@ -102,83 +139,116 @@ export function tickTierA(
     let nearestEnemyId = -1;
     let nearestEnemyDist2 = Infinity;
 
-    for (const n of neighbors) {
-      if (n.id === u.id) continue;
-      const dx = n.x - u.x;
-      const dy = n.y - u.y;
+    for (const neigh of neighbors) {
+      if (neigh.id === uid) continue;
+      const dx = neigh.x - ux;
+      const dy = neigh.y - uy;
       const d2 = dx * dx + dy * dy;
-      const d = Math.sqrt(d2);
+      // d (the unsquared distance) is computed lazily — only branches that
+      // need it for normalization (dx/d, dy/d) trigger the sqrt.
+      let d = -1;
 
-      if (n.side === u.side) {
+      if (neigh.side === uside) {
         // Separation: inverse-distance so force spikes when very close
-        if (d < cfg.separationRadius && d > 0) {
-          const strength = cfg.separationRadius / Math.max(d, 0.5) - 1;
-          ax -= (dx / d) * strength * cfg.separationWeight;
-          ay -= (dy / d) * strength * cfg.separationWeight;
+        if (d2 < sepR2 && d2 > 0) {
+          d = Math.sqrt(d2);
+          const dc = d < 0.5 ? 0.5 : d;
+          // Factor strength * weight / d once → 1 div instead of 2
+          const k = (sepR / dc - 1) * sepWeight / d;
+          ax -= dx * k;
+          ay -= dy * k;
         }
-        if (d < cfg.alignmentRadius) {
-          alignVx += n.vx; alignVy += n.vy; alignCount++;
+        if (d2 < alignR2) {
+          alignVx += neigh.vx; alignVy += neigh.vy; alignCount++;
         }
-        if (d < cfg.cohesionRadius) {
-          cohX += n.x; cohY += n.y; cohCount++;
+        if (d2 < cohR2) {
+          cohX += neigh.x; cohY += neigh.y; cohCount++;
         }
       } else {
         // Enemy separation: weaker push — slows penetration without blocking combat
-        if (d < cfg.separationRadius && d > 0) {
-          const strength = cfg.separationRadius / Math.max(d, 0.5) - 1;
-          ax -= (dx / d) * strength * cfg.enemySeparationWeight;
-          ay -= (dy / d) * strength * cfg.enemySeparationWeight;
+        if (d2 < sepR2 && d2 > 0) {
+          d = Math.sqrt(d2);
+          const dc = d < 0.5 ? 0.5 : d;
+          const k = (sepR / dc - 1) * enemySepWeight / d;
+          ax -= dx * k;
+          ay -= dy * k;
         }
         // Local seek
-        if (d < cfg.seekRadius && d > 0) {
-          seekX += dx / d; seekY += dy / d; seekCount++;
+        if (d2 < seekR2 && d2 > 0) {
+          if (d < 0) d = Math.sqrt(d2);
+          const invD = 1 / d;
+          seekX += dx * invD;
+          seekY += dy * invD;
+          seekCount++;
         }
         if (d2 < nearestEnemyDist2) {
-          nearestEnemyDist2 = d2; nearestEnemyId = n.id;
+          nearestEnemyDist2 = d2; nearestEnemyId = neigh.id;
         }
       }
     }
 
     // Widen seek search if no enemies found in cohesion radius
     if (seekCount === 0) {
-      const enemyNeighbors = hash.queryRadius(u.x, u.y, cfg.seekRadius);
-      for (const n of enemyNeighbors) {
-        if (n.side === u.side) continue;
-        const dx = n.x - u.x;
-        const dy = n.y - u.y;
+      const enemyNeighbors = hash.queryRadius(ux, uy, seekR);
+      for (const neigh of enemyNeighbors) {
+        if (neigh.side === uside) continue;
+        const dx = neigh.x - ux;
+        const dy = neigh.y - uy;
         const d2 = dx * dx + dy * dy;
-        const d = Math.sqrt(d2);
-        if (d > 0) { seekX += dx / d; seekY += dy / d; }
+        if (d2 > 0) {
+          const invD = 1 / Math.sqrt(d2);
+          seekX += dx * invD;
+          seekY += dy * invD;
+        }
         seekCount++;
-        if (d2 < nearestEnemyDist2) { nearestEnemyDist2 = d2; nearestEnemyId = n.id; }
+        if (d2 < nearestEnemyDist2) { nearestEnemyDist2 = d2; nearestEnemyId = neigh.id; }
       }
     }
 
     // Global march: if still no visible enemies, steer toward enemy centroid
     if (seekCount === 0) {
-      const enemySide: Side = u.side === 'a' ? 'b' : 'a';
+      const enemySide: Side = uside === 'a' ? 'b' : 'a';
       const ec = centroid[enemySide];
       if (ec.count > 0) {
-        const dx = ec.x / ec.count - u.x;
-        const dy = ec.y / ec.count - u.y;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d > 0) { seekX = dx / d; seekY = dy / d; seekCount = 1; }
+        const dx = ec.x / ec.count - ux;
+        const dy = ec.y / ec.count - uy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 > 0) {
+          const invD = 1 / Math.sqrt(d2);
+          seekX = dx * invD; seekY = dy * invD; seekCount = 1;
+        }
       }
     }
 
-    if (alignCount > 0) { ax += (alignVx / alignCount - u.vx) * cfg.alignmentWeight; ay += (alignVy / alignCount - u.vy) * cfg.alignmentWeight; }
-    if (cohCount > 0) { ax += (cohX / cohCount - u.x) * cfg.cohesionWeight; ay += (cohY / cohCount - u.y) * cfg.cohesionWeight; }
-    if (seekCount > 0) { ax += (seekX / seekCount) * cfg.seekWeight; ay += (seekY / seekCount) * cfg.seekWeight; }
+    // Apply flocking accumulators
+    if (alignCount > 0) {
+      const inv = 1 / alignCount;
+      ax += (alignVx * inv - uvx) * alignWeight;
+      ay += (alignVy * inv - uvy) * alignWeight;
+    }
+    if (cohCount > 0) {
+      const inv = 1 / cohCount;
+      ax += (cohX * inv - ux) * cohWeight;
+      ay += (cohY * inv - uy) * cohWeight;
+    }
+    if (seekCount > 0) {
+      const inv = 1 / seekCount;
+      ax += seekX * inv * seekWeight;
+      ay += seekY * inv * seekWeight;
+    }
 
-    // Clamp acceleration
-    const aMag = Math.sqrt(ax * ax + ay * ay);
-    if (aMag > cfg.maxAccel) { ax = ax / aMag * cfg.maxAccel; ay = ay / aMag * cfg.maxAccel; }
+    // Clamp acceleration. Compare against maxAccel² so sqrt only runs when over.
+    const aMag2 = ax * ax + ay * ay;
+    if (aMag2 > maxAccel2) {
+      const k = maxAccel / Math.sqrt(aMag2);
+      ax *= k; ay *= k;
+    }
 
     accX[i] = ax;
     accY[i] = ay;
 
     // Combat: attack nearest enemy within attackRadius
-    if (nearestEnemyId !== -1 && nearestEnemyDist2 < cfg.attackRadius * cfg.attackRadius) {
+    if (nearestEnemyId !== -1 && nearestEnemyDist2 < attackR2) {
       const dmg = (u.dmg ?? 1) * dt;
       damageBuffer.set(nearestEnemyId, (damageBuffer.get(nearestEnemyId) ?? 0) + dmg);
     }
@@ -187,14 +257,18 @@ export function tickTierA(
   // Apply acceleration and integrate
   for (let i = 0; i < units.length; i++) {
     const u = units[i];
-    const maxSpeed = u.speed * cfg.speedScale;
+    const maxSpeed = u.speed * speedScale;
+    const maxSpeed2 = maxSpeed * maxSpeed;
 
     u.vx += accX[i] * dt;
     u.vy += accY[i] * dt;
 
-    // Clamp speed
-    const spd = Math.sqrt(u.vx * u.vx + u.vy * u.vy);
-    if (spd > maxSpeed) { u.vx = u.vx / spd * maxSpeed; u.vy = u.vy / spd * maxSpeed; }
+    // Clamp speed. Compare against maxSpeed² so sqrt only runs when over.
+    const spd2 = u.vx * u.vx + u.vy * u.vy;
+    if (spd2 > maxSpeed2) {
+      const k = maxSpeed / Math.sqrt(spd2);
+      u.vx *= k; u.vy *= k;
+    }
 
     // Integrate
     u.x += u.vx * dt;
@@ -202,15 +276,20 @@ export function tickTierA(
 
     // Bounce off walls
     if (u.x < 0) { u.x = 0; u.vx *= -0.5; }
-    if (u.x > width) { u.x = width; u.vx *= -0.5; }
+    else if (u.x > width) { u.x = width; u.vx *= -0.5; }
     if (u.y < 0) { u.y = 0; u.vy *= -0.5; }
-    if (u.y > height) { u.y = height; u.vy *= -0.5; }
+    else if (u.y > height) { u.y = height; u.vy *= -0.5; }
   }
 
-  // Hard collision resolution — push overlapping enemy pairs apart.
+  if (stats) stats.accelMs += performance.now() - p2Start;
+
+  // ── Phase 3: hard collision resolution ──────────────────────
   // Forces alone can't guarantee separation when seek weights are high; this
   // runs after integration so it always wins.
+  const p3Start = stats ? performance.now() : 0;
+
   const collRadius = COMBAT_CONFIG.rendering.dotRadius * 2 + 0.5;
+  const collRadius2 = collRadius * collRadius;
   const collHash = new SpatialHash<UnitA>(collRadius * 3);
   for (const u of units) collHash.insert(u);
 
@@ -220,17 +299,23 @@ export function tickTierA(
       const dx = u.x - n.x;
       const dy = u.y - n.y;
       const d2 = dx * dx + dy * dy;
-      if (d2 >= collRadius * collRadius || d2 < 0.0001) continue;
+      if (d2 >= collRadius2 || d2 < 0.0001) continue;
       const d = Math.sqrt(d2);
-      // Push u half the overlap away; n's own iteration handles its half
-      const push = (collRadius - d) * 0.5;
-      u.x += (dx / d) * push;
-      u.y += (dy / d) * push;
+      // Push u half the overlap away; n's own iteration handles its half.
+      // Factor (collRadius - d) * 0.5 / d once.
+      const push = (collRadius - d) * 0.5 / d;
+      u.x += dx * push;
+      u.y += dy * push;
     }
     // Re-clamp after collision nudges
     if (u.x < 0) u.x = 0; else if (u.x > width) u.x = width;
     if (u.y < 0) u.y = 0; else if (u.y > height) u.y = height;
   }
+
+  if (stats) stats.collisionMs += performance.now() - p3Start;
+
+  // ── Phase 4: damage + dead removal + events ─────────────────
+  const p4Start = stats ? performance.now() : 0;
 
   // Apply damage buffer
   const dead: UnitA[] = [];
@@ -251,4 +336,6 @@ export function tickTierA(
     const deadIds = new Set(dead.map(u => u.id));
     state.units = state.units.filter(u => !deadIds.has(u.id));
   }
+
+  if (stats) stats.damageMs += performance.now() - p4Start;
 }
