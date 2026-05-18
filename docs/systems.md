@@ -69,7 +69,7 @@ returning ──position reaches 0──► idle ──(auto-deploy if c0)──
 | `fighting` | — | Dealing and taking damage each tick |
 | `returning` | 1→0 | Moving back; deposits `pendingLoot` on arrival |
 
-**Travel speed** = `1 / dungeonDef.travelTimeTicks` per tick, multiplied by `derived.surgeSpeedMultiplier` and (on return) `1 + derived.squadReturnSpeedBonus`.
+**Travel speed** = `1 / dungeonDef.travelTimeTicks` per tick, multiplied by `derived.surgeSpeedMultiplier` and (on return) `1 + derived.squadTravelSpeedBonus`.
 
 ### Naming
 

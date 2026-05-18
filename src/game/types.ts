@@ -141,6 +141,15 @@ export interface Units {
   wraiths: number;
 }
 
+export interface UnitDerivedStats {
+  hpFlat: number;
+  hpBonus: number;
+  dmgFlat: number;
+  dmgBonus: number;
+  speedFlat: number;
+  speedBonus: number;
+}
+
 export interface GameState {
   resources: Resources;
   units: Units;
@@ -171,6 +180,9 @@ export interface GameState {
     bonesPerTick: number;
     coinsPerTick: number;
     soulsPerTick: number;
+    boneYieldBonus: number;
+    coinYieldBonus: number;
+    soulsYieldBonus: number;
     maxSquadSize: number;
     maxActiveSquads: number;
     zombiesUnlocked: boolean;
@@ -178,24 +190,17 @@ export interface GameState {
     autoDeploy: boolean;
     boneSurgeActive: boolean;
     soulHarvestBonus: number;
-    dropRateBonus: number;
     rarityBoostActive: boolean;
     surgeYieldMultiplier: number;
     surgeSpeedMultiplier: number;
     surgeDamageMultiplier: number;
-    skeletonDamageBonus: number;
-    skeletonHpBonus: number;
-    zombieDamageBonus: number;
-    zombieHpBonus: number;
-    wraithDamageBonus: number;
-    wraithHpBonus: number;
-    squadReturnSpeedBonus: number;
+
+    skeleton: UnitDerivedStats;
+    zombie: UnitDerivedStats;
+    wraith: UnitDerivedStats;
+
+    squadTravelSpeedBonus: number;
     summonCostBonus: number;
     combatSpeedMultiplier: number;
-    workshopTravelSpeedBonus: number;
-    skeletonSpeedBonus: number;
-    zombieSpeedBonus: number;
-    wraithSpeedBonus: number;
-    gardenBonesPerTick: number;
   };
 }

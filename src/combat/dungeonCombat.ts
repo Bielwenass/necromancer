@@ -1,3 +1,4 @@
+import { GameState } from '../game/types';
 import type { SideConfig } from './types';
 
 export const COMBAT_W = 360;
@@ -9,24 +10,29 @@ export const PLAYER_COLORS = {
   wraith:   '#9B7ED4',
 };
 
-type DerivedBonuses = {
-  skeletonHpBonus: number; skeletonDamageBonus: number;
-  zombieHpBonus: number;   zombieDamageBonus: number;
-  wraithHpBonus: number;   wraithDamageBonus: number;
-  surgeDamageMultiplier: number;
-};
-
 export function buildAttackerConfig(
   composition: Record<'skeleton' | 'zombie' | 'wraith', number>,
-  bonuses: DerivedBonuses,
+  derived: GameState['derived'],
 ): SideConfig {
-  const b = bonuses;
-  const sdm = b.surgeDamageMultiplier;
+  const sdm = derived.surgeDamageMultiplier;
   const statsByUnit = {
-    skeleton: { hp: 10 * (1 + b.skeletonHpBonus), dmg: 4 * (1 + b.skeletonDamageBonus) * sdm, speed: 1.0 },
-    zombie:   { hp: 25 * (1 + b.zombieHpBonus),   dmg: 8  * (1 + b.zombieDamageBonus)   * sdm, speed: 0.6 },
-    wraith:   { hp: 6  * (1 + b.wraithHpBonus),   dmg: 20 * (1 + b.wraithDamageBonus)   * sdm, speed: 1.8 },
+    skeleton: {
+      hp: derived.skeleton.hpFlat * (1 + derived.skeleton.hpBonus),
+      dmg: derived.skeleton.dmgFlat * (1 + derived.skeleton.dmgBonus) * sdm,
+      speed: derived.skeleton.speedFlat * (1 + derived.skeleton.speedBonus),
+    },
+    zombie:   {
+      hp: derived.zombie.hpFlat * (1 + derived.zombie.hpBonus),
+      dmg: derived.zombie.dmgFlat * (1 + derived.zombie.dmgBonus) * sdm,
+      speed: derived.zombie.speedFlat * (1 + derived.zombie.speedBonus),
+    },
+    wraith:   {
+      hp: derived.wraith.hpFlat * (1 + derived.wraith.hpBonus),
+      dmg: derived.wraith.dmgFlat * (1 + derived.wraith.dmgBonus) * sdm,
+      speed: derived.wraith.speedFlat * (1 + derived.wraith.speedBonus),
+    },
   }
+  console.log('Attacker stats with bonuses:', statsByUnit);
 
   return {
     units: Object.entries(composition).map(([key, value]) => {

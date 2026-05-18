@@ -28,7 +28,7 @@ Twelve relic bases across four slot types. A relic can only be equipped in slots
 | `pale-sigil` | Pale Sigil | Squad Return Speed +10–25% | — |
 | `hex-lantern` | Hex Lantern | Drop Rate +15–35% | — |
 
-Minor affix pool (Crypt): boneYield, coinYield, squadReturnSpeed, summonCost, dropRate, rarityWeight, surgeDuration
+Minor affix pool (Crypt): boneYield, coinYield, squadReturnSpeed, summonCost, rarityWeight, surgeDuration
 
 ### Skeleton Slots (I1, I2) — 3 bases
 
@@ -75,7 +75,6 @@ All 21 affix types with their display labels, units, and value ranges.
 | `coinYield` | Coin Income | % | 5–30 |
 | `squadReturnSpeed` | Squad Return Speed | % | 5–25 |
 | `summonCost` | Summoning Cost | % | 5–20 |
-| `dropRate` | Drop Rate | % | 5–30 |
 | `rarityWeight` | Rarity Weight | % | 3–15 |
 | `surgeDuration` | Surge Duration | % | 5–25 |
 | `skeletonDamage` | Skeleton Damage | % | 5–30 |

@@ -78,10 +78,10 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 
 export const DUST_VALUES: Record<Rarity, number> = {
   common: 1,
-  uncommon: 3,
-  rare: 10,
-  epic: 30,
-  legendary: 100,
+  uncommon: 2,
+  rare: 5,
+  epic: 10,
+  legendary: 30,
 };
 
 export function getAffixLabel(affixId: string): string {

@@ -10,8 +10,14 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
 
   // Start with base values
   let bonesPerTick = 0;
+  let bonesPassiveBonus = 0;
   let coinsPerTick = 0;
   let soulsPerTick = 0;
+  let boneYieldBonus = 0;
+  let coinYieldBonus = 0;
+  let soulsYieldBonus = 0;
+  let corpseYieldBonus = 0;
+
   let maxSquadSize = 5;
   let maxActiveSquads = 1;
   let zombiesUnlocked = false;
@@ -19,16 +25,32 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
   let autoDeploy = false;
   let boneSurgeActive = false;
   let soulHarvestBonus = 0;
-  let dropRateBonus = 0;
   let rarityBoostActive = false;
+
   let skeletonDamageBonus = 0;
+  let skeletonDamageFlat = 0;
   let skeletonHpBonus = 0;
+  let skeletonHpFlat = 0;
+  let skeletonSpeedBonus = 0;
+  let skeletonSpeedFlat = 0;
+
   let zombieDamageBonus = 0;
+  let zombieDamageFlat = 0;
   let zombieHpBonus = 0;
+  let zombieHpFlat = 0;
+  let zombieSpeedBonus = 0;
+  let zombieSpeedFlat = 0;
+
   let wraithDamageBonus = 0;
+  let wraithDamageFlat = 0;
   let wraithHpBonus = 0;
-  let squadReturnSpeedBonus = 0;
+  let wraithHpFlat = 0;
+  let wraithSpeedBonus = 0;
+  let wraithSpeedFlat = 0;
+
+  let squadTravelSpeedBonus = 0;
   let summonCostBonus = 0;
+  let gardenBonesPerTick = 0;
 
   // Apply upgrade effects
   for (const nodeId of purchased) {
@@ -44,31 +66,31 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
       case 's5a': maxActiveSquads += 1; break;
       case 's5b': break; // Reanimation — handled in tick
       case 's6': maxActiveSquads += 2; maxSquadSize += 3; break;
-      case 's7': skeletonDamageBonus += 0.25; skeletonHpBonus += 0.25; zombieDamageBonus += 0.25; zombieHpBonus += 0.25; wraithDamageBonus += 0.25; wraithHpBonus += 0.25; bonesPerTick *= 2; break;
+      case 's7': skeletonDamageBonus += 0.25; skeletonHpBonus += 0.25; zombieDamageBonus += 0.25; zombieHpBonus += 0.25; wraithDamageBonus += 0.25; wraithHpBonus += 0.25; bonesPassiveBonus *= 2; break;
       case 'c0': autoDeploy = true; break;
       case 'c1a': skeletonDamageBonus += 0.10; zombieDamageBonus += 0.10; wraithDamageBonus += 0.10; break;
       case 'c1b': skeletonDamageBonus += 0.20; zombieDamageBonus += 0.20; wraithDamageBonus += 0.20; skeletonHpBonus -= 0.10; zombieHpBonus -= 0.10; wraithHpBonus -= 0.10; break;
       case 'c2': skeletonHpBonus += 0.20; zombieHpBonus += 0.20; wraithHpBonus += 0.20; skeletonDamageBonus -= 0.10; zombieDamageBonus -= 0.10; wraithDamageBonus -= 0.10; break;
       case 'c3a': break; // healing on arrival
       case 'c3b': break; // group tactics — in combat
-      case 'c4a': squadReturnSpeedBonus += 0.30; break;
+      case 'c4a': squadTravelSpeedBonus += 0.30; break;
       case 'c4b': break; // vampiric — in combat
       case 'c5a': maxActiveSquads += 1; break;
       case 'c5b': break; // battle drums — in combat
       case 'c6': maxActiveSquads += 1; skeletonDamageBonus += 0.10; zombieDamageBonus += 0.10; wraithDamageBonus += 0.10; skeletonHpBonus += 0.10; zombieHpBonus += 0.10; wraithHpBonus += 0.10; break;
       case 'c7': skeletonDamageBonus += 0.25; zombieDamageBonus += 0.25; wraithDamageBonus += 0.25; break;
       case 'n0': soulHarvestBonus += 0.5; break;
-      case 'n1a': boneSurgeActive = true; bonesPerTick *= 1.5; break;
+      case 'n1a': boneSurgeActive = true; bonesPassiveBonus *= 1.5; break;
       case 'n1b': zombieDamageBonus += 0.15; break;
       case 'n2': break; // death aura — in combat
-      case 'n3a': dropRateBonus += 0.20; break;
+      case 'n3a': corpseYieldBonus += 0.20; break;
       case 'n3b': soulHarvestBonus += 0.5; break; // approximated
       case 'n4a': break; // phylactery — free pulls
       case 'n4b': break; // lich form — surge charges
-      case 'n5a': bonesPerTick *= 1.25; dropRateBonus += 0.30; break;
+      case 'n5a': bonesPassiveBonus *= 1.25; boneYieldBonus += 0.30; break;
       case 'n5b': rarityBoostActive = true; break;
-      case 'n6': dropRateBonus += 0.10; bonesPerTick *= 1.05; break;
-      case 'n7': bonesPerTick *= 3; break;
+      case 'n6': boneYieldBonus += 0.10; bonesPassiveBonus *= 1.05; break;
+      case 'n7': bonesPassiveBonus *= 3; break;
     }
   }
 
@@ -76,13 +98,21 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
   if (state.workshop) {
     const ws = state.workshop;
     const usc = UNIT_STAT_CONFIG;
-    skeletonHpBonus     += ws.skeleton.hp    * (usc.skeleton.hp.perLevel    / usc.skeleton.hp.base);
-    skeletonDamageBonus += ws.skeleton.dmg   * (usc.skeleton.dmg.perLevel   / usc.skeleton.dmg.base);
-    zombieHpBonus       += ws.zombie.hp      * (usc.zombie.hp.perLevel      / usc.zombie.hp.base);
-    zombieDamageBonus   += ws.zombie.dmg     * (usc.zombie.dmg.perLevel     / usc.zombie.dmg.base);
-    wraithHpBonus       += ws.wraith.hp      * (usc.wraith.hp.perLevel      / usc.wraith.hp.base);
-    wraithDamageBonus   += ws.wraith.dmg     * (usc.wraith.dmg.perLevel     / usc.wraith.dmg.base);
+    skeletonHpFlat     += usc.skeleton.hp.base + ws.skeleton.hp * usc.skeleton.hp.perLevel;
+    skeletonDamageFlat += usc.skeleton.dmg.base + ws.skeleton.dmg * usc.skeleton.dmg.perLevel;
+    skeletonSpeedFlat  += usc.skeleton.speed.base + ws.skeleton.speed * usc.skeleton.speed.perLevel;
+    zombieHpFlat       += usc.zombie.hp.base + ws.zombie.hp * usc.zombie.hp.perLevel;
+    zombieDamageFlat   += usc.zombie.dmg.base + ws.zombie.dmg * usc.zombie.dmg.perLevel;
+    zombieSpeedFlat    += usc.zombie.speed.base + ws.zombie.speed * usc.zombie.speed.perLevel;
+    wraithHpFlat       += usc.wraith.hp.base + ws.wraith.hp * usc.wraith.hp.perLevel;
+    wraithDamageFlat   += usc.wraith.dmg.base + ws.wraith.dmg * usc.wraith.dmg.perLevel;
+    wraithSpeedFlat    += usc.wraith.speed.base + ws.wraith.speed * usc.wraith.speed.perLevel;
     maxSquadSize        += ws.crypt.squadSize;
+    squadTravelSpeedBonus += ws.crypt.travelSpeed * 0.08; // 8% travel speed per level
+
+    gardenBonesPerTick = ws
+    ? ws.garden.reduce((sum, level) => sum + level * GARDEN_BASE_YIELD, 0) / 10
+    : 0;
   }
 
   // Apply relic effects from equipped relics
@@ -95,28 +125,25 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
     const applyAffix = (affixId: string, value: number) => {
       const boosted = value * upgradeMultiplier / 100; // convert % to decimal
       switch (affixId) {
-        case 'boneYield': bonesPerTick += 0.5 * boosted; break;
-        case 'coinYield': coinsPerTick += boosted * 0.1; break; // small base
-        case 'squadReturnSpeed': squadReturnSpeedBonus += boosted; break;
+        case 'boneYield': boneYieldBonus += boosted; break;
+        case 'coinYield': coinYieldBonus += boosted; break;
+        case 'soulYield': soulsYieldBonus += boosted; break;
+        case 'corpseYield': corpseYieldBonus += boosted; break;
+        case 'squadSizeBonus': maxSquadSize += Math.floor(maxSquadSize * boosted); break; // convert back to flat squad size
+        case 'squadTravelSpeed': squadTravelSpeedBonus += boosted; break;
         case 'summonCost': summonCostBonus += boosted; break;
-        case 'dropRate': dropRateBonus += boosted; break;
         case 'rarityWeight': break; // handled in gacha
         case 'surgeDuration': break; // handled in tick
         case 'skeletonDamage': skeletonDamageBonus += boosted; break;
-        case 'skeletonSpeed': break; // would affect speed multiplier
         case 'skeletonHp': skeletonHpBonus += boosted; break;
-        case 'resurrectChance': break;
-        case 'boneYieldFromKills': bonesPerTick += 0.1 * boosted; break;
+        case 'skeletonSpeed': skeletonSpeedBonus += boosted; break; // would affect speed multiplier
         case 'zombieDamage': zombieDamageBonus += boosted; break;
         case 'zombieHp': zombieHpBonus += boosted; break;
-        case 'plagueDuration': break;
-        case 'corpseYield': break;
-        case 'zombieAoe': break;
         case 'wraithDamage': wraithDamageBonus += boosted; break;
-        case 'wraithSpeed': break;
         case 'wraithHp': wraithHpBonus += boosted; break;
+        case 'wraithSpeed': wraithSpeedBonus += boosted; break;
+        case 'boneYieldFromKills': bonesPerTick += 0.1 * boosted; break;
         case 'soulOnKill': soulHarvestBonus += boosted * 2; break;
-        case 'phaseChance': break;
       }
     };
 
@@ -133,22 +160,17 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
 
   // Apply surge to passive resources
   if (surgeYieldMultiplier > 1) {
-    bonesPerTick *= surgeYieldMultiplier;
+    bonesPassiveBonus *= surgeYieldMultiplier;
   }
 
-  const ws = state.workshop;
-  const workshopTravelSpeedBonus = ws ? ws.crypt.travelSpeed * 0.08 : 0;
-  const skeletonSpeedBonus = ws ? ws.skeleton.speed * UNIT_STAT_CONFIG.skeleton.speed.perLevel : 0;
-  const zombieSpeedBonus   = ws ? ws.zombie.speed   * UNIT_STAT_CONFIG.zombie.speed.perLevel   : 0;
-  const wraithSpeedBonus   = ws ? ws.wraith.speed   * UNIT_STAT_CONFIG.wraith.speed.perLevel   : 0;
-  const gardenBonesPerTick = ws
-    ? ws.garden.reduce((sum, level) => sum + level * GARDEN_BASE_YIELD, 0) / 10
-    : 0;
 
   return {
-    bonesPerTick: bonesPerTick + gardenBonesPerTick,
+    bonesPerTick: gardenBonesPerTick * bonesPassiveBonus,
     coinsPerTick,
     soulsPerTick,
+    boneYieldBonus,
+    coinYieldBonus,
+    soulsYieldBonus,
     maxSquadSize,
     maxActiveSquads,
     zombiesUnlocked,
@@ -156,25 +178,41 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
     autoDeploy,
     boneSurgeActive,
     soulHarvestBonus,
-    dropRateBonus,
     rarityBoostActive,
     surgeYieldMultiplier,
     surgeSpeedMultiplier,
     surgeDamageMultiplier,
-    skeletonDamageBonus,
-    skeletonHpBonus,
-    zombieDamageBonus,
-    zombieHpBonus,
-    wraithDamageBonus,
-    wraithHpBonus,
-    squadReturnSpeedBonus,
+
+    skeleton: {
+      hpFlat: skeletonHpFlat,
+      hpBonus: skeletonHpBonus,
+      dmgFlat: skeletonDamageFlat,
+      dmgBonus: skeletonDamageBonus,
+      speedFlat: skeletonSpeedFlat,
+      speedBonus: skeletonSpeedBonus,
+    },
+
+    zombie: {
+      hpFlat: zombieHpFlat,
+      hpBonus: zombieHpBonus,
+      dmgFlat: zombieDamageFlat,
+      dmgBonus: zombieDamageBonus,
+      speedFlat: zombieSpeedFlat,
+      speedBonus: zombieSpeedBonus,
+    },
+
+    wraith: {
+      hpFlat: wraithHpFlat,
+      hpBonus: wraithHpBonus,
+      dmgFlat: wraithDamageFlat,
+      dmgBonus: wraithDamageBonus,
+      speedFlat: wraithSpeedFlat,
+      speedBonus: wraithSpeedBonus,
+    },
+
+    squadTravelSpeedBonus,
     summonCostBonus,
     combatSpeedMultiplier: 1,
-    workshopTravelSpeedBonus,
-    skeletonSpeedBonus,
-    zombieSpeedBonus,
-    wraithSpeedBonus,
-    gardenBonesPerTick,
   };
 }
 

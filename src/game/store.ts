@@ -151,11 +151,11 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
         if (totalUnits === 0) return prev;
 
         const derived = prev.derived;
-        const hpBonuses = {
-          skeleton: 1 + derived.skeletonHpBonus,
-          zombie: 1 + derived.zombieHpBonus,
-          wraith: 1 + derived.wraithHpBonus,
-        };
+        // const hpBonuses = {
+        //   skeleton: 1 + derived.skeletonHpBonus,
+        //   zombie: 1 + derived.zombieHpBonus,
+        //   wraith: 1 + derived.wraithHpBonus,
+        // };
 
         const newSquads = prev.squads.map(s => {
           if (s.id !== squadId) return s;
@@ -164,10 +164,11 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
             state: 'traveling' as const,
             targetDungeonId: dungeonId,
             position: 0,
+            // TODO remove
             currentHp: {
-              skeleton: s.composition.skeleton * 10 * hpBonuses.skeleton,
-              zombie: s.composition.zombie * 25 * hpBonuses.zombie,
-              wraith: s.composition.wraith * 6 * hpBonuses.wraith,
+              skeleton: s.composition.skeleton * 10,
+              zombie: s.composition.zombie * 25,
+              wraith: s.composition.wraith * 6,
             },
           };
         });
@@ -206,13 +207,13 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
         const newCurrentHp = { ...squad.currentHp };
         for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
           const survivors = survivorsByType[type] ?? 0;
-          const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus
-            : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
+          // const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus
+          //   : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
           newComposition[type] = survivors;
-          newCurrentHp[type] = survivors * UNIT_STATS[type].hp * (1 + hpBonus);
+          // newCurrentHp[type] = survivors * UNIT_STATS[type].hp * (1 + hpBonus);
         }
 
-        const pendingLoot = generateLoot(dungeonId, dungeonState.clearCount, derived.surgeYieldMultiplier, derived.dropRateBonus);
+        const pendingLoot = generateLoot(dungeonId, dungeonState.clearCount, derived.surgeYieldMultiplier);
 
         const newDungeons = prev.dungeons.map(ds =>
           ds.id === dungeonId ? { ...ds, clearCount: ds.clearCount + 1 } : ds
@@ -412,28 +413,28 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
 
         for (const relic of newRelics) {
           // Find existing same base+rarity
-          const existingIdx = newInventory.findIndex(r => r.baseId === relic.baseId && r.rarity === relic.rarity);
-          if (existingIdx >= 0) {
-            newInventory[existingIdx] = {
-              ...newInventory[existingIdx],
-              duplicateCount: newInventory[existingIdx].duplicateCount + 1,
-            };
-            // If past 5 dupes and upgrade level 5, auto-sacrifice
-            const dupe = newInventory[existingIdx];
-            if (dupe.duplicateCount >= 5 && dupe.upgradeLevel >= 5) {
-              newInventory.splice(existingIdx, 1);
-              newResources.dust += DUST_VALUES[relic.rarity];
-            }
-            // Auto-fuse if 5 dupes
-            if (newInventory[existingIdx]?.duplicateCount >= 4) {
-              const { newInventory: fused, success } = fuseRelics(newInventory, relic.baseId, relic.rarity);
-              if (success) {
-                newInventory.splice(0, newInventory.length, ...fused);
-              }
-            }
-          } else {
+          // const existingIdx = newInventory.findIndex(r => r.baseId === relic.baseId && r.rarity === relic.rarity);
+          // if (existingIdx >= 0) {
+          //   newInventory[existingIdx] = {
+          //     ...newInventory[existingIdx],
+          //     duplicateCount: newInventory[existingIdx].duplicateCount + 1,
+          //   };
+          //   // If past 5 dupes and upgrade level 5, auto-sacrifice
+          //   const dupe = newInventory[existingIdx];
+          //   if (dupe.duplicateCount >= 5 && dupe.upgradeLevel >= 5) {
+          //     newInventory.splice(existingIdx, 1);
+          //     newResources.dust += DUST_VALUES[relic.rarity];
+          //   }
+          //   // Auto-fuse if 5 dupes
+          //   if (newInventory[existingIdx]?.duplicateCount >= 4) {
+          //     const { newInventory: fused, success } = fuseRelics(newInventory, relic.baseId, relic.rarity);
+          //     if (success) {
+          //       newInventory.splice(0, newInventory.length, ...fused);
+          //     }
+          //   }
+          // } else {
             newInventory.push({ ...relic, isNew: true });
-          }
+          // }
 
           // Get the base for glyph info
           const base = prev.relics.inventory.find(r => r.baseId === relic.baseId);

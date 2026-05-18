@@ -481,15 +481,6 @@ export function RelicCard({
                 transparent 42%
               )`,
             }} />
-            <div className="rc-rim" style={{
-              opacity: tweaks.gloss * 0.6 * (hovered ? 1 : 0),
-              background: `radial-gradient(
-                ellipse 60% 60% at var(--mx) var(--my),
-                transparent 55%,
-                rgba(255,255,255,0.18) 75%,
-                transparent 100%
-              )`,
-            }} />
           </div>
         </div>
       </div>

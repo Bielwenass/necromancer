@@ -3,12 +3,12 @@ import type { Resources } from './types';
 export const UNIT_STAT_CONFIG = {
   skeleton: {
     hp:    { baseBones: 50,  growth: 1.22, perLevel: 2,    label: 'HP',    base: 10  },
-    dmg:   { baseBones: 80,  growth: 1.25, perLevel: 1,    label: 'DMG',   base: 3   },
+    dmg:   { baseBones: 80,  growth: 1.25, perLevel: 1,    label: 'DMG',   base: 4   },
     speed: { baseBones: 200, growth: 1.30, perLevel: 0.05, label: 'Speed', base: 1.0 },
   },
   zombie: {
-    hp:    { baseBones: 120, growth: 1.22, perLevel: 5,    label: 'HP',    base: 25  },
-    dmg:   { baseBones: 100, growth: 1.25, perLevel: 1,    label: 'DMG',   base: 4   },
+    hp:    { baseBones: 120, growth: 1.22, perLevel: 4,    label: 'HP',    base: 24  },
+    dmg:   { baseBones: 100, growth: 1.25, perLevel: 1,    label: 'DMG',   base: 3   },
     speed: { baseBones: 300, growth: 1.30, perLevel: 0.04, label: 'Speed', base: 0.6 },
   },
   wraith: {

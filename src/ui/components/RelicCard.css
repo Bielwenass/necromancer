@@ -535,18 +535,11 @@
   opacity: 0.55;
 }
 
-/* specular / rim lights */
+/* specular light */
 .rc-gloss {
   position: absolute; inset: 0;
   mix-blend-mode: soft-light;
   z-index: 9;
-  pointer-events: none;
-  transition: opacity 300ms ease;
-}
-.rc-rim {
-  position: absolute; inset: 0;
-  mix-blend-mode: screen;
-  z-index: 10;
   pointer-events: none;
   transition: opacity 300ms ease;
 }

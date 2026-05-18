@@ -21,7 +21,7 @@ export function RelicDetail({
     <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: 300 }}>
-          <RelicCard relic={relic} variant="pull" tweaks={{ idleDrift: false }} />
+          <RelicCard relic={relic} variant="pull" tweaks={{ idleDrift: true, tilt: 6 }} />
         </div>
       </div>
 

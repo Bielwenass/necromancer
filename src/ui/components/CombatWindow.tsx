@@ -21,16 +21,7 @@ export function CombatWindow({ squad, def }: { squad: Squad; def: DungeonDef }) 
     }
 
     const derived = useGameStore.getState().derived;
-    const attackerConfig = buildAttackerConfig(squad.composition, {
-
-      skeletonHpBonus: derived.skeletonHpBonus,
-      skeletonDamageBonus: derived.skeletonDamageBonus,
-      zombieHpBonus: derived.zombieHpBonus,
-      zombieDamageBonus: derived.zombieDamageBonus,
-      wraithHpBonus: derived.wraithHpBonus,
-      wraithDamageBonus: derived.wraithDamageBonus,
-      surgeDamageMultiplier: derived.surgeDamageMultiplier,
-    });
+    const attackerConfig = buildAttackerConfig(squad.composition, derived);
 
     const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed: squad.fightSeed });
     engine.setSide('a', attackerConfig);

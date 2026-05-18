@@ -39,15 +39,7 @@ export function useCombatWorkers() {
 
       // Snapshot derived at fight-start so bonuses don't shift mid-fight
       const derived = useGameStore.getState().derived;
-      const attackerConfig = buildAttackerConfig(squad.composition, {
-        skeletonHpBonus: derived.skeletonHpBonus,
-        skeletonDamageBonus: derived.skeletonDamageBonus,
-        zombieHpBonus: derived.zombieHpBonus,
-        zombieDamageBonus: derived.zombieDamageBonus,
-        wraithHpBonus: derived.wraithHpBonus,
-        wraithDamageBonus: derived.wraithDamageBonus,
-        surgeDamageMultiplier: derived.surgeDamageMultiplier,
-      });
+      const attackerConfig = buildAttackerConfig(squad.composition, derived);
       const defenderConfig = {
         units: enemyDef,
         spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },

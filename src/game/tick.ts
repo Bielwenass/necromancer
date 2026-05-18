@@ -2,23 +2,17 @@ import type { GameState, Resources } from './types';
 import { DUNGEON_DEFS } from './data/dungeons';
 import { checkUnlockConditions } from './dungeons';
 
-const UNIT_STATS = {
-  skeleton: { hp: 10, dmg: 3, speed: 1.0 },
-  zombie:   { hp: 25, dmg: 4, speed: 0.6 },
-  wraith:   { hp: 6,  dmg: 8, speed: 1.5 },
-};
-
 const SURGE_COOLDOWN = 900;  // ticks
 const SURGE_DURATION = 180;  // ticks
 const SURGE_MAX_CHARGES = 3;
 const TICKS_PER_DAY = 1200;  // 2 minutes per in-game day
 
-export function generateLoot(dungeonId: string, clearCount: number, surgeYield: number, dropRateBonus: number): Partial<Resources> {
+export function generateLoot(dungeonId: string, clearCount: number, surgeYield: number): Partial<Resources> {
   const def = DUNGEON_DEFS[dungeonId];
   if (!def) return {};
 
   const clearBonus = 1 + Math.log(clearCount + 1) * 0.2;
-  const yieldMult = surgeYield * (1 + dropRateBonus);
+  const yieldMult = surgeYield;
   const lt = def.lootTable;
 
   const bones = Math.round(
@@ -54,7 +48,7 @@ export function gameTick(state: GameState): Partial<GameState> {
     if (squad.state === 'traveling') {
       const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
-      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.workshopTravelSpeedBonus);
+      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadTravelSpeedBonus);
       updated.position += (1 / def.travelTimeTicks) * speedMult;
 
       if (updated.position >= 1) {
@@ -63,10 +57,11 @@ export function gameTick(state: GameState): Partial<GameState> {
         updated.fightSeed = Math.floor(Math.random() * 0xFFFFFFFF);
         updated.fightStartWallTime = Date.now();
         // Restore full HP on arrival
-        for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
-          const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
-          updated.currentHp[type] = squad.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
-        }
+        // TODO
+        // for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
+        //   const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
+        //   updated.currentHp[type] = squad.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
+        // }
       }
     } else if (squad.state === 'fighting') {
       // The visual simulation in CombatWindow is the fight — outcome is applied
@@ -74,7 +69,7 @@ export function gameTick(state: GameState): Partial<GameState> {
     } else if (squad.state === 'returning') {
       const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
-      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadReturnSpeedBonus) * (1 + derived.workshopTravelSpeedBonus);
+      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadTravelSpeedBonus);
       updated.position -= (1 / def.travelTimeTicks) * speedMult;
 
       if (updated.position <= 0) {
@@ -84,9 +79,9 @@ export function gameTick(state: GameState): Partial<GameState> {
         // Deposit loot
         if (squad.pendingLoot) {
           const loot = squad.pendingLoot;
-          newResources.bones += loot.bones ?? 0;
-          newResources.coins += loot.coins ?? 0;
-          newResources.souls += loot.souls ?? 0;
+          newResources.bones += (loot.bones ?? 0) * (1 + derived.boneYieldBonus);
+          newResources.coins += (loot.coins ?? 0) * (1 + derived.coinYieldBonus);
+          newResources.souls += (loot.souls ?? 0) * (1 + derived.soulsYieldBonus);
           newResources.corpses += loot.corpses ?? 0;
         }
         updated.pendingLoot = null;
@@ -102,10 +97,11 @@ export function gameTick(state: GameState): Partial<GameState> {
               updated.state = 'traveling';
               updated.position = 0;
               // Restore HP for re-deploy
-              for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
-                const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
-                updated.currentHp[type] = updated.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
-              }
+              // TODO
+              // for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
+              //   const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
+              //   updated.currentHp[type] = updated.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
+              // }
             }
           }
         }
@@ -167,4 +163,4 @@ export function gameTick(state: GameState): Partial<GameState> {
   };
 }
 
-export { UNIT_STATS, SURGE_COOLDOWN, SURGE_DURATION, SURGE_MAX_CHARGES };
+export { SURGE_COOLDOWN, SURGE_DURATION, SURGE_MAX_CHARGES };

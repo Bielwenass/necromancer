@@ -10,21 +10,21 @@ import { EquippedSlotCard } from './EquippedSlotCard';
 import { InvCard } from './InvCard';
 import { RelicDetail } from './RelicDetail';
 
-const SLOT_GROUPS: { title: string; subtitle: string; slots: { id: SlotId; label: string }[]; unitType?: 'skeleton' | 'zombie' | 'wraith' }[] = [
+const SLOT_GROUPS: { title: string; slots: { id: SlotId; label: string }[]; unitType?: 'skeleton' | 'zombie' | 'wraith' }[] = [
   {
-    title: 'The Crypt', subtitle: 'Sanctum · 3 slots',
+    title: 'The Crypt',
     slots: [{ id: 'C1', label: 'C-I' }, { id: 'C2', label: 'C-II' }, { id: 'C3', label: 'C-III' }],
   },
   {
-    title: 'Summoning Circle I', subtitle: 'Skeleton · 2 slots', unitType: 'skeleton',
+    title: 'Skeleton Summoning Circle', unitType: 'skeleton',
     slots: [{ id: 'I1', label: 'I-α' }, { id: 'I2', label: 'I-β' }],
   },
   {
-    title: 'Summoning Circle II', subtitle: 'Zombie · 2 slots', unitType: 'zombie',
+    title: 'Zombie Summoning Circle', unitType: 'zombie',
     slots: [{ id: 'II1', label: 'II-α' }, { id: 'II2', label: 'II-β' }],
   },
   {
-    title: 'Summoning Circle III', subtitle: 'Wraith · 2 slots', unitType: 'wraith',
+    title: 'Wraith Summoning Circle', unitType: 'wraith',
     slots: [{ id: 'III1', label: 'III-α' }, { id: 'III2', label: 'III-β' }],
   },
 ];
@@ -137,9 +137,15 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                       : <IconCrypt size={12} color="var(--ink-muted)" />
                     }
                     <span className="display" style={{ fontSize: 10, color: 'var(--ink-bone)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{group.title}</span>
-                    <span className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)' }}>{group.subtitle}</span>
                     <div style={{ flex: 1, height: 1, background: 'var(--rule)', marginLeft: 6 }} />
                   </div>
+                  { ['skeleton', 'zombie', 'wraith'].includes(group.unitType ?? '') && (
+                    <div className="flex flex-col">
+                      <div>HP: {`${derived[group.unitType].hpFlat} (+${Math.floor(derived[group.unitType].hpFlat * derived[group.unitType].hpBonus)})`} </div>
+                      <div>Damage: {`${derived[group.unitType].dmgFlat} (+${Math.floor(derived[group.unitType].dmgFlat * derived[group.unitType].dmgBonus)})`} </div>
+                      <div>Speed: {`${derived[group.unitType].speedFlat} (+${Math.floor(derived[group.unitType].speedFlat * derived[group.unitType].speedBonus)})`} </div>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: 10 }}>
                     {group.slots.map(slot => {
                       const relicId = equipped[slot.id];
