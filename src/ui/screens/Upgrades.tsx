@@ -8,6 +8,7 @@ import type { TabId } from '../components/TabBar';
 import type { UpgradeNode } from '../../game/types';
 import { BranchColumn, BRANCHES } from './BranchColumn';
 import { NodeDetail } from './NodeDetail';
+import { Workshop } from './Workshop';
 
 interface UpgradesProps {
   onTabChange: (tab: TabId) => void;
@@ -20,6 +21,7 @@ export function Upgrades({ onTabChange }: UpgradesProps) {
   const purchaseUpgrade = useGameStore(s => s.purchaseUpgrade);
   const gameState = useGameStore(s => s);
 
+  const [view, setView] = useState<'tree' | 'workshop'>('tree');
   const [selectedNode, setSelectedNode] = useState<UpgradeNode | null>(null);
   const [filter, setFilter] = useState<'all' | 'affordable' | 'purchased'>('all');
 
@@ -33,7 +35,14 @@ export function Upgrades({ onTabChange }: UpgradesProps) {
     <div className="necro">
       <TopBar />
 
-      <div className="stage">
+      <div className="upg-subnav">
+        <div className={'upg-subnav-tab' + (view === 'tree' ? ' active' : '')} onClick={() => setView('tree')}>Skill Tree</div>
+        <div className={'upg-subnav-tab' + (view === 'workshop' ? ' active' : '')} onClick={() => setView('workshop')}>Workshop</div>
+      </div>
+
+      <div style={{ position: 'absolute', top: 92, bottom: 60, left: 0, right: 0, display: 'flex' }}>
+        {view === 'workshop' && <Workshop />}
+        {view === 'tree' && <>
         {/* Left Rail */}
         <div style={{ width: 240, borderRight: '1px solid var(--rule)', background: 'var(--bg-panel)', padding: '24px 18px', display: 'flex', flexDirection: 'column', gap: 22 }}>
           <div>
@@ -128,6 +137,7 @@ export function Upgrades({ onTabChange }: UpgradesProps) {
             </div>
           </div>
         )}
+        </>}
       </div>
 
       <TabBar active="upgrades" onTabChange={onTabChange} />

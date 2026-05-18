@@ -9,7 +9,9 @@
       "Bash(bun --version)",
       "Bash(/home/grunt/.bun/bin/bun run *)",
       "Bash(curl -s http://localhost:5174/src/demo/DemoHarness.tsx)",
-      "Bash(curl -s 'http://localhost:5174/')"
+      "Bash(curl -s 'http://localhost:5174/')",
+      "Bash(grep -E '\\\\.\\(tsx?|jsx?\\)$')",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

@@ -12,9 +12,9 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
     tier: 1,
     enemies: [{
       name: 'wretch',
-      amount: 14,
+      amount: 5,
       color: '#8B6B5D',
-      stats: { hp: 6, dmg: 2, speed: 0.8 }
+      stats: { hp: 8, dmg: 4, speed: 0.8 }
     }],
     lootTable: { bonesMin: 15, bonesMax: 30, coinsMin: 3, coinsMax: 8, soulChance: 0.03, corpseMin: 3, corpseMax: 6 },
     travelTimeTicks: 60,
@@ -28,12 +28,12 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
     tier: 1,
     enemies: [{
       name: 'wretch',
-      amount: 8,
+      amount: 7,
       color: '#8B6B5D',
-      stats: { hp: 6, dmg: 2, speed: 0.8 }
+      stats: { hp: 8, dmg: 4, speed: 0.8 }
     }, {
       name: 'biter',
-      amount: 10,
+      amount: 12,
       color: '#5A4A3A',
       stats: { hp: 5, dmg: 3, speed: 1.4 }
     }],
@@ -72,7 +72,7 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
       name: 'wretch',
       amount: 20,
       color: '#8B6B5D',
-      stats: { hp: 6, dmg: 2, speed: 0.8 }
+      stats: { hp: 8, dmg: 4, speed: 0.8 }
     }, {
       name: 'alpha',
       amount: 10,

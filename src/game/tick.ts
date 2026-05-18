@@ -54,7 +54,7 @@ export function gameTick(state: GameState): Partial<GameState> {
     if (squad.state === 'traveling') {
       const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
-      const speedMult = derived.surgeSpeedMultiplier;
+      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.workshopTravelSpeedBonus);
       updated.position += (1 / def.travelTimeTicks) * speedMult;
 
       if (updated.position >= 1) {
@@ -74,7 +74,7 @@ export function gameTick(state: GameState): Partial<GameState> {
     } else if (squad.state === 'returning') {
       const def = DUNGEON_DEFS[squad.targetDungeonId!];
       if (!def) return updated;
-      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadReturnSpeedBonus);
+      const speedMult = derived.surgeSpeedMultiplier * (1 + derived.squadReturnSpeedBonus) * (1 + derived.workshopTravelSpeedBonus);
       updated.position -= (1 / def.travelTimeTicks) * speedMult;
 
       if (updated.position <= 0) {

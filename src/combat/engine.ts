@@ -41,7 +41,6 @@ export class CombatEngine {
     for (const side of ['a', 'b'] as Side[]) {
       const config = this.configs[side];
       if (!config) continue;
-      console.log(config)
       const result = spawnUnitsA(config, side, this.nextId, this.rand);
       this.tierAState.units.push(...result.units);
       this.nextId = result.nextId;

@@ -7,17 +7,10 @@ import { DUST_VALUES, fuseRelics } from './relics';
 import { saveGame, loadGame, clearSave } from './save';
 import { DUNGEON_DEFS } from './data/dungeons';
 import { makeDungeonState } from './dungeons';
-
-const SQUAD_NAMES = [
-  'Coldfingers', 'Pale Choir', 'Drift of Vael', 'Marrow-Eight',
-  'Husk Brigade', 'Bone Tide', 'Ash Cohort', 'Grey Shamble',
-  'Cinder March', 'Hollow Host', 'Dusk Banner', 'Rot Company',
-];
-
-let squadNameIdx = 0;
-function nextSquadName(): string {
-  return SQUAD_NAMES[squadNameIdx++ % SQUAD_NAMES.length];
-}
+import {
+  unitStatCost, cryptCost, gardenCost, canAffordCost, applyCost,
+  type UnitKey, type StatKey, type CryptKey,
+} from './workshopUpgrades';
 
 let squadIdCounter = 0;
 function nextSquadId(): string {
@@ -28,7 +21,14 @@ function buildInitialState(): GameState {
   const dungeonStates = Object.values(DUNGEON_DEFS).map(def => makeDungeonState(def, def.id === 'paupers-tomb'));
 
   const state: Omit<GameState, 'derived'> = {
-    resources: { bones: 200, coins: 0, souls: 0, dust: 0, corpses: 0 },
+    resources: { bones: 100, coins: 0, souls: 0, dust: 0, corpses: 0 },
+    workshop: {
+      skeleton: { hp: 0, dmg: 0, speed: 0 },
+      zombie:   { hp: 0, dmg: 0, speed: 0 },
+      wraith:   { hp: 0, dmg: 0, speed: 0 },
+      crypt: { squadSize: 0, travelSpeed: 0 },
+      garden: [0, 0, 0, 0, 0, 0],
+    },
     units: { skeletons: 10, zombies: 0, wraiths: 0 },
     squads: [],
     dungeons: dungeonStates,
@@ -57,10 +57,11 @@ interface StoreActions {
   tick: (deltaMs: number) => void;
   dispatchSquad: (squadId: string, dungeonId: string) => void;
   recallSquad: (squadId: string) => void;
-  createSquad: (composition: Record<UnitType, number>, name?: string) => string | null;
+  createSquad: (composition: Record<UnitType, number>, name: string) => string | null;
   deleteSquad: (squadId: string) => void;
   equipRelic: (relicId: string, slotId: SlotId) => void;
   unequipRelic: (slotId: SlotId) => void;
+  markRelicSeen: (relicId: string) => void;
   sacrificeRelic: (relicId: string) => void;
   fuseRelicsAction: (baseId: string, rarity: Rarity) => void;
   purchaseUpgrade: (nodeId: string) => void;
@@ -72,6 +73,8 @@ interface StoreActions {
   resetSave: () => void;
   markRelicsOld: () => void;
   summonUnits: (type: UnitType, count: number) => void;
+  levelUpWorkshop: (key: string) => void;
+  digBone: () => void;
 }
 
 let tickAccumulator = 0;
@@ -237,7 +240,7 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
       });
     },
 
-    createSquad: (composition: Record<UnitType, number>, name?: string) => {
+    createSquad: (composition: Record<UnitType, number>, name: string) => {
       const state = get();
       const totalUnits = Object.values(composition).reduce((s, n) => s + n, 0);
       if (totalUnits === 0) return null;
@@ -249,7 +252,6 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
       if (composition.wraith > state.units.wraiths) return null;
 
       const squadId = nextSquadId();
-      const squadName = name ?? nextSquadName();
 
       set(prev => ({
         units: {
@@ -259,7 +261,7 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
         },
         squads: [...prev.squads, {
           id: squadId,
-          name: squadName,
+          name,
           composition: { ...composition },
           currentHp: { skeleton: 0, zombie: 0, wraith: 0 },
           targetDungeonId: null,
@@ -306,6 +308,13 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
           relics: { ...prev.relics, equipped: newEquipped },
         };
         return { ...newState, derived: recomputeDerived(newState) };
+      });
+    },
+
+    markRelicSeen: (relicId: string) => {
+      set(prev => {
+        const newInventory = prev.relics.inventory.map(r => r.id === relicId ? { ...r, isNew: false } : r);
+        return { ...prev, relics: { ...prev.relics, inventory: newInventory } };
       });
     },
 
@@ -500,6 +509,50 @@ export const useGameStore = create<GameState & StoreActions>()((set, get) => {
           ...prev.relics,
           inventory: prev.relics.inventory.map(r => ({ ...r, isNew: false })),
         },
+      }));
+    },
+
+    levelUpWorkshop: (key: string) => {
+      set(prev => {
+        const ws = prev.workshop;
+        let cost: ReturnType<typeof unitStatCost>;
+        let newWorkshop = { ...ws };
+
+        if (key.startsWith('garden.')) {
+          const idx = parseInt(key.split('.')[1], 10);
+          const level = ws.garden[idx];
+          cost = gardenCost(level);
+          if (!canAffordCost(cost, prev.resources)) return prev;
+          const newGarden = [...ws.garden];
+          newGarden[idx] = level + 1;
+          newWorkshop = { ...ws, garden: newGarden };
+        } else if (key.startsWith('crypt.')) {
+          const stat = key.split('.')[1] as CryptKey;
+          const level = ws.crypt[stat];
+          cost = cryptCost(stat, level);
+          if (!canAffordCost(cost, prev.resources)) return prev;
+          newWorkshop = { ...ws, crypt: { ...ws.crypt, [stat]: level + 1 } };
+        } else {
+          const [unit, stat] = key.split('.') as [UnitKey, StatKey];
+          const level = ws[unit][stat];
+          cost = unitStatCost(unit, stat, level);
+          if (!canAffordCost(cost, prev.resources)) return prev;
+          newWorkshop = { ...ws, [unit]: { ...ws[unit], [stat]: level + 1 } };
+        }
+
+        const newState = {
+          ...prev,
+          resources: applyCost(cost, prev.resources),
+          workshop: newWorkshop,
+        };
+        return { ...newState, derived: recomputeDerived(newState) };
+      });
+    },
+
+    digBone: () => {
+      set(prev => ({
+        ...prev,
+        resources: { ...prev.resources, bones: prev.resources.bones + 1 },
       }));
     },
 

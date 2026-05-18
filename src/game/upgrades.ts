@@ -1,6 +1,7 @@
 import type { GameState } from './types';
 import { UPGRADE_NODES } from './data/upgrades';
 import { RELIC_BASES } from './data/relics';
+import { UNIT_STAT_CONFIG, GARDEN_BASE_YIELD } from './workshopUpgrades';
 
 export function recomputeDerived(state: GameState): GameState['derived'] {
   const purchased = state.upgrades.purchased;
@@ -8,11 +9,11 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
   const inventory = state.relics.inventory;
 
   // Start with base values
-  let bonesPerTick = 0.1;
+  let bonesPerTick = 0;
   let coinsPerTick = 0;
   let soulsPerTick = 0;
   let maxSquadSize = 5;
-  let maxActiveSquads = 3;
+  let maxActiveSquads = 1;
   let zombiesUnlocked = false;
   let wraithsUnlocked = false;
   let autoDeploy = false;
@@ -71,6 +72,19 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
     }
   }
 
+  // Apply workshop unit stat bonuses (convert flat values to % of base stat)
+  if (state.workshop) {
+    const ws = state.workshop;
+    const usc = UNIT_STAT_CONFIG;
+    skeletonHpBonus     += ws.skeleton.hp    * (usc.skeleton.hp.perLevel    / usc.skeleton.hp.base);
+    skeletonDamageBonus += ws.skeleton.dmg   * (usc.skeleton.dmg.perLevel   / usc.skeleton.dmg.base);
+    zombieHpBonus       += ws.zombie.hp      * (usc.zombie.hp.perLevel      / usc.zombie.hp.base);
+    zombieDamageBonus   += ws.zombie.dmg     * (usc.zombie.dmg.perLevel     / usc.zombie.dmg.base);
+    wraithHpBonus       += ws.wraith.hp      * (usc.wraith.hp.perLevel      / usc.wraith.hp.base);
+    wraithDamageBonus   += ws.wraith.dmg     * (usc.wraith.dmg.perLevel     / usc.wraith.dmg.base);
+    maxSquadSize        += ws.crypt.squadSize;
+  }
+
   // Apply relic effects from equipped relics
   for (const [_slotId, relicId] of Object.entries(equipped)) {
     if (!relicId) continue;
@@ -122,8 +136,17 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
     bonesPerTick *= surgeYieldMultiplier;
   }
 
+  const ws = state.workshop;
+  const workshopTravelSpeedBonus = ws ? ws.crypt.travelSpeed * 0.08 : 0;
+  const skeletonSpeedBonus = ws ? ws.skeleton.speed * UNIT_STAT_CONFIG.skeleton.speed.perLevel : 0;
+  const zombieSpeedBonus   = ws ? ws.zombie.speed   * UNIT_STAT_CONFIG.zombie.speed.perLevel   : 0;
+  const wraithSpeedBonus   = ws ? ws.wraith.speed   * UNIT_STAT_CONFIG.wraith.speed.perLevel   : 0;
+  const gardenBonesPerTick = ws
+    ? ws.garden.reduce((sum, level) => sum + level * GARDEN_BASE_YIELD, 0) / 10
+    : 0;
+
   return {
-    bonesPerTick,
+    bonesPerTick: bonesPerTick + gardenBonesPerTick,
     coinsPerTick,
     soulsPerTick,
     maxSquadSize,
@@ -147,6 +170,11 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
     squadReturnSpeedBonus,
     summonCostBonus,
     combatSpeedMultiplier: 1,
+    workshopTravelSpeedBonus,
+    skeletonSpeedBonus,
+    zombieSpeedBonus,
+    wraithSpeedBonus,
+    gardenBonesPerTick,
   };
 }
 

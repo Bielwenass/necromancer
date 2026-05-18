@@ -1,6 +1,6 @@
 export function UnitReserve({ type, count, color, canSummon, onSummon, cost }: {
   type: string; count: number; color: string;
-  canSummon: boolean; onSummon: () => void; cost: string;
+  canSummon: (v: number) => boolean; onSummon: () => void; cost: string;
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -13,13 +13,30 @@ export function UnitReserve({ type, count, color, canSummon, onSummon, cost }: {
         title={`Summon 1 ${type} (${cost})`}
         style={{
           padding: '3px 10px',
-          border: `1px solid ${canSummon ? color : 'var(--rule)'}`,
-          color: canSummon ? color : 'var(--ink-faint)',
+          border: `1px solid ${canSummon(1) ? color : 'var(--rule)'}`,
+          color: canSummon(1) ? color : 'var(--ink-faint)',
           fontFamily: 'var(--f-mono)', fontSize: 11, letterSpacing: '0.1em',
-          cursor: canSummon ? 'pointer' : 'not-allowed',
-          opacity: canSummon ? 1 : 0.5,
+          cursor: canSummon(1) ? 'pointer' : 'not-allowed',
+          opacity: canSummon(1) ? 1 : 0.5,
         }}
-      >+1</button>
+      >Raise</button>
+      <button
+        onClick={() => {
+          if (canSummon(10)) {
+            for (let i = 0; i < 10; i++) onSummon();
+          }
+        }}
+        disabled={!canSummon(10)}
+        title={`Summon 10 ${type}s (${cost} each)`}
+        style={{
+          padding: '3px 10px',
+          border: `1px solid ${canSummon(10) ? color : 'var(--rule)'}`,
+          color: canSummon(10) ? color : 'var(--ink-faint)',
+          fontFamily: 'var(--f-mono)', fontSize: 11, letterSpacing: '0.1em',
+          cursor: canSummon(10) ? 'pointer' : 'not-allowed',
+          opacity: canSummon(10) ? 1 : 0.5,
+        }}
+      >+10</button>
     </div>
   );
 }

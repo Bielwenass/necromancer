@@ -7,6 +7,7 @@ export function saveGame(state: GameState): void {
   try {
     const toSave = {
       resources: state.resources,
+      workshop: state.workshop,
       units: state.units,
       squads: state.squads,
       dungeons: state.dungeons,

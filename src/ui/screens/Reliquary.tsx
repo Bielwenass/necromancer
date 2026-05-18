@@ -9,7 +9,6 @@ import type { SlotId, Rarity } from '../../game/types';
 import { EquippedSlotCard } from './EquippedSlotCard';
 import { InvCard } from './InvCard';
 import { RelicDetail } from './RelicDetail';
-import { SetProgress } from './SetProgress';
 
 const SLOT_GROUPS: { title: string; subtitle: string; slots: { id: SlotId; label: string }[]; unitType?: 'skeleton' | 'zombie' | 'wraith' }[] = [
   {
@@ -40,6 +39,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
   const derived = useGameStore(s => s.derived);
   const equipRelic = useGameStore(s => s.equipRelic);
   const unequipRelic = useGameStore(s => s.unequipRelic);
+  const markRelicSeen = useGameStore(s => s.markRelicSeen);
   const sacrificeRelic = useGameStore(s => s.sacrificeRelic);
 
   const [selectedRelicId, setSelectedRelicId] = useState<string | null>(null);
@@ -62,6 +62,15 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
       setSelectedRelicId(equippedId);
     }
   };
+
+  const handleSelectRelic = (relicId: string) => {
+    if (selectedRelicId === relicId) {
+      setSelectedRelicId(null);
+    } else {
+      setSelectedRelicId(relicId);
+      markRelicSeen(relicId);
+    }
+  }
 
   const handleSacrifice = () => {
     if (!selectedRelicId) return;
@@ -111,7 +120,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
         {/* 3-column body */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           {/* LEFT — Equipped */}
-          <div style={{ width: 560, padding: '22px 24px', borderRight: '1px solid var(--rule)', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
+          <div className='scr-ghost' style={{ width: 560, padding: '22px 24px', borderRight: '1px solid var(--rule)', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
             <div className="display" style={{ fontSize: 13, color: 'var(--ink-parchm)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>Equipped</div>
             {SLOT_GROUPS.map(group => {
               if (group.unitType === 'zombie' && !derived.zombiesUnlocked) return null;
@@ -185,7 +194,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                 </div>
               </div>
             ) : (
-              <div style={{
+              <div className="scr-ghost" style={{
                 display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 124px)',
                 gap: 10, alignContent: 'start', overflowY: 'auto', flex: 1,
               }}>
@@ -194,15 +203,13 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                     key={relic.id}
                     relic={relic}
                     selected={selectedRelicId === relic.id}
-                    onSelect={() => setSelectedRelicId(relic.id === selectedRelicId ? null : relic.id)}
+                    onSelect={() => handleSelectRelic(relic.id)}
                   />
                 ))}
               </div>
             )}
           </div>
         </div>
-
-        <SetProgress equipped={equipped} inventory={inventory} />
       </div>
 
       <TabBar active="reliquary" onTabChange={onTabChange} />

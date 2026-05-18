@@ -15,15 +15,10 @@ export function RelicDetail({
 }) {
   const c = rarityColor(relic.rarity);
   const base = RELIC_BASES.find(b => b.id === relic.baseId);
-  const slotLabel = base ? base.slot.toUpperCase() + '-BOUND' : '';
   const dustValue = DUST_VALUES[relic.rarity];
 
   return (
-    <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
-      <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.18em', marginBottom: 12 }}>
-        SELECTED · {slotLabel}
-      </div>
-
+    <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: 300 }}>
           <RelicCard relic={relic} variant="pull" tweaks={{ idleDrift: false }} />

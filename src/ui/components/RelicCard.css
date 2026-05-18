@@ -357,13 +357,13 @@
 }
 
 .rc-glyph {
-  font-size: 0.9em;
+  font-size: 1.2em;
   flex-shrink: 0;
 }
 
 .rc-type {
   font-family: var(--f-mono, monospace);
-  font-size: 0.5em;
+  font-size: 0.8em;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--accent-1, #cfc7b8);
@@ -375,8 +375,8 @@
 
 .rc-rarity-tag {
   font-family: var(--f-display, serif);
-  font-size: 0.48em;
-  letter-spacing: 0.18em;
+  font-size: 0.9em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--rarity-color, #a8a39a);
   opacity: 0.9;

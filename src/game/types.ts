@@ -127,6 +127,14 @@ export interface Resources {
   corpses: number;
 }
 
+export interface WorkshopState {
+  skeleton: { hp: number; dmg: number; speed: number };
+  zombie:   { hp: number; dmg: number; speed: number };
+  wraith:   { hp: number; dmg: number; speed: number };
+  crypt: { squadSize: number; travelSpeed: number };
+  garden: number[]; // 6 plots; 0 = not purchased, ≥1 = level
+}
+
 export interface Units {
   skeletons: number;
   zombies: number;
@@ -153,6 +161,7 @@ export interface GameState {
     sessionTotals: Record<Rarity, number>;
     lastPulledRelics: Relic[] | null;
   };
+  workshop: WorkshopState;
   meta: {
     tickCount: number;
     dayCount: number;
@@ -183,5 +192,10 @@ export interface GameState {
     squadReturnSpeedBonus: number;
     summonCostBonus: number;
     combatSpeedMultiplier: number;
+    workshopTravelSpeedBonus: number;
+    skeletonSpeedBonus: number;
+    zombieSpeedBonus: number;
+    wraithSpeedBonus: number;
+    gardenBonesPerTick: number;
   };
 }

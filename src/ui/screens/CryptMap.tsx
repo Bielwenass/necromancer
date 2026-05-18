@@ -74,20 +74,20 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
             <div className="mono" style={{ fontSize: 11, color: 'var(--ink-dim)', letterSpacing: '0.14em', marginBottom: 10 }}>UNIT RESERVES</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <UnitReserve type="skeleton" count={units.skeletons} color="var(--sq-skeleton)"
-                canSummon={resources.bones >= Math.round(10 * (1 - derived.summonCostBonus))}
+                canSummon={(v) => resources.bones >= Math.round(10 * v * (1 - derived.summonCostBonus))}
                 onSummon={() => summonUnits('skeleton', 1)}
                 cost={`${Math.round(10 * (1 - derived.summonCostBonus))} bones`}
               />
               {derived.zombiesUnlocked && (
                 <UnitReserve type="zombie" count={units.zombies} color="var(--sq-zombie)"
-                  canSummon={resources.bones >= 5 && resources.corpses >= 1}
+                  canSummon={(v) => resources.bones >= 5 * v && resources.corpses >= 1 * v}
                   onSummon={() => summonUnits('zombie', 1)}
                   cost="5 bones + 1 corpse"
                 />
               )}
               {derived.wraithsUnlocked && (
                 <UnitReserve type="wraith" count={units.wraiths} color="var(--sq-wraith)"
-                  canSummon={resources.bones >= 20 && resources.souls >= 1}
+                  canSummon={(v) => resources.bones >= 20 * v && resources.souls >= 1 * v}
                   onSummon={() => summonUnits('wraith', 1)}
                   cost="20 bones + 1 soul"
                 />
@@ -143,7 +143,6 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
                     display: 'flex', gap: 12, alignItems: 'center',
                     background: i % 2 === 0 ? 'rgba(212,184,140,0.01)' : 'transparent',
                   }}>
-                    {squad.id}
                     <div style={{
                       width: 38, height: 38, borderRadius: '50%',
                       border: '1px solid var(--rule-strong)',

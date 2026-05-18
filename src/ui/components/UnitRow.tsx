@@ -15,7 +15,7 @@ export function UnitRow({
       <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
       <span style={{ flex: 1, fontSize: 13, color: 'var(--ink-bone)' }}>{label}</span>
       <span className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', minWidth: 60, textAlign: 'right' }}>
-        {available} avail.
+        {available} available
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button
@@ -37,6 +37,13 @@ export function UnitRow({
             fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >+</button>
+        <button onClick={() => onAdjust(available - count)} disabled={!canIncrease}
+          style={{
+            width: 48, height: 24, border: '1px solid var(--rule-strong)',
+            color: canIncrease ? 'var(--ink-bone)' : 'var(--ink-faint)',
+            fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >Max</button>
       </div>
     </div>
   );

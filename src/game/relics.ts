@@ -3,12 +3,12 @@ import { RELIC_BASES, AFFIX_DEFS } from './data/relics';
 
 let relicCounter = 0;
 
-function rollPosition(): number {
-  if (Math.random() < 0.8) {
-    // center band 40-60%
-    return 0.4 + Math.random() * 0.2;
-  }
-  return Math.random(); // full range
+function rollPosition(rarity: Rarity): number {
+  // if (Math.random() < 0.8) {
+  //   // center band 40-60%
+  //   return 0.4 + Math.random() * 0.2;
+  // }
+  return Math.random() + POS_BOOST_RARITY[rarity]; // full range with rarity boost
 }
 
 function rollValue(range: [number, number], pos: number): number {
@@ -23,13 +23,21 @@ const MINOR_COUNT: Record<Rarity, number> = {
   legendary: 3,
 };
 
+const POS_BOOST_RARITY: Record<Rarity, number> = {
+  common: 0.0,
+  uncommon: 0.1,
+  rare: 0.2,
+  epic: 0.35,
+  legendary: 0.5,
+};
+
 export function rollRelic(baseId: string, rarity: Rarity): Relic {
   const base = RELIC_BASES.find(b => b.id === baseId);
   if (!base) throw new Error(`Unknown relic base: ${baseId}`);
 
-  const mainPos = rollPosition();
+  const mainPos = rollPosition(rarity);
   const mainAffixDef = AFFIX_DEFS[base.mainAffixId];
-  const mainValue = rollValue(base.mainAffixRange, mainPos);
+  let mainValue = rollValue(base.mainAffixRange, mainPos);
 
   const minorCount = MINOR_COUNT[rarity];
   const pool = [...base.minorAffixPool];
@@ -40,9 +48,13 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
     const affixId = pool.splice(idx, 1)[0];
     const affixDef = AFFIX_DEFS[affixId];
     if (!affixDef) continue;
-    const pos = rollPosition();
+    const pos = rollPosition(rarity);
     const value = rollValue(affixDef.range, pos);
-    minorAffixes.push({ id: affixId, value, rollPosition: pos });
+    if (base.mainAffixId === affixId) {
+      mainValue += value;
+    } else {
+      minorAffixes.push({ id: affixId, value, rollPosition: pos });
+    }
   }
 
   const allPositions = [mainPos, ...minorAffixes.map(a => a.rollPosition)];
