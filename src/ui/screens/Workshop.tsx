@@ -165,6 +165,7 @@ function UpgRow({ row, res, pts, focused, onFocus, onBuy, isSkill, skillCost }: 
   const maxed = row.maxLevel !== undefined && row.level >= row.maxLevel;
   const cost = maxed ? null : (isSkill ? null : row.costFn(row.level));
   const affordable = maxed ? false : isSkill ? pts >= (skillCost ?? 0) : (cost ? canAffordCost(cost, res) : false);
+  const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100 
 
   return (
     <div className={'upg-row' + (focused ? ' focused' : '')} onMouseEnter={() => onFocus(row.id)} onClick={() => onFocus(row.id)}
@@ -173,7 +174,7 @@ function UpgRow({ row, res, pts, focused, onFocus, onBuy, isSkill, skillCost }: 
       <div><div className="upg-name">{row.name}</div><div className="upg-desc">{row.description}</div></div>
       <div className="upg-current">
         <div className="lv" style={maxed ? { color: 'var(--hp-good)' } : {}}>{maxed ? 'DONE' : `LV ${row.level}`}</div>
-        <div className="val">{Math.round(Number(row.valueFn(row.level)) * 100) / 100}</div>
+        <div className="val">{valueNumerical ? valueNumerical : row.valueFn(row.level)}</div>
       </div>
       <div className="upg-cost">
         {maxed ? <div className="mono" style={{ fontSize: 9, color: 'var(--hp-good)', letterSpacing: '0.12em' }}>MAXED</div>
@@ -305,6 +306,8 @@ function Detail({ rowId, sections, res, pts, onBuy, onSkillBuy, gameState }: {
   const maxed = row.maxLevel !== undefined && row.level >= row.maxLevel;
   const cost = maxed ? null : (isSkill ? null : row.costFn(row.level));
   const canBuy = maxed ? false : isSkill ? canPurchaseUpgrade(gameState, (row as WRow & { _skillId: string })._skillId ?? row.id) : (cost ? canAffordCost(cost, res) : false);
+  const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100;
+  const valueNextNumerical = Math.round(Number(row.nextFn(row.level)) * 100) / 100;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -321,9 +324,9 @@ function Detail({ rowId, sections, res, pts, onBuy, onSkillBuy, gameState }: {
         <div>
           <div className="eyebrow-sm" style={{ marginBottom: 8 }}>Current → Next</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '10px 0' }}>
-            <span className="display" style={{ fontSize: 22, color: 'var(--ink-bone)' }}>{Math.round(Number(row.valueFn(row.level)) * 100) / 100}</span>
+            <span className="display" style={{ fontSize: 22, color: 'var(--ink-bone)' }}>{valueNumerical ? valueNumerical : row.valueFn(row.level)}</span>
             <span className="mono" style={{ fontSize: 16, color: 'var(--ink-dim)' }}>→</span>
-            <span className="display" style={{ fontSize: 22, color: 'var(--c-ember)' }}>{Math.round(Number(row.nextFn(row.level)) * 100) / 100}</span>
+            <span className="display" style={{ fontSize: 22, color: 'var(--c-ember)' }}>{valueNextNumerical ? valueNextNumerical : row.nextFn(row.level)}</span>
           </div>
         </div>
       )}
