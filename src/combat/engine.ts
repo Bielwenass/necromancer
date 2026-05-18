@@ -118,8 +118,8 @@ export class CombatEngine {
     this.stats.wallTimeMs += performance.now() - wallStart;
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    renderFrame(ctx, this.width, this.height, this.tierAState.units, this.configs, this.deathFlashes, this.t);
+  render(ctx: CanvasRenderingContext2D, extrapolationDt: number = 0): void {
+    renderFrame(ctx, this.width, this.height, this.tierAState.units, this.configs, this.deathFlashes, this.t, extrapolationDt);
   }
 
   getCounts(): Record<Side, Record<string, number>> {

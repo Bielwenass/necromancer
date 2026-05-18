@@ -25,6 +25,8 @@ export function CombatWindow({ squad, def: _def }: { squad: Squad; def: DungeonD
   // RAF render loop — persists for the lifetime of the component.
   useEffect(() => {
     const lastTsRef = { current: 0 };
+    const lastSimTRef = { current: -1 };    // sim time at last detected tick
+    const lastTickWallRef = { current: 0 }; // wall time (ms) when last tick was detected
     const squadId = squad.id;
 
     function loop(ts: number): void {
@@ -33,10 +35,13 @@ export function CombatWindow({ squad, def: _def }: { squad: Squad; def: DungeonD
       const ctx = canvas?.getContext('2d');
 
       if (eng && ctx) {
-        // Tick only during visual replay (engine removed from store map by lifecycle hook).
-        if (!useGameStore.getState().combatEngines.has(squadId)) {
+        const store = useGameStore.getState();
+        const isLive = store.combatEngines.has(squadId);
+
+        if (!isLive) {
+          // Visual replay: tick the engine ourselves with real delta time.
           if (lastTsRef.current === 0) lastTsRef.current = ts;
-          const speed = useGameStore.getState().derived.combatSpeedMultiplier;
+          const speed = store.derived.combatSpeedMultiplier;
           const dt = Math.min(ts - lastTsRef.current, 50) * speed;
           lastTsRef.current = ts;
           eng.tick(dt);
@@ -44,7 +49,19 @@ export function CombatWindow({ squad, def: _def }: { squad: Squad; def: DungeonD
           lastTsRef.current = ts;
         }
 
-        eng.render(ctx);
+        // Detect lifecycle-hook ticks by watching sim time, then extrapolate positions.
+        let extrapolationDt = 0;
+        if (isLive) {
+          const simT = eng.getT();
+          if (simT !== lastSimTRef.current) {
+            lastSimTRef.current = simT;
+            lastTickWallRef.current = ts;
+          }
+          const wallElapsed = ts - lastTickWallRef.current;
+          extrapolationDt = (wallElapsed / 1000) * store.derived.combatSpeedMultiplier;
+        }
+
+        eng.render(ctx, extrapolationDt);
 
         if (eng.getWinner() !== null && !restartTimeoutRef.current) {
           restartTimeoutRef.current = setTimeout(() => {

@@ -9,6 +9,7 @@ export function renderFrame(
   configs: Partial<Record<Side, SideConfig>>,
   deathFlashes: DeathFlash[],
   t: number,
+  extrapolationDt: number = 0,
 ): void {
   const rcfg = COMBAT_CONFIG.rendering;
 
@@ -21,9 +22,15 @@ export function renderFrame(
     const sideConfig = configs[unit.side];
     if (!sideConfig) continue;
     const color = sideConfig.units.find(e => e.name === unit.type)?.color ?? '#888';
+    const ex = extrapolationDt > 0
+      ? Math.max(0, Math.min(width, unit.x + unit.vx * extrapolationDt))
+      : unit.x;
+    const ey = extrapolationDt > 0
+      ? Math.max(0, Math.min(height, unit.y + unit.vy * extrapolationDt))
+      : unit.y;
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(unit.x, unit.y, rcfg.dotRadius, 0, Math.PI * 2);
+    ctx.arc(ex, ey, rcfg.dotRadius, 0, Math.PI * 2);
     ctx.fill();
   }
 
