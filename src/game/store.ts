@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { GameState, SlotId, PoolId, UnitType, Rarity } from './types';
-import { gameTick, generateLoot, UNIT_STATS, SURGE_COOLDOWN, SURGE_DURATION } from './tick';
+import { gameTick, generateLoot, SURGE_COOLDOWN, SURGE_DURATION } from './tick';
 import { recomputeDerived, canPurchaseUpgrade, UPGRADE_NODES } from './upgrades';
 import { executePull, POOL_CONFIGS } from './gacha';
 import { DUST_VALUES, fuseRelics } from './relics';

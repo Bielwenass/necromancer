@@ -2,9 +2,10 @@ import type { DungeonDef, DungeonState, Squad } from '../../game/types';
 import { HPBar } from '../components/HPBar';
 import { formatTime } from '../theme';
 
-export function tierColor(tier: 1 | 2 | 3): string {
-  if (tier === 3) return 'var(--r-legendary)';
-  if (tier === 2) return 'var(--r-rare)';
+export function tierColor(tier: 1 | 2 | 3 | 4): string {
+  if (tier === 4) return 'var(--r-epic)';
+  if (tier === 3) return 'var(--r-rare)';
+  if (tier === 2) return 'var(--r-uncommon)';
   return 'var(--ink-dim)';
 }
 
@@ -41,6 +42,8 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
     ? formatTime(Math.round(activeSquad.position * def.travelTimeTicks))
     : null;
 
+  const clearMult = 1 + Math.sqrt(ds.clearCount + 1) * 0.1;
+
   return (
     <div
       onClick={() => !locked && onDispatch(def.id)}
@@ -72,11 +75,14 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
           ) : (
             <div className="mono" style={{ fontSize: 13, color: 'var(--ink-muted)', display: 'flex', gap: 22, flexWrap: 'wrap' }}>
               <span>{def.travelTimeTicks / 10}s travel</span>
-              <span>{def.lootTable.bonesMin}–{def.lootTable.bonesMax} bones</span>
-              <span>{def.lootTable.coinsMin}–{def.lootTable.coinsMax} coins</span>
+              <span>{Math.floor(def.lootTable.bonesMin * clearMult)}–{Math.floor(def.lootTable.bonesMax * clearMult)} bones</span>
+              <span>{Math.floor(def.lootTable.coinsMin * clearMult)}–{Math.floor(def.lootTable.coinsMax * clearMult)} coins</span>
               <span>{(def.lootTable.soulChance * 100).toFixed(0)}% soul</span>
               {ds.clearCount > 0 && (
-                <span style={{ color: 'var(--c-coin)' }}>{ds.clearCount}× cleared</span>
+                <>
+                  <span style={{ color: 'var(--c-coin)' }}>{ds.clearCount}× cleared</span>
+                  <span>x{(1 + Math.log(ds.clearCount + 1) * 0.2).toFixed(2)} clear mult</span>
+                </>
               )}
             </div>
           )}

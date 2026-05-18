@@ -11,7 +11,7 @@ export function generateLoot(dungeonId: string, clearCount: number, surgeYield: 
   const def = DUNGEON_DEFS[dungeonId];
   if (!def) return {};
 
-  const clearBonus = 1 + Math.log(clearCount + 1) * 0.2;
+  const clearBonus = 1 + Math.sqrt(clearCount + 1) * 0.1;
   const yieldMult = surgeYield;
   const lt = def.lootTable;
 

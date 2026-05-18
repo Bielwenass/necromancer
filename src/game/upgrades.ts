@@ -165,7 +165,7 @@ export function recomputeDerived(state: GameState): GameState['derived'] {
 
 
   return {
-    bonesPerTick: gardenBonesPerTick * bonesPassiveBonus,
+    bonesPerTick: gardenBonesPerTick * (1 + bonesPassiveBonus),
     coinsPerTick,
     soulsPerTick,
     boneYieldBonus,
