@@ -80,7 +80,7 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
       }
     }
 
-    async function runCatchup(): Promise<void> {
+    async function runCatchup(showOverlay: boolean): Promise<void> {
       if (catchingUpRef.current) return;
       catchingUpRef.current = true;
       stopInterval();
@@ -88,12 +88,12 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
 
       const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
       const emptyStats: CatchupStats = { eventsProcessed: 0, bonesGained: 0, coinsGained: 0, soulsGained: 0 };
-      setCatchup({ progress: 0, stats: emptyStats, done: false });
+      if (showOverlay) setCatchup({ progress: 0, stats: emptyStats, done: false });
 
       const rawResult = await simulateOffline(useGameStore.getState(), elapsed, {
-        onProgress: (cursor, target, stats) => {
+        onProgress: showOverlay ? (cursor, target, stats) => {
           setCatchup({ progress: cursor / target, stats: stats ?? emptyStats, done: false });
-        },
+        } : undefined,
       });
 
       const recomputed = recomputeDerived(rawResult);
@@ -107,8 +107,7 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
       });
       saveGame({ ...rawResult, derived: recomputed });
 
-      // Mark done and resume ticking — overlay stays until player dismisses.
-      setCatchup(prev => prev ? { ...prev, done: true } : null);
+      if (showOverlay) setCatchup(prev => prev ? { ...prev, done: true } : null);
       catchingUpRef.current = false;
       startInterval();
     }
@@ -124,7 +123,7 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
         if (catchingUpRef.current) return;
         const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
         if (elapsed > CATCHUP_THRESHOLD_MS) {
-          runCatchup();
+          runCatchup(true);
         } else {
           startInterval();
         }
@@ -135,7 +134,7 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
 
     const initialElapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
     if (initialElapsed > CATCHUP_THRESHOLD_MS) {
-      runCatchup();
+      runCatchup(false);
     } else {
       startInterval();
     }

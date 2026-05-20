@@ -139,13 +139,17 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                     <span className="display" style={{ fontSize: 10, color: 'var(--ink-bone)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{group.title}</span>
                     <div style={{ flex: 1, height: 1, background: 'var(--rule)', marginLeft: 6 }} />
                   </div>
-                  { ['skeleton', 'zombie', 'wraith'].includes(group.unitType ?? '') && (
-                    <div className="flex flex-col">
-                      <div>HP: {`${Math.floor(derived[group.unitType].hpFlat)} (+${Math.floor(derived[group.unitType].hpFlat * derived[group.unitType].hpBonus)})`} </div>
-                      <div>Damage: {`${Math.floor(derived[group.unitType].dmgFlat)} (+${Math.floor(derived[group.unitType].dmgFlat * derived[group.unitType].dmgBonus)})`} </div>
-                      <div>Speed: {`${Math.floor(derived[group.unitType].speedFlat * 100) / 100} (+${Math.floor(derived[group.unitType].speedFlat * derived[group.unitType].speedBonus * 100) / 100})`} </div>
-                    </div>
-                  )}
+                  {(() => {
+                    const ut = group.unitType;
+                    if (!ut) return null;
+                    return (
+                      <div className="flex flex-col">
+                        <div>HP: {`${Math.floor(derived[ut].hpFlat)} (+${Math.floor(derived[ut].hpFlat * derived[ut].hpBonus)})`} </div>
+                        <div>Damage: {`${Math.floor(derived[ut].dmgFlat)} (+${Math.floor(derived[ut].dmgFlat * derived[ut].dmgBonus)})`} </div>
+                        <div>Speed: {`${Math.floor(derived[ut].speedFlat * 100) / 100} (+${Math.floor(derived[ut].speedFlat * derived[ut].speedBonus * 100) / 100})`} </div>
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: 'flex', gap: 10 }}>
                     {group.slots.map(slot => {
                       const relicId = equipped[slot.id];

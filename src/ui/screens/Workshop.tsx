@@ -396,7 +396,6 @@ export function Workshop() {
   const wraithsUnlocked = useGameStore(s => s.derived.wraithsUnlocked);
   const purchaseUpgrade = useGameStore(s => s.purchaseUpgrade);
   const levelUpWorkshop = useGameStore(s => s.levelUpWorkshop);
-  const digBone         = useGameStore(s => s.digBone);
   const gameState       = useGameStore(s => s);
 
   const sections = buildSections(purchased, ws, zombiesUnlocked, wraithsUnlocked);
@@ -478,10 +477,7 @@ export function Workshop() {
         <Detail rowId={focusedId} sections={sections} res={res} pts={pts}
           onBuy={levelUpWorkshop} onSkillBuy={purchaseUpgrade} gameState={gameState} />
         <div style={{ marginTop: 'auto', padding: 14, border: '1px solid var(--rule)', background: 'var(--bg-inset)' }}>
-          <button className="dig-bone-btn" onClick={digBone}>
-            <Icon kind="bone" size={14} color="var(--c-bone)" /> Dig Bone
-          </button>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-dim)', letterSpacing: '0.14em', lineHeight: 1.7, marginTop: 10 }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-dim)', letterSpacing: '0.14em', lineHeight: 1.7 }}>
             HOVER A ROW TO SEE DETAILS.<br />RIGHT-CLICK TO UPGRADE INSTANTLY.
           </div>
         </div>

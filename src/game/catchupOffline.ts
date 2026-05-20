@@ -284,7 +284,7 @@ function processEvent(
       const outcome = resolveFight(state, squad, dungeon, cache);
 
       if (outcome.winner === 'a') {
-        for (const k of Object.keys(squad.composition)) {
+        for (const k of Object.keys(squad.composition) as Array<keyof typeof squad.composition>) {
           squad.composition[k] = outcome.survivors[k] ?? 0;
         }
         const lootRand = mulberry32(
@@ -293,7 +293,7 @@ function processEvent(
         squad.pendingLoot = generateLootSeeded(dungeon.id, dungeon.clearCount, 1, lootRand);
         dungeon.clearCount++;
       } else {
-        for (const k of Object.keys(squad.composition)) {
+        for (const k of Object.keys(squad.composition) as Array<keyof typeof squad.composition>) {
           squad.composition[k] = 0;
         }
         squad.pendingLoot = null;

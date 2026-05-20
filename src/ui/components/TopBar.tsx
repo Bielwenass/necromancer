@@ -10,6 +10,7 @@ export function TopBar({ phase = 'PHASE I · ASCENDANCY' }: TopBarProps) {
   const resources = useGameStore(s => s.resources);
   const derived = useGameStore(s => s.derived);
   const meta = useGameStore(s => s.meta);
+  const digBone = useGameStore(s => s.digBone);
 
   const bonesPerSec = derived.bonesPerTick * 10;
   const coinsPerSec = derived.coinsPerTick * 10;
@@ -31,6 +32,23 @@ export function TopBar({ phase = 'PHASE I · ASCENDANCY' }: TopBarProps) {
         <span style={{ color: 'var(--ink-dim)' }}>T:{meta.tickCount}</span>
       </div>
       <div className="currencies">
+        <button
+          onClick={digBone}
+          title="Dig a bone"
+          style={{
+            padding: '3px 9px',
+            border: '1px solid var(--rule-strong)',
+            color: 'var(--c-bone)',
+            fontFamily: 'var(--f-mono)', fontSize: 9, letterSpacing: '0.16em',
+            background: 'transparent',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 5,
+            alignSelf: 'center',
+          }}
+        >
+          <IconBone size={10} />
+          DIG
+        </button>
         <div className="cur">
           <IconBone size={16} />
           <div>

@@ -321,3 +321,11 @@ export const AFFIX_DEFS: Record<string, { label: string; unit: string; range: [n
   spectralStrike:     { label: 'Spectral Strike',         unit: '%', range: [3, 10], implemented: false,
                         description: 'Wraith damage scales with target HP%. IMPLEMENT per-unit damage calc.' },
 };
+
+export const SET_DEFS: Array<{
+  id: string;
+  glyph: string;
+  name: string;
+  pieces: string[];
+  perks: { at: number; label: string }[];
+}> = [];
