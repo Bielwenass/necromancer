@@ -76,7 +76,7 @@ export default function App() {
           zIndex: 500,
         }}>
           <div className="display" style={{ color: 'var(--ink-bone)', fontSize: 13, letterSpacing: '0.22em', marginBottom: 18 }}>
-            CATCHING UP...
+            {catchup.done ? 'CAUGHT UP' : 'CATCHING UP...'}
           </div>
 
           <div style={{ width: 240, height: 2, background: 'var(--rule)', marginBottom: 24 }}>

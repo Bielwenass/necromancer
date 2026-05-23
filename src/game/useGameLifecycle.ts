@@ -88,11 +88,18 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
 
       const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
       const emptyStats: CatchupStats = { eventsProcessed: 0, bonesGained: 0, coinsGained: 0, soulsGained: 0 };
-      if (showOverlay) setCatchup({ progress: 0, stats: emptyStats, done: false });
+      let lastStats: CatchupStats = emptyStats;
+      let overlayShown = false;
 
       const rawResult = await simulateOffline(useGameStore.getState(), elapsed, {
         onProgress: showOverlay ? (cursor, target, stats) => {
-          setCatchup({ progress: cursor / target, stats: stats ?? emptyStats, done: false });
+          if (stats) lastStats = stats;
+          const hasActivity = !!stats && stats.eventsProcessed > 0 &&
+            (stats.bonesGained > 0 || stats.coinsGained > 0 || stats.soulsGained > 0);
+          if (hasActivity) {
+            overlayShown = true;
+            setCatchup({ progress: cursor / target, stats: lastStats, done: false });
+          }
         } : undefined,
       });
 
@@ -107,7 +114,9 @@ export function useGameLifecycle(): { catchup: CatchupState | null; dismissCatch
       });
       saveGame({ ...rawResult, derived: recomputed });
 
-      if (showOverlay) setCatchup(prev => prev ? { ...prev, done: true } : null);
+      if (showOverlay && overlayShown) {
+        setCatchup(prev => prev ? { ...prev, done: true } : null);
+      }
       catchingUpRef.current = false;
       startInterval();
     }
