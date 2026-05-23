@@ -20,6 +20,14 @@ function createEmptyStats(): EngineStats {
     accelMs: 0,
     collisionMs: 0,
     damageMs: 0,
+    queryMs: 0,
+    neighborLoopMs: 0,
+    seekFallbackMs: 0,
+    integrateMs: 0,
+    neighborsVisited: 0,
+    queryCalls: 0,
+    maxNeighbors: 0,
+    unitsProcessed: 0,
   };
 }
 
@@ -36,7 +44,6 @@ export class CombatEngine {
   private nextId: number = 1;
   private rand: () => number;
 
-  // INSTRUMENTATION: per-engine performance counters. Reset on start().
   public stats: EngineStats = createEmptyStats();
 
   constructor(options: EngineOptions) {

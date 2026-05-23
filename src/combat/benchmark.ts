@@ -1,19 +1,17 @@
 /**
- * Headless combat benchmark.
+ * Headless combat benchmark with accel sub-phase breakdown.
  *
- * Run with: `bunx tsx src/combat/benchmark.ts`
+ * Run: `npx tsx src/combat/benchmark.ts`
  *
- * For accurate numbers, replace the placeholder STATS / makeConfig below with
- * your real `buildAttackerConfig` and `DUNGEON_DEFS[id].enemies`. The shape of
- * the scaling curve is what matters most — whether you're at 0.5ms or 50ms per
- * tick at 500v500 decides whether catch-up needs chunking.
+ * Replace STATS / makeConfig with your real buildAttackerConfig + enemy defs
+ * for accurate numbers. The phase split is what tells us where to optimize.
  */
 
 import { CombatEngine } from './engine';
 import { COMBAT_W, COMBAT_H } from './dungeonCombat';
 import type { SideConfig } from './types';
 
-// ── Optionally adjust these to match your real unit stats ───────────────
+// ── Adjust to match real unit stats ──────────────────────────
 const STATS = {
   skeleton: { hp: 10, dmg: 2, speed: 1 },
 };
@@ -27,24 +25,27 @@ function makeConfig(count: number, leftSide: boolean): SideConfig {
   };
 }
 
-const SCENARIOS = [25, 50, 100, 250, 500, 1000];
+const SCENARIOS = [100, 250, 500, 1000];
 const SEEDS = [0xCAFE, 0xBEEF, 0xF00D];
-const MAX_TICKS = 20000; // safety cap; ~5 minutes of sim time
+const MAX_TICKS = 20000;
 
 interface RunResult {
   n: number;
-  seed: number;
-  winner: string | null;
-  survivorsA: number;
-  survivorsB: number;
   ticks: number;
-  simSec: number;
   wallMs: number;
   perTickMs: number;
-  hashBuildPct: number;
-  accelPct: number;
-  collisionPct: number;
-  damagePct: number;
+
+  // accel sub-phase percentages (of accelMs)
+  queryPct: number;
+  neighborLoopPct: number;
+  seekFallbackPct: number;
+  integratePct: number;
+  accelPctOfTotal: number;
+
+  // neighbor telemetry
+  avgNeighbors: number;
+  maxNeighbors: number;
+  avgQueriesPerUnit: number;
 }
 
 function runOnce(n: number, seed: number): RunResult {
@@ -59,22 +60,22 @@ function runOnce(n: number, seed: number): RunResult {
 
   const s = engine.stats;
   const phaseTotal = s.hashBuildMs + s.accelMs + s.collisionMs + s.damageMs;
-  const pct = (ms: number) => phaseTotal > 0 ? (ms / phaseTotal) * 100 : 0;
+  const accelTotal = s.queryMs + s.neighborLoopMs + s.seekFallbackMs + s.integrateMs;
+  const pct = (ms: number, base: number) => base > 0 ? (ms / base) * 100 : 0;
 
   return {
     n,
-    seed,
-    winner: engine.getWinner(),
-    survivorsA: engine.getTotalCount('a'),
-    survivorsB: engine.getTotalCount('b'),
     ticks: s.numTicks,
-    simSec: s.simTimeMs / 1000,
     wallMs: s.wallTimeMs,
     perTickMs: s.numTicks > 0 ? s.wallTimeMs / s.numTicks : 0,
-    hashBuildPct: pct(s.hashBuildMs),
-    accelPct: pct(s.accelMs),
-    collisionPct: pct(s.collisionMs),
-    damagePct: pct(s.damageMs),
+    queryPct: pct(s.queryMs, accelTotal),
+    neighborLoopPct: pct(s.neighborLoopMs, accelTotal),
+    seekFallbackPct: pct(s.seekFallbackMs, accelTotal),
+    integratePct: pct(s.integrateMs, accelTotal),
+    accelPctOfTotal: pct(s.accelMs, phaseTotal),
+    avgNeighbors: s.unitsProcessed > 0 ? s.neighborsVisited / s.unitsProcessed : 0,
+    maxNeighbors: s.maxNeighbors,
+    avgQueriesPerUnit: s.unitsProcessed > 0 ? s.queryCalls / s.unitsProcessed : 0,
   };
 }
 
@@ -82,32 +83,29 @@ function summarize(results: RunResult[]): void {
   const n = results[0].n;
   const avg = (f: (r: RunResult) => number) =>
     results.reduce((s, r) => s + f(r), 0) / results.length;
-  const min = (f: (r: RunResult) => number) =>
-    Math.min(...results.map(f));
-  const max = (f: (r: RunResult) => number) =>
-    Math.max(...results.map(f));
 
   console.log(`\n── ${n}v${n} (avg over ${results.length} seeds) ──`);
-  console.log(`  winner:       ${results.map(r => r.winner).join(', ')}`);
-  console.log(`  ticks:        avg ${avg(r => r.ticks).toFixed(0)}  range ${min(r => r.ticks)}–${max(r => r.ticks)}`);
-  console.log(`  sim time:     avg ${avg(r => r.simSec).toFixed(2)}s`);
-  console.log(`  wall time:    avg ${avg(r => r.wallMs).toFixed(0)}ms  range ${min(r => r.wallMs).toFixed(0)}–${max(r => r.wallMs).toFixed(0)}ms`);
-  console.log(`  per tick:     avg ${avg(r => r.perTickMs).toFixed(3)}ms`);
-  console.log(`  phase split:  hash ${avg(r => r.hashBuildPct).toFixed(0)}%  accel ${avg(r => r.accelPct).toFixed(0)}%  collision ${avg(r => r.collisionPct).toFixed(0)}%  damage ${avg(r => r.damagePct).toFixed(0)}%`);
+  console.log(`  ticks:        ${avg(r => r.ticks).toFixed(0)}`);
+  console.log(`  per tick:     ${avg(r => r.perTickMs).toFixed(3)}ms   (accel = ${avg(r => r.accelPctOfTotal).toFixed(0)}% of total)`);
+  console.log(`  accel split:  query ${avg(r => r.queryPct).toFixed(0)}%  neighborLoop ${avg(r => r.neighborLoopPct).toFixed(0)}%  seekFallback ${avg(r => r.seekFallbackPct).toFixed(0)}%  integrate ${avg(r => r.integratePct).toFixed(0)}%`);
+  console.log(`  neighbors:    avg ${avg(r => r.avgNeighbors).toFixed(1)}/unit  max ${avg(r => r.maxNeighbors).toFixed(0)}  queries ${avg(r => r.avgQueriesPerUnit).toFixed(2)}/unit`);
 }
 
-console.log('Combat engine benchmark');
-console.log(`Board: ${COMBAT_W}×${COMBAT_H}, step: 16ms, max ticks: ${MAX_TICKS}`);
+console.log('Combat benchmark — accel sub-phase breakdown');
+console.log(`Board: ${COMBAT_W}×${COMBAT_H}, step: 16ms`);
 
-// Warm-up so JIT settles before measurements
-runOnce(50, 0);
+runOnce(50, 0); // warm-up
 
 for (const n of SCENARIOS) {
   const results: RunResult[] = [];
-  for (const seed of SEEDS) {
-    results.push(runOnce(n, seed));
-  }
+  for (const seed of SEEDS) results.push(runOnce(n, seed));
   summarize(results);
 }
 
 console.log('\nDone.');
+console.log('\nReading guide:');
+console.log('  - query high      → queryRadius itself is costly (cell iteration / result alloc)');
+console.log('  - neighborLoop high → per-neighbor force math; density-driven, cut via cell aggregates');
+console.log('  - seekFallback high → many units firing the second query; widen-seek is the culprit');
+console.log('  - integrate high   → unlikely, but would point at the integration pass');
+console.log('  - avgNeighbors growing with n → density scaling; the core 1000v1000 problem');
