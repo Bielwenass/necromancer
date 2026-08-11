@@ -12,6 +12,8 @@ export type SlotId =
 	| "III1"
 	| "III2";
 export type PoolId = "bone" | "soul" | "forbidden";
+/** Which family of slots a relic base belongs to — the crypt or one unit type. */
+export type RelicSlotType = "crypt" | UnitType;
 
 export interface Affix {
 	id: string;
@@ -35,7 +37,7 @@ export interface Relic {
 export interface RelicBase {
 	id: string;
 	name: string;
-	slot: "crypt" | "skeleton" | "zombie" | "wraith";
+	slot: RelicSlotType;
 	slotIds: SlotId[];
 	mainAffixId: string;
 	mainAffixRange: [number, number];

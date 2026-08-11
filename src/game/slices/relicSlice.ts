@@ -9,11 +9,12 @@ export interface RelicSlice {
 	unequipRelic: (slotId: SlotId) => void;
 	markRelicSeen: (relicId: string) => void;
 	sacrificeRelic: (relicId: string) => void;
+	sacrificeRelics: (relicIds: string[]) => void;
 	pull: (poolId: PoolId, count: 1 | 10) => void;
 	clearLastPulled: () => void;
 }
 
-export const createRelicSlice: SliceCreator<RelicSlice> = (set) => ({
+export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 	equipRelic: (relicId, slotId) => {
 		set((prev) => {
 			const relic = prev.relics.inventory.find((r) => r.id === relicId);
@@ -50,18 +51,27 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set) => ({
 	},
 
 	sacrificeRelic: (relicId) => {
+		get().sacrificeRelics([relicId]);
+	},
+
+	sacrificeRelics: (relicIds) => {
 		set((prev) => {
-			const relic = prev.relics.inventory.find((r) => r.id === relicId);
-			if (!relic) return prev;
+			const doomed = new Set(relicIds);
+			const sacrificed = prev.relics.inventory.filter((r) => doomed.has(r.id));
+			if (sacrificed.length === 0) return prev;
+
+			const dust = sacrificed.reduce(
+				(sum, r) => sum + DUST_VALUES[r.rarity],
+				0,
+			);
+			let equipped = prev.relics.equipped;
+			for (const r of sacrificed) equipped = withoutRelic(equipped, r.id);
 
 			return withDerived(prev, {
-				resources: {
-					...prev.resources,
-					dust: prev.resources.dust + DUST_VALUES[relic.rarity],
-				},
+				resources: { ...prev.resources, dust: prev.resources.dust + dust },
 				relics: {
-					inventory: prev.relics.inventory.filter((r) => r.id !== relicId),
-					equipped: withoutRelic(prev.relics.equipped, relicId),
+					inventory: prev.relics.inventory.filter((r) => !doomed.has(r.id)),
+					equipped,
 				},
 			});
 		});

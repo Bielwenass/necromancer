@@ -1,5 +1,5 @@
 import { AFFIX_DEFS, RELIC_BASES } from "./data/relics";
-import type { Rarity, Relic, SlotId } from "./types";
+import type { Rarity, Relic, RelicSlotType, SlotId } from "./types";
 
 let relicCounter = 0;
 
@@ -97,6 +97,11 @@ export const DUST_VALUES: Record<Rarity, number> = {
 export function canEquipInSlot(baseId: string, slotId: SlotId): boolean {
 	const base = RELIC_BASES.find((b) => b.id === baseId);
 	return base?.slotIds.includes(slotId) ?? false;
+}
+
+/** The slot family a relic belongs to, or null when its base is unknown. */
+export function getRelicSlotType(baseId: string): RelicSlotType | null {
+	return RELIC_BASES.find((b) => b.id === baseId)?.slot ?? null;
 }
 
 export function getAffixLabel(affixId: string): string {

@@ -1,5 +1,5 @@
 import type { DungeonDef, DungeonState, Squad } from "../../game/types";
-import { formatTime } from "../theme";
+import { formatSeconds, formatTime } from "../theme";
 
 export function tierColor(tier: 1 | 2 | 3 | 4): string {
 	if (tier === 4) return "var(--r-epic)";
@@ -18,11 +18,14 @@ export function DungeonCard({
 	def,
 	ds,
 	squads,
+	travelTicks,
 	onDispatch,
 }: {
 	def: DungeonDef;
 	ds: DungeonState;
 	squads: Squad[];
+	/** Travel duration after upgrades — see effectiveTravelTicks. */
+	travelTicks: number;
 	onDispatch: (id: string) => void;
 }) {
 	const fightingSquad = squads.find(
@@ -45,9 +48,9 @@ export function DungeonCard({
 
 	const eta =
 		activeSquad?.state === "traveling"
-			? formatTime(Math.round((1 - activeSquad.position) * def.travelTimeTicks))
+			? formatTime(Math.round((1 - activeSquad.position) * travelTicks))
 			: activeSquad?.state === "returning"
-				? formatTime(Math.round(activeSquad.position * def.travelTimeTicks))
+				? formatTime(Math.round(activeSquad.position * travelTicks))
 				: null;
 
 	const clearMult = 1 + Math.sqrt(ds.clearCount + 1) * 0.07;
@@ -91,7 +94,7 @@ export function DungeonCard({
 						</div>
 					) : (
 						<div className="mono text-muted text-sm flex flex-wrap gap-x-5">
-							<span>{def.travelTimeTicks / 10}s travel</span>
+							<span>{formatSeconds(travelTicks)}s travel</span>
 							<span>
 								{Math.floor(def.lootTable.bonesMin * clearMult)}–
 								{Math.floor(def.lootTable.bonesMax * clearMult)} bones

@@ -7,6 +7,7 @@ import { CombatEngine } from "../combat/engine";
 import { mulberry32 } from "../combat/prng";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
+import { effectiveTravelTicks } from "./travel";
 import type { GameState, Resources, Squad } from "./types";
 
 // ── Constants ────────────────────────────────────────────────
@@ -144,8 +145,7 @@ function isLossless(
 function computeTravelTime(state: GameState, dungeonId: string): number {
 	const def = DUNGEON_DEFS[dungeonId];
 	if (!def) return Infinity;
-	const speedMult = 1 + state.derived.squadTravelSpeedBonus;
-	return def.travelTimeTicks / speedMult;
+	return effectiveTravelTicks(def, state.derived.squadTravelSpeedBonus);
 }
 
 function totalUnits(c: Record<string, number>): number {

@@ -46,6 +46,8 @@ Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true |
 
 Sacrifice returns dust by rarity (1 / 2 / 5 / 10 / 30) and removes the relic from any slot it occupies. It is the only way to dispose of a relic.
 
+`sacrificeRelics(ids)` is the real action; `sacrificeRelic(id)` delegates to it. The Reliquary's inventory filters (slot type × rarity, in `InventoryFilters`) drive a bulk sacrifice of everything currently listed, behind a confirm step that any filter change cancels. The list excludes equipped relics, so bulk sacrifice can never take one out of a slot.
+
 There is **no fusion**. `upgradeLevel` (0–5) is read when applying affixes and displaying values, but nothing ever raises it above 0, so the `× (1 + upgradeLevel × 0.1)` boost is always a no-op today.
 
 ## Equipping

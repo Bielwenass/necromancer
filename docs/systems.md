@@ -29,7 +29,7 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
                                                                         (or squad destroyed)
 ```
 
-- Travel: `position += (1 / travelTimeTicks) × (1 + derived.squadTravelSpeedBonus)` per tick, and the mirror of that on the way back.
+- Travel: `position += 1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus)` per tick, and the mirror of that on the way back. `game/travel.ts` owns that formula (`travelTimeTicks / (1 + bonus)`) and is the single source the live tick, the offline catchup, and the Crypt timers all read — so ETAs and the "Ns travel" label show the upgraded duration, not the base one.
 - On return, `pendingLoot` is deposited with yield bonuses applied, then unlock conditions are re-checked.
 - With `c0` (Auto-Deploy), a returning squad re-dispatches to the same dungeon unless the player recalled it manually (`manualRecall`).
 - Caps: `derived.maxSquadSize` (base 5) and `derived.maxActiveSquads` (base 1), both raised by upgrades and the Workshop.
@@ -45,10 +45,9 @@ Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clear
 
 ## Workshop
 
-Two upgrade surfaces share the Upgrades tab:
+Every workshop section is a list of the same `WRow`, rendered by the same `UpgradeRow`/`UpgradeDetail` pair — skill branches, per-unit stats, crypt, and garden alike. A row is either **one-time** (`maxLevel: 1`, priced in upgrade points earned from clears) or **leveled** (priced in resources, `base × growth^level`, no ceiling).
 
-- **Skill tree** — one-time nodes, paid in upgrade points earned from clears.
-- **Workshop** — repeatable levels paid in resources: per-unit HP/DMG/Speed, crypt squad size and travel speed, and the five garden plots. Costs grow geometrically (`base × growth^level`).
+`sections.ts` decides what a section shows: skill nodes with unmet prerequisites are omitted entirely rather than drawn as locked, and inscribed ones are moved below everything still purchasable, under a divider. So the top of a section is always what the player can act on.
 
 ## Gacha
 
@@ -63,7 +62,7 @@ It deliberately duplicates the live rules, so **any change to travel time, fight
 | Live | Catchup |
 |---|---|
 | `generateLoot` (`tick.ts`) | `generateLootSeeded` |
-| travel speed in `gameTick` | `computeTravelTime` |
+| travel speed in `gameTick` | `computeTravelTime` (both call `effectiveTravelTicks`) |
 | auto-deploy branch in `gameTick` | `returnArrive` case in `processEvent` |
 | `checkUnlockConditions` | same, called on loot deposit |
 

@@ -34,6 +34,12 @@ export function formatRate(perTick: number): string {
 	return `+${perSec.toFixed(1)}/s`;
 }
 
+/** Ticks as a bare seconds count — one decimal only when it isn't a whole second. */
+export function formatSeconds(ticks: number): string {
+	const seconds = Math.round(ticks) / 10;
+	return seconds.toFixed(Number.isInteger(seconds) ? 0 : 1);
+}
+
 export function formatTime(ticks: number): string {
 	const seconds = Math.ceil(ticks / 10);
 	if (seconds < 60) return `0:${String(seconds).padStart(2, "0")}`;

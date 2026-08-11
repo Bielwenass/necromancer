@@ -1,28 +1,26 @@
 import { canAffordCost } from "../../../game/resources";
 import type { Resources } from "../../../game/types";
 import { Icon } from "./Icon";
+import { isRowMaxed } from "./sections";
 import type { WRow } from "./types";
 import { UpgradeRowCost } from "./UpgradeRowCost";
-import { UpgradeRowLocked } from "./UpgradeRowLocked";
 
 export function UpgradeRow({
 	row,
 	res,
 	pts,
-	focused,
-	onFocus,
+	pinned,
+	onPin,
 	onBuy,
 }: {
 	row: WRow;
 	res: Resources;
 	pts: number;
-	focused: boolean;
-	onFocus: (id: string) => void;
-	onBuy: (id: string) => void;
+	pinned: boolean;
+	onPin: (id: string) => void;
+	onBuy: (row: WRow) => void;
 }) {
-	if (row.locked) return <UpgradeRowLocked row={row} />;
-
-	const maxed = row.maxLevel !== undefined && row.level >= row.maxLevel;
+	const maxed = isRowMaxed(row);
 	const cost = maxed || row.skill ? null : row.costFn(row.level);
 	const affordable = maxed
 		? false
@@ -36,16 +34,17 @@ export function UpgradeRow({
 	return (
 		<button
 			type="button"
+			id={`wrow-${row.id}`}
 			className={`grid grid-cols-[48px_1fr_90px_90px] items-center gap-4 py-4 w-full text-left transition-colors duration-100 border-b border-[color:var(--rule)] ${
-				focused
+				pinned
 					? "bg-bg-hover border-l-2 border-l-ember pl-[30px] pr-8"
 					: "px-8 hover:bg-bg-hover"
 			}`}
-			onMouseEnter={() => onFocus(row.id)}
-			onClick={() => onFocus(row.id)}
+			onClick={() => onPin(row.id)}
 			onContextMenu={(e) => {
 				e.preventDefault();
-				if (!maxed && affordable) onBuy(row.id);
+				onPin(row.id);
+				if (!maxed && affordable) onBuy(row);
 			}}
 		>
 			<div className="flex items-center justify-center">

@@ -61,7 +61,7 @@ One Zustand store, composed in `game/store.ts` from five slice creators in `game
 |---|---|
 | `combatSlice` | `combatEngines` map + `tick` (accumulator, autosave counter) |
 | `squadSlice` | dispatch, recall, create, delete, `resolveFight`, squad-id counter |
-| `relicSlice` | equip, unequip, mark seen, sacrifice, gacha `pull` |
+| `relicSlice` | equip, unequip, mark seen, sacrifice (single + bulk), gacha `pull` |
 | `progressionSlice` | upgrade purchase, workshop levels, summoning, dig |
 | `persistenceSlice` | `importSave`, `resetSave` |
 
@@ -78,7 +78,7 @@ Import and reset go through store actions, not `save.ts` directly. Both call `su
 | Key | Screen | Notes |
 |-----|--------|-------|
 | 1 | Crypt Map | Dungeon list, squad roster, live combat canvases |
-| 2 | Reliquary | Equipped slots, relic detail, inventory, set progress |
+| 2 | Reliquary | Equipped slots, relic detail, inventory with type/rarity filters + bulk sacrifice |
 | 3 | Ritual | Three gacha pools, reveal overlay |
 | 4 | Upgrades | Skill tree and Workshop sub-views |
 

@@ -1,5 +1,6 @@
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
+import { effectiveTravelTicks } from "./travel";
 import type { GameState, Resources } from "./types";
 
 const TICKS_PER_DAY = 1200; // 2 minutes per in-game day
@@ -50,8 +51,8 @@ export function gameTick(state: GameState): Partial<GameState> {
 				? DUNGEON_DEFS[squad.targetDungeonId]
 				: undefined;
 			if (!def) return updated;
-			const speedMult = 1 + derived.squadTravelSpeedBonus;
-			updated.position += (1 / def.travelTimeTicks) * speedMult;
+			updated.position +=
+				1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus);
 
 			if (updated.position >= 1) {
 				updated.position = 0;
@@ -67,8 +68,8 @@ export function gameTick(state: GameState): Partial<GameState> {
 				? DUNGEON_DEFS[squad.targetDungeonId]
 				: undefined;
 			if (!def) return updated;
-			const speedMult = 1 + derived.squadTravelSpeedBonus;
-			updated.position -= (1 / def.travelTimeTicks) * speedMult;
+			updated.position -=
+				1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus);
 
 			if (updated.position <= 0) {
 				updated.position = 0;

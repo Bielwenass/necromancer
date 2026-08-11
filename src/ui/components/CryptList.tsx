@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
 import { useGameStore } from "../../game/store";
+import { effectiveTravelTicks } from "../../game/travel";
 import type { DungeonDef } from "../../game/types";
 import { formatTime } from "../theme";
 import { CombatWindow } from "./CombatWindow";
@@ -69,6 +70,10 @@ export function CryptList({ onTabChange }: CryptListProps) {
 									def={def}
 									ds={ds}
 									squads={squads}
+									travelTicks={effectiveTravelTicks(
+										def,
+										derived.squadTravelSpeedBonus,
+									)}
 									onDispatch={(id) => setDispatchTarget(id)}
 								/>
 							);
@@ -176,19 +181,14 @@ export function CryptList({ onTabChange }: CryptListProps) {
 									squad.composition.zombie +
 									squad.composition.wraith;
 								const color = squadColor(squad);
+								const travelTicks = def
+									? effectiveTravelTicks(def, derived.squadTravelSpeedBonus)
+									: 100;
 								const eta =
 									squad.state === "traveling"
-										? formatTime(
-												Math.round(
-													(1 - squad.position) * (def?.travelTimeTicks ?? 100),
-												),
-											)
+										? formatTime(Math.round((1 - squad.position) * travelTicks))
 										: squad.state === "returning"
-											? formatTime(
-													Math.round(
-														squad.position * (def?.travelTimeTicks ?? 100),
-													),
-												)
+											? formatTime(Math.round(squad.position * travelTicks))
 											: "—";
 
 								return (

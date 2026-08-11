@@ -3,28 +3,24 @@ import type { Resources } from "../../../game/types";
 import { BuyButton } from "./BuyButton";
 import { CostBlock } from "./CostBlock";
 import { PointsCostBlock } from "./PointsCostBlock";
+import { isRowMaxed } from "./sections";
 import type { WRow } from "./types";
-import { UpgradeDetailLocked } from "./UpgradeDetailLocked";
 
 export function UpgradeDetail({
 	row,
 	res,
 	pts,
 	onBuy,
-	onSkillBuy,
 	canPurchaseSkill,
 }: {
 	row: WRow;
 	res: Resources;
 	pts: number;
-	onBuy: (id: string) => void;
-	onSkillBuy: (id: string) => void;
+	onBuy: (row: WRow) => void;
 	canPurchaseSkill: (upgradeId: string) => boolean;
 }) {
-	if (row.locked) return <UpgradeDetailLocked row={row} />;
-
 	const skill = row.skill;
-	const maxed = row.maxLevel !== undefined && row.level >= row.maxLevel;
+	const maxed = isRowMaxed(row);
 	const cost = maxed || skill ? null : row.costFn(row.level);
 	const canBuy = maxed
 		? false
@@ -41,7 +37,7 @@ export function UpgradeDetail({
 		<div className="flex flex-col gap-[18px]">
 			<div>
 				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim">
-					{skill ? "One-time Upgrade" : "Leveled Upgrade"}
+					{row.kindLabel ?? "Leveled Upgrade"}
 				</div>
 				<div className="font-display text-2xl text-bone tracking-wider mt-2 leading-tight">
 					{row.name}
@@ -86,15 +82,11 @@ export function UpgradeDetail({
 					<BuyButton
 						label={
 							canBuy
-								? skill
-									? "Inscribe"
-									: `Upgrade ➞ LV ${row.level + 1}`
+								? (row.buyLabel?.(row.level) ?? `Upgrade ➞ LV ${row.level + 1}`)
 								: "Insufficient"
 						}
 						disabled={!canBuy}
-						onClick={() =>
-							skill ? onSkillBuy(skill.upgradeId) : onBuy(row.id)
-						}
+						onClick={() => onBuy(row)}
 					/>
 				</>
 			)}

@@ -6,15 +6,33 @@ import {
 	cryptCost,
 	GARDEN_PLOTS,
 	gardenCost,
+	gardenYield,
 	UNIT_STAT_CONFIG,
 	type UnitKey,
 	unitStatCost,
 } from "../../../game/workshopUpgrades";
 import { IconSkeleton, IconWraith, IconZombie } from "../icons";
+import { resMeta } from "./cost";
 import type { WRow, WSection } from "./types";
 
+/** A row is done when it has a ceiling and has reached it. */
+export function isRowMaxed(row: WRow): boolean {
+	return row.maxLevel !== undefined && row.level >= row.maxLevel;
+}
+
+/** Inscribed rows sink below everything still purchasable. */
+function arrange(rows: WRow[]): WRow[] {
+	return [...rows.filter((r) => !isRowMaxed(r)), ...rows.filter(isRowMaxed)];
+}
+
+/** Nodes whose prerequisites are unmet are omitted, not shown as locked. */
 function skillRows(purchased: string[], branch: string): WRow[] {
-	return UPGRADE_NODES.filter((n) => n.branch === branch).map((n) => ({
+	return UPGRADE_NODES.filter(
+		(n) =>
+			n.branch === branch &&
+			(purchased.includes(n.id) ||
+				n.prerequisites.every((p) => purchased.includes(p))),
+	).map((n) => ({
 		id: n.id,
 		name: n.name,
 		description: n.description,
@@ -22,21 +40,32 @@ function skillRows(purchased: string[], branch: string): WRow[] {
 		icon: n.icon,
 		level: purchased.includes(n.id) ? 1 : 0,
 		maxLevel: 1,
-		locked:
-			!purchased.includes(n.id) &&
-			n.prerequisites.some((p) => !purchased.includes(p)),
-		unlockText:
-			n.prerequisites.length > 0
-				? `Requires: ${n.prerequisites
-						.map((p) => UPGRADE_NODES.find((x) => x.id === p)?.name ?? p)
-						.join(", ")}`
-				: "",
+		kindLabel: "One-time Upgrade",
+		buyLabel: () => "Inscribe",
 		costFn: () => null,
 		valueFn: (lv) => (lv >= 1 ? "Inscribed" : "—"),
 		nextFn: (lv) => (lv >= 1 ? "— maxed —" : n.description),
 		skill: { upgradeId: n.id, cost: n.cost },
 	}));
 }
+
+const UNIT_FLAVOR: Record<UnitKey, Record<"hp" | "dmg" | "speed", string>> = {
+	skeleton: {
+		hp: "Denser bone takes longer to break.",
+		dmg: "Sharpened at the joint, swung without hesitation.",
+		speed: "A lighter frame crosses the field sooner.",
+	},
+	zombie: {
+		hp: "Rot is slow to notice a mortal wound.",
+		dmg: "Dead weight, delivered.",
+		speed: "Still shambling — but with purpose.",
+	},
+	wraith: {
+		hp: "Little to strike, and less to hold.",
+		dmg: "A touch that skips the armour entirely.",
+		speed: "It does not cross the field so much as arrive.",
+	},
+};
 
 function unitRows(
 	unit: UnitKey,
@@ -50,10 +79,9 @@ function unitRows(
 			id: `${unit}.${stat}`,
 			name: `${unit.charAt(0).toUpperCase() + unit.slice(1)} ${c.label}`,
 			description: `+${c.perLevel} ${c.label} per level (base ${c.base})`,
+			flavor: UNIT_FLAVOR[unit][stat],
 			icon: stat === "hp" ? "heal" : stat === "dmg" ? "aggro" : "fast",
 			level: lv,
-			locked: false,
-			unlockText: "",
 			costFn: () => unitStatCost(unit, stat, lv),
 			valueFn: (l) => `${c.base + l * c.perLevel}`,
 			nextFn: (l) => `${c.base + (l + 1) * c.perLevel}`,
@@ -68,10 +96,8 @@ function cryptRows(crypt: WorkshopState["crypt"]): WRow[] {
 			name: "Squad Capacity",
 			icon: "army",
 			description: CRYPT_CONFIG.squadSize.label,
+			flavor: "Widen the circle, and more rise inside it.",
 			level: crypt.squadSize,
-			locked: false,
-			unlockText: "",
-			flavor: "More bodies for the march.",
 			costFn: () => cryptCost("squadSize", crypt.squadSize),
 			valueFn: (l) => `+${l}`,
 			nextFn: (l) => `+${l + 1}`,
@@ -81,14 +107,40 @@ function cryptRows(crypt: WorkshopState["crypt"]): WRow[] {
 			name: "March Speed",
 			icon: "retreat",
 			description: CRYPT_CONFIG.travelSpeed.label,
+			flavor: "The roads remember your banners, and shorten for them.",
 			level: crypt.travelSpeed,
-			locked: false,
-			unlockText: "",
 			costFn: () => cryptCost("travelSpeed", crypt.travelSpeed),
 			valueFn: (l) => `+${l * 8}%`,
 			nextFn: (l) => `+${(l + 1) * 8}%`,
 		},
 	];
+}
+
+const PLOT_FLAVOR: Record<string, string> = {
+	bones: "Bone sown as seed corn: plant a little, reap a lot.",
+	coins: "Grave-coin buys a wider trench, and wider trenches pay.",
+	souls: "Nothing feeds soil like something that refuses to rest.",
+	dust: "Relics ground fine make a grey and generous earth.",
+	corpses: "Bury the flesh, harvest the frame beneath it.",
+};
+
+function gardenRows(garden: WorkshopState["garden"]): WRow[] {
+	return GARDEN_PLOTS.map((plot) => {
+		const meta = resMeta(plot.id);
+		return {
+			id: `garden.${plot.id}`,
+			name: plot.name,
+			description: `+${plot.baseYield} bones/sec per level · tended with ${meta.label.toLowerCase()}`,
+			flavor: PLOT_FLAVOR[plot.id],
+			icon: meta.icon,
+			level: garden[plot.id],
+			kindLabel: "Garden Plot",
+			buyLabel: (l) => (l === 0 ? "Break Ground" : `Upgrade ➞ LV ${l + 1}`),
+			costFn: (l) => gardenCost(plot.id, l),
+			valueFn: (l) => `${gardenYield(plot.id, l).toFixed(2)}/s`,
+			nextFn: (l) => `${gardenYield(plot.id, l + 1).toFixed(2)}/s`,
+		};
+	});
 }
 
 export function buildSections(
@@ -104,7 +156,7 @@ export function buildSections(
 			subtitle: "One-time summon enhancements.",
 			icon: "army",
 			unlocked: true,
-			rows: skillRows(purchased, "summoning"),
+			rows: arrange(skillRows(purchased, "summoning")),
 		},
 		{
 			id: "command",
@@ -112,7 +164,7 @@ export function buildSections(
 			subtitle: "One-time battlefield enhancements.",
 			icon: "auto",
 			unlocked: true,
-			rows: skillRows(purchased, "command"),
+			rows: arrange(skillRows(purchased, "command")),
 		},
 		{
 			id: "necromancy",
@@ -120,7 +172,7 @@ export function buildSections(
 			subtitle: "One-time dark arts enhancements.",
 			icon: "soul",
 			unlocked: true,
-			rows: skillRows(purchased, "necromancy"),
+			rows: arrange(skillRows(purchased, "necromancy")),
 		},
 		{
 			id: "skeletons",
@@ -160,12 +212,11 @@ export function buildSections(
 		},
 		{
 			id: "garden",
-			name: "Garden",
-			subtitle: "One plot per resource. Each is paid for in what it grows.",
+			name: "Bone Garden",
+			subtitle: "Every plot grows bone. Each is tended with its own resource.",
 			icon: "aura",
 			unlocked: true,
-			type: "garden",
-			gardenLevels: ws.garden,
+			rows: gardenRows(ws.garden),
 		},
 	];
 }
@@ -178,22 +229,14 @@ export function affordableDots(
 ): Record<string, boolean> {
 	const dots: Record<string, boolean> = {};
 	for (const s of sections) {
-		if (!s.unlocked) {
-			dots[s.id] = false;
-		} else if (s.type === "garden") {
-			const levels = s.gardenLevels;
-			dots[s.id] = GARDEN_PLOTS.some(
-				(p) =>
-					levels != null && canAffordCost(gardenCost(p.id, levels[p.id]), res),
-			);
-		} else {
-			dots[s.id] = (s.rows ?? []).some((r) => {
-				if (r.locked) return false;
-				if (r.skill) return pts >= r.skill.cost && r.level === 0;
+		dots[s.id] =
+			s.unlocked &&
+			s.rows.some((r) => {
+				if (isRowMaxed(r)) return false;
+				if (r.skill) return pts >= r.skill.cost;
 				const cost = r.costFn(r.level);
 				return cost !== null && canAffordCost(cost, res);
 			});
-		}
 	}
 	return dots;
 }

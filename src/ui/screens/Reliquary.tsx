@@ -1,14 +1,15 @@
 import { useState } from "react";
+import { DUST_VALUES, getRelicSlotType } from "../../game/relics";
 import { useGameStore } from "../../game/store";
-import type { Rarity, SlotId } from "../../game/types";
+import type { Rarity, RelicSlotType, SlotId } from "../../game/types";
 import { EquippedSlotCard } from "../components/EquippedSlotCard";
 import { InvCard } from "../components/InvCard";
+import { InventoryFilters } from "../components/InventoryFilters";
 import { IconCrypt } from "../components/icons";
 import { RelicDetail } from "../components/RelicDetail";
 import type { TabId } from "../components/TabBar";
 import { TabBar } from "../components/TabBar";
 import { TopBar } from "../components/TopBar";
-import { rarityColor } from "../theme";
 
 const SLOT_GROUPS: {
 	title: string;
@@ -61,12 +62,13 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	const unequipRelic = useGameStore((s) => s.unequipRelic);
 	const markRelicSeen = useGameStore((s) => s.markRelicSeen);
 	const sacrificeRelic = useGameStore((s) => s.sacrificeRelic);
+	const sacrificeRelics = useGameStore((s) => s.sacrificeRelics);
 
 	const [selectedRelicId, setSelectedRelicId] = useState<string | null>(null);
 	const [filterRarity, setFilterRarity] = useState<Rarity | null>(null);
+	const [filterSlot, setFilterSlot] = useState<RelicSlotType | null>(null);
 	const [confirmSacrifice, setConfirmSacrifice] = useState(false);
-
-	console.log(equipped);
+	const [confirmBulkSacrifice, setConfirmBulkSacrifice] = useState(false);
 
 	const selectedRelic =
 		inventory.find((r) => r.id === selectedRelicId) ??
@@ -76,9 +78,17 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 					.find((r) => r?.id === selectedRelicId)
 			: null);
 
+	// Equipped relics are excluded, so the bulk sacrifice below can never eat a
+	// relic that is currently doing something.
 	const filteredInventory = inventory
 		.filter((r) => !Object.values(equipped).includes(r.id))
-		.filter((r) => !filterRarity || r.rarity === filterRarity);
+		.filter((r) => !filterRarity || r.rarity === filterRarity)
+		.filter((r) => !filterSlot || getRelicSlotType(r.baseId) === filterSlot);
+
+	const filteredDust = filteredInventory.reduce(
+		(sum, r) => sum + DUST_VALUES[r.rarity],
+		0,
+	);
 
 	// Slots only select the relic they hold — equipping is done from the
 	// EQUIP TO SLOT buttons in RelicDetail, which offer only valid slots.
@@ -101,6 +111,20 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 		sacrificeRelic(selectedRelicId);
 		setSelectedRelicId(null);
 		setConfirmSacrifice(false);
+	};
+
+	const handleBulkSacrifice = () => {
+		if (!confirmBulkSacrifice) {
+			setConfirmBulkSacrifice(true);
+			return;
+		}
+		const doomed = filteredInventory.map((r) => r.id);
+		sacrificeRelics(doomed);
+		if (selectedRelicId && doomed.includes(selectedRelicId)) {
+			setSelectedRelicId(null);
+			setConfirmSacrifice(false);
+		}
+		setConfirmBulkSacrifice(false);
 	};
 
 	return (
@@ -229,38 +253,40 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 							Inventory
 						</div>
 						<div className="mono text-[10px] text-muted tracking-[0.1em]">
-							{inventory.length} RELICS
+							{filterSlot || filterRarity
+								? `${filteredInventory.length} / ${inventory.length} RELICS`
+								: `${inventory.length} RELICS`}
 						</div>
 					</div>
 
-					<div className="ml-auto flex gap-2 items-center">
-						<span className="mono text-[9px] text-dim tracking-[0.14em]">
-							FILTER
-						</span>
-						{(
-							["common", "uncommon", "rare", "epic", "legendary"] as Rarity[]
-						).map((r) => (
-							<button
-								type="button"
-								key={r}
-								onClick={() => setFilterRarity(filterRarity === r ? null : r)}
-								className="mono text-[9px] px-2 py-0.5 cursor-pointer tracking-[0.12em] uppercase border"
-								style={{
-									borderColor:
-										filterRarity === r ? rarityColor(r) : "var(--rule)",
-									color:
-										filterRarity === r ? rarityColor(r) : "var(--ink-muted)",
-								}}
-							>
-								{r}
-							</button>
-						))}
-					</div>
+					<InventoryFilters
+						filterSlot={filterSlot}
+						filterRarity={filterRarity}
+						onFilterSlot={(slot) => {
+							setFilterSlot(slot);
+							setConfirmBulkSacrifice(false);
+						}}
+						onFilterRarity={(rarity) => {
+							setFilterRarity(rarity);
+							setConfirmBulkSacrifice(false);
+						}}
+						sacrificeCount={filteredInventory.length}
+						sacrificeDust={filteredDust}
+						confirming={confirmBulkSacrifice}
+						onSacrifice={handleBulkSacrifice}
+						onCancelSacrifice={() => setConfirmBulkSacrifice(false)}
+					/>
 
 					{inventory.length === 0 ? (
 						<div className="p-6 text-center">
 							<div className="mono text-[10px] text-dim tracking-[0.14em]">
 								NO RELICS · PERFORM RITUALS TO OBTAIN
+							</div>
+						</div>
+					) : filteredInventory.length === 0 ? (
+						<div className="p-6 text-center">
+							<div className="mono text-[10px] text-dim tracking-[0.14em]">
+								NO UNEQUIPPED RELICS MATCH THIS FILTER
 							</div>
 						</div>
 					) : (

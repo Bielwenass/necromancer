@@ -45,11 +45,11 @@ An idle/incremental game: three React tabs over a fixed-timestep simulation, per
 
 ### Component files
 
-**One component per file, and the file is named after it.** This includes small presentational pieces that only one parent renders — `UpgradeRowLocked`, `SectionLocked`, and `UpgradeRowCost` each have their own file rather than sitting privately inside their parent. Exporting them is fine; the point is that a component is findable by name.
+**One component per file, and the file is named after it.** This includes small presentational pieces that only one parent renders — `RowGroupDivider`, `SectionLocked`, and `UpgradeRowCost` each have their own file rather than sitting privately inside their parent. Exporting them is fine; the point is that a component is findable by name.
 
 **Split anything past ~200–300 lines.** A file over that is a signal that several components are sharing a file, or that one component is doing layout work that belongs in children. The exception is a component that is genuinely one indivisible slice of layout or logic — `RelicCard.tsx` is the standing example — where splitting would only scatter a single visual unit across files.
 
-When a screen grows a family of components, give it a subfolder under `src/ui/components/` — `components/workshop/` holds the Workshop's ~15 components plus the pure helpers only it uses (`sections.ts` builds the section/row data, `cost.ts` maps costs to icons, `types.ts` holds `WRow`/`WSection`). Screens under `src/ui/screens/` should be thin: store selectors, local UI state, and layout composition. `screens/Workshop.tsx` is ~65 lines and is the shape to aim for.
+When a screen grows a family of components, give it a subfolder under `src/ui/components/` — `components/workshop/` holds the Workshop's components plus the pure helpers only it uses (`sections.ts` builds the section/row data and owns row visibility/ordering, `cost.ts` maps costs to icons, `types.ts` holds `WRow`/`WSection`). Screens under `src/ui/screens/` should be thin: store selectors, local UI state, and layout composition. `screens/Workshop.tsx` is ~65 lines and is the shape to aim for.
 
 Default to presentational components that take data and callbacks as props, with the screen owning the store wiring — that's what makes the pieces splittable at all. Reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `CryptList`, `DispatchModal`, `CombatWindow` do this); it isn't a shortcut around passing a prop one level down.
 
@@ -87,7 +87,7 @@ Forgetting this produces stale stats that only correct themselves on the next un
 
 `src/game/catchupOffline.ts` re-simulates up to 8 hours away from the game by jumping between squad events on a min-heap instead of stepping 100ms ticks, resolving fights headlessly with a cached, seeded engine. It deliberately duplicates the live rules.
 
-**Any change to travel time, fight resolution, loot, or auto-deploy in `tick.ts`/`store.ts` must be mirrored here**, or players get different results online vs. offline. The mirrored pairs today: `generateLoot` ↔ `generateLootSeeded`, travel speed ↔ `computeTravelTime`, the auto-deploy branch ↔ the `returnArrive` case, and `checkUnlockConditions` in both.
+**Any change to travel time, fight resolution, loot, or auto-deploy in `tick.ts`/`store.ts` must be mirrored here**, or players get different results online vs. offline. The mirrored pairs today: `generateLoot` ↔ `generateLootSeeded`, travel speed ↔ `computeTravelTime` (both now delegate to `effectiveTravelTicks` in `src/game/travel.ts`, which the Crypt UI also uses so displayed timers match the simulation), the auto-deploy branch ↔ the `returnArrive` case, and `checkUnlockConditions` in both.
 
 Two intentional deviations from house style live here: it mutates its own cloned working state (a deep-ish clone made by `cloneForCatchup`) for speed, and it uses seeded `mulberry32` instead of `Math.random` so a mid-window refresh reproduces identical results. Preserve both.
 
