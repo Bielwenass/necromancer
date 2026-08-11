@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { POOL_CONFIGS } from "../../game/gacha";
 import { useGameStore } from "../../game/store";
 import type { PoolId, Rarity, Relic } from "../../game/types";
-import { IconBone, IconCoin, IconSoul } from "../components/Icons";
+import { IconBone, IconCoin, IconSoul } from "../components/icons";
 import { RelicGlyph } from "../components/RelicGlyph";
 import { formatNumber, rarityColor, rarityName } from "../theme";
 import { RevealOverlay } from "./RevealOverlay";

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { exportSave } from "../../game/save";
 import { useGameStore } from "../../game/store";
 import { formatNumber, formatRate } from "../theme";
-import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "./Icons";
+import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "./icons";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TopBarProps {

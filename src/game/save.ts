@@ -58,6 +58,14 @@ export function clearSave(): void {
 	localStorage.removeItem(SAVE_KEY);
 }
 
+/** Local date/time as "YYYY-MM-DD HH:MM" (24h). */
+function saveFileStamp(now = new Date()): string {
+	const pad = (n: number) => String(n).padStart(2, "0");
+	const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+	const time = `${pad(now.getHours())}-${pad(now.getMinutes())}`;
+	return `${date} ${time}`;
+}
+
 export function exportSave(): void {
 	const raw = localStorage.getItem(SAVE_KEY);
 	if (!raw) return;
@@ -65,7 +73,7 @@ export function exportSave(): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `necromancer_save_${Date.now()}.json`;
+	a.download = `Necromancer Save ${saveFileStamp()}.json`;
 	document.body.appendChild(a);
 	a.click();
 	document.body.removeChild(a);

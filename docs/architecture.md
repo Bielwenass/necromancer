@@ -12,6 +12,8 @@ src/combat/   battle engine. No React imports.
 src/ui/       screens and components. Reads state via useGameStore selectors.
 ```
 
+One component per file. A screen with a large component set gets a subfolder under `src/ui/components/` (`components/workshop/`), holding its components plus the pure builders and helpers only it uses.
+
 The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup and in `src/combat/benchmark.ts`.
 
 ## Tick pipeline

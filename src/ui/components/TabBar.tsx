@@ -1,5 +1,5 @@
 import type React from "react";
-import { IconCrypt, IconReliquary, IconRitual, IconTower } from "./Icons";
+import { IconCrypt, IconReliquary, IconRitual, IconTower } from "./icons";
 
 export type TabId = "crypt" | "reliquary" | "ritual" | "upgrades";
 
