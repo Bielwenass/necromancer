@@ -3,44 +3,55 @@ import type { GameState } from "./types";
 const SAVE_KEY = "necromancer_save_v1";
 const SAVE_VERSION = 1;
 
+/** Slices written to disk. `derived` is deliberately absent — it is recomputed. */
+const PERSISTED_KEYS = [
+	"resources",
+	"workshop",
+	"units",
+	"squads",
+	"dungeons",
+	"relics",
+	"upgrades",
+	"gacha",
+	"meta",
+] as const;
+
+export type SavedState = Omit<GameState, "derived">;
+
+/**
+ * Set once the app has committed to replacing the save and reloading (import or
+ * reset). Both of those write localStorage and then wait ~1s for the reload, and
+ * the simulation keeps running in the meantime — an autosave or the tail of an
+ * in-flight offline catchup would otherwise overwrite the bytes we just wrote
+ * with the state we are trying to discard. One-way by design.
+ */
+let persistenceSuspended = false;
+
+export function suspendPersistence(): void {
+	persistenceSuspended = true;
+}
+
 export function saveGame(state: GameState): void {
+	if (persistenceSuspended) return;
 	try {
-		const toSave = {
-			resources: state.resources,
-			workshop: state.workshop,
-			units: state.units,
-			squads: state.squads,
-			dungeons: state.dungeons,
-			relics: state.relics,
-			upgrades: state.upgrades,
-			gacha: {
-				pityCounters: state.gacha.pityCounters,
-				lastPulledRelics: state.gacha.lastPulledRelics,
-			},
-			meta: state.meta,
-			version: SAVE_VERSION,
-		};
-		console.log("Saving game state:", toSave);
+		const toSave: Record<string, unknown> = { version: SAVE_VERSION };
+		for (const key of PERSISTED_KEYS) toSave[key] = state[key];
 		localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
 	} catch (e) {
 		console.warn("Save failed:", e);
 	}
 }
 
-export function loadGame(): Omit<GameState, "derived"> | null {
+export function loadGame(): SavedState | null {
 	try {
 		const raw = localStorage.getItem(SAVE_KEY);
 		if (!raw) return null;
 		const parsed = JSON.parse(raw) as Record<string, unknown>;
 		if (parsed.version !== SAVE_VERSION) return null;
-		return parsed as unknown as Omit<GameState, "derived">;
+		return parsed as unknown as SavedState;
 	} catch {
 		return null;
 	}
-}
-
-export function hasSave(): boolean {
-	return localStorage.getItem(SAVE_KEY) !== null;
 }
 
 export function clearSave(): void {
@@ -61,38 +72,33 @@ export function exportSave(): void {
 	URL.revokeObjectURL(url);
 }
 
-type ImportResult = { ok: true } | { ok: false; error: string };
+export type ParseResult =
+	| { ok: true; state: SavedState }
+	| { ok: false; error: string };
 
-export function importSave(json: string): ImportResult {
+/** Validate an exported save. Pure — writing it is the store's job. */
+export function parseSave(json: string): ParseResult {
+	let parsed: Record<string, unknown>;
 	try {
-		const parsed = JSON.parse(json) as Record<string, unknown>;
-		if (parsed.version !== SAVE_VERSION) {
-			return {
-				ok: false,
-				error: `Version mismatch (expected ${SAVE_VERSION}, got ${parsed.version ?? "unknown"}).`,
-			};
-		}
-		const required = [
-			"resources",
-			"workshop",
-			"units",
-			"squads",
-			"dungeons",
-			"relics",
-			"upgrades",
-			"gacha",
-			"meta",
-		];
-		for (const key of required) {
-			if (!(key in parsed))
-				return { ok: false, error: `Missing field: ${key}` };
-		}
-		console.log("Importing save:", parsed);
-		console.log("Importing save stringified:", JSON.stringify(parsed));
-		console.log("Importing save keys:", Object.keys(parsed));
-		localStorage.setItem(SAVE_KEY, json);
-		return { ok: true };
+		parsed = JSON.parse(json) as Record<string, unknown>;
 	} catch {
 		return { ok: false, error: "Invalid JSON." };
 	}
+	if (parsed.version !== SAVE_VERSION) {
+		return {
+			ok: false,
+			error: `Version mismatch (expected ${SAVE_VERSION}, got ${parsed.version ?? "unknown"}).`,
+		};
+	}
+	for (const key of PERSISTED_KEYS) {
+		if (!(key in parsed)) return { ok: false, error: `Missing field: ${key}` };
+	}
+	return { ok: true, state: parsed as unknown as SavedState };
+}
+
+/** Write a validated save straight to disk, bypassing the suspend guard. */
+export function writeSave(state: SavedState): void {
+	const toSave: Record<string, unknown> = { version: SAVE_VERSION };
+	for (const key of PERSISTED_KEYS) toSave[key] = state[key];
+	localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
 }

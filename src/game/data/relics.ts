@@ -569,11 +569,3 @@ export const AFFIX_DEFS: Record<
 			"Wraith damage scales with target HP%. IMPLEMENT per-unit damage calc.",
 	},
 };
-
-export const SET_DEFS: Array<{
-	id: string;
-	glyph: string;
-	name: string;
-	pieces: string[];
-	perks: { at: number; label: string }[];
-}> = [];

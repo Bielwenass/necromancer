@@ -39,11 +39,9 @@ export function gameTick(state: GameState): Partial<GameState> {
 	newResources.souls += derived.soulsPerTick;
 
 	// ── 2 & 3 & 4. Advance squads ────────────────────────────────
-	const earnedPoints = 0;
 	const newSquads = state.squads.map((squad) => {
 		const updated = {
 			...squad,
-			currentHp: { ...squad.currentHp },
 			composition: { ...squad.composition },
 		};
 
@@ -60,12 +58,6 @@ export function gameTick(state: GameState): Partial<GameState> {
 				updated.state = "fighting";
 				updated.fightSeed = Math.floor(Math.random() * 0xffffffff);
 				updated.fightStartWallTime = Date.now();
-				// Restore full HP on arrival
-				// TODO
-				// for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
-				//   const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
-				//   updated.currentHp[type] = squad.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
-				// }
 			}
 		} else if (squad.state === "fighting") {
 			// The visual simulation in CombatWindow is the fight — outcome is applied
@@ -114,12 +106,6 @@ export function gameTick(state: GameState): Partial<GameState> {
 						if (totalUnits > 0) {
 							updated.state = "traveling";
 							updated.position = 0;
-							// Restore HP for re-deploy
-							// TODO
-							// for (const type of ['skeleton', 'zombie', 'wraith'] as const) {
-							//   const hpBonus = type === 'skeleton' ? derived.skeletonHpBonus : type === 'zombie' ? derived.zombieHpBonus : derived.wraithHpBonus;
-							//   updated.currentHp[type] = updated.composition[type] * UNIT_STATS[type].hp * (1 + hpBonus);
-							// }
 						}
 					}
 				}
@@ -129,13 +115,8 @@ export function gameTick(state: GameState): Partial<GameState> {
 		return updated;
 	});
 
-	// Apply earned upgrade points after all squads are processed
-	if (earnedPoints > 0) {
-		result.upgrades = {
-			...state.upgrades,
-			availablePoints: state.upgrades.availablePoints + earnedPoints,
-		};
-	}
+	// Upgrade points are awarded by `resolveFight`, not here — a fight is decided
+	// by the combat engine, which the tick deliberately never touches.
 
 	// ── 5. Unlock check ──────────────────────────────────────────
 	if (!result.dungeons) result.dungeons = [...state.dungeons];

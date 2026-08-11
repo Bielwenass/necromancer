@@ -425,7 +425,6 @@ function cloneForCatchup(state: GameState): GameState {
 		squads: state.squads.map((s) => ({
 			...s,
 			composition: { ...s.composition },
-			currentHp: { ...(s.currentHp ?? {}) },
 			pendingLoot: s.pendingLoot ? { ...s.pendingLoot } : null,
 		})),
 		dungeons: state.dungeons.map((d) => ({ ...d })),

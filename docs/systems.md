@@ -16,9 +16,9 @@ Passive income is **garden-only**: `bonesPerTick = (Σ plotLevel × GARDEN_BASE_
 
 ## Units
 
-Three types — skeleton, zombie, wraith — with base HP/DMG/Speed in `UNIT_STAT_CONFIG`, raised per level in the Workshop. Zombies unlock via `s2`, wraiths via `s4b`; both cost bones plus a secondary resource.
+Three types — skeleton, zombie, wraith — with base HP/DMG/Speed in `UNIT_STAT_CONFIG`, raised per level in the Workshop. Zombies unlock via `s2`, wraiths via `s4b`; both cost bones plus a secondary resource. Summoning prices are in `game/summoning.ts`; `derived.summonCostBonus` discounts skeletons only.
 
-`Squad.currentHp` is vestigial: `dispatchSquad` seeds it from hardcoded per-unit values and combat never writes it back, so the HP bars are decorative. Survivor counts, not HP, carry over from a fight.
+A squad carries no HP between phases — only unit counts. Survivors from a fight become the squad's new composition, and a wipe destroys the squad outright.
 
 ## Squads
 
@@ -31,6 +31,7 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 - On return, `pendingLoot` is deposited with yield bonuses applied, then unlock conditions are re-checked.
 - With `c0` (Auto-Deploy), a returning squad re-dispatches to the same dungeon unless the player recalled it manually (`manualRecall`).
 - Caps: `derived.maxSquadSize` (base 5) and `derived.maxActiveSquads` (base 1), both raised by upgrades and the Workshop.
+- Only an `idle` squad can be disbanded. A squad in the field still holds its units, so refunding them mid-run would duplicate them.
 
 ## Dungeons
 
@@ -74,4 +75,4 @@ Three branches (`s*` summoning, `c*` command, `n*` necromancy), 6 tiers each, en
 
 ## Save
 
-Auto-save every 50 ticks to `necromancer_save_v1`, plus on tab hide. `derived` is excluded and recomputed on load. A version mismatch makes `loadGame` return `null` and the game starts fresh. Export/import are available in the settings modal.
+Auto-save every 50 ticks to `necromancer_save_v1`, plus on tab hide. `derived` is excluded and recomputed on load. A version mismatch makes `loadGame` return `null` and the game starts fresh. Export/import are available in the settings modal; both import and reset suspend persistence before writing, so the still-running tick loop can't overwrite them before the reload. See [architecture.md](architecture.md#persistence).

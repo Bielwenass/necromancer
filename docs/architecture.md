@@ -26,11 +26,10 @@ The React-free boundary is load-bearing: it's what lets the simulation run headl
 
 ## `derived`
 
-`GameState.derived` projects *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads. Computed by `recomputeDerived` (`game/upgrades.ts`), never persisted, and **not** recomputed on a timer — every action that changes those inputs must recompute explicitly:
+`GameState.derived` projects *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads. Computed by `recomputeDerived` (`game/upgrades.ts`), never persisted, and **not** recomputed on a timer — every action that changes those inputs must recompute explicitly, via the `withDerived` helper in `game/slices/helpers.ts`:
 
 ```ts
-const newState = { ...prev, /* mutation */ };
-return { ...newState, derived: recomputeDerived(newState) };
+return withDerived(prev, { /* patch */ });
 ```
 
 Some `derived` fields are computed but not yet consumed (`corpseYieldBonus`, `boneSurgeActive`, `soulHarvestBonus`, `rarityBoostActive`). Check the consumer before assuming a value has an effect.
@@ -52,9 +51,25 @@ derived     computed, never persisted
 
 Live `CombatEngine` instances live in `store.combatEngines`, a runtime-only `Map` outside `GameState`.
 
+## Store layout
+
+One Zustand store, composed in `game/store.ts` from five slice creators in `game/slices/`. Slices are a domain split only — they share a single state object, so any slice may read the whole store through `get()`.
+
+| Slice | Owns |
+|---|---|
+| `combatSlice` | `combatEngines` map + `tick` (accumulator, autosave counter) |
+| `squadSlice` | dispatch, recall, create, delete, `resolveFight`, squad-id counter |
+| `relicSlice` | equip, unequip, mark seen, sacrifice, gacha `pull` |
+| `progressionSlice` | upgrade purchase, workshop levels, summoning, dig |
+| `persistenceSlice` | `importSave`, `resetSave` |
+
+Actions are reducers: `set(prev => …)` returning a partial, immutable spread copies, and an early `return prev` to reject an invalid operation rather than throwing. Preconditions are checked at the top of the action, not by the caller. `game/slices/helpers.ts` holds the cross-slice primitives (`withDerived`, `applyUnitDelta`, `withoutRelic`).
+
 ## Persistence
 
-`game/save.ts` serializes an explicit allowlist of slices (never `derived`) under `necromancer_save_v1`, gated on `SAVE_VERSION`. Loads are spread over `buildInitialState()`, so new fields pick up defaults on old saves. Adding a persisted slice means updating `saveGame` **and** `importSave`'s `required` list.
+`game/save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1`, gated on `SAVE_VERSION`. Loads are spread over defaults by `buildHydratedState()` (`game/initialState.ts`), so new fields pick up defaults on old saves. Adding a persisted slice means adding it to `PERSISTED_KEYS` — that single list drives writing, validation on import, and the required-field check.
+
+Import and reset go through store actions, not `save.ts` directly. Both call `suspendPersistence()` before touching `localStorage`: the tick loop keeps running during the ~1 s before the page reloads, and an autosave or a finishing offline catchup would otherwise overwrite the bytes just written. Import also stamps `meta.lastTickAt` to now, so restoring an old export doesn't immediately grant offline catchup.
 
 ## Screens
 

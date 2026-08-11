@@ -61,7 +61,6 @@ export interface Squad {
 	id: string;
 	name: string;
 	composition: Record<UnitType, number>;
-	currentHp: Record<UnitType, number>;
 	targetDungeonId: string | null;
 	state: SquadState;
 	position: number; // 0-1 along route

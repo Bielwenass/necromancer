@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { clearSave, exportSave, importSave } from "../../game/save";
+import { exportSave } from "../../game/save";
 import { useGameStore } from "../../game/store";
 import { formatNumber, formatRate } from "../theme";
-import { IconBone, IconCoin, IconSoul } from "./Icons";
+import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "./Icons";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TopBarProps {
@@ -17,6 +17,8 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 	const derived = useGameStore((s) => s.derived);
 	const meta = useGameStore((s) => s.meta);
 	const digBone = useGameStore((s) => s.digBone);
+	const importSave = useGameStore((s) => s.importSave);
+	const resetSave = useGameStore((s) => s.resetSave);
 
 	const [showSettings, setShowSettings] = useState(false);
 	const [resetConfirm, setResetConfirm] = useState(false);
@@ -49,7 +51,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 	};
 
 	const handleReset = () => {
-		clearSave();
+		resetSave();
 		window.location.reload();
 	};
 
@@ -120,7 +122,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						DIG
 					</button>
 					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconBone size={16} />
+						<IconBone size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
 								Bones
@@ -134,7 +136,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconCoin size={16} />
+						<IconCoin size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
 								Coin
@@ -148,7 +150,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconSoul size={16} />
+						<IconSoul size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
 								Souls
@@ -160,7 +162,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
-						<div className="text-xs text-muted">✦</div>
+						<IconDust size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
 								Dust
@@ -169,7 +171,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
-						<div className="text-xs text-sq-zombie">◈</div>
+						<IconCorpse size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
 								Corpses

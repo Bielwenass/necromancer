@@ -5,8 +5,7 @@ import type { DungeonDef } from "../../game/types";
 import { formatTime } from "../theme";
 import { CombatWindow } from "./CombatWindow";
 import { DispatchModal } from "./DispatchModal";
-import { DungeonCard, squadColor, squadHpPct } from "./DungeonCard";
-import { HPBar } from "./HPBar";
+import { DungeonCard, squadColor } from "./DungeonCard";
 import type { TabId } from "./TabBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
@@ -168,7 +167,6 @@ export function CryptList({ onTabChange }: CryptListProps) {
 								const def = squad.targetDungeonId
 									? DUNGEON_DEFS[squad.targetDungeonId]
 									: null;
-								const hpPct = squadHpPct(squad);
 								const total =
 									squad.composition.skeleton +
 									squad.composition.zombie +
@@ -256,10 +254,6 @@ export function CryptList({ onTabChange }: CryptListProps) {
 
 											{squad.state !== "idle" && (
 												<div className="flex items-center gap-2">
-													<HPBar pct={hpPct} w={120} />
-													<span className="mono text-[11px] text-muted">
-														{Math.round(hpPct * 100)}%
-													</span>
 													<span className="mono text-[11px] text-dim ml-auto">
 														{eta}
 													</span>

@@ -7,17 +7,17 @@ interface IconProps {
 
 export const IconBone = ({ size = 14, color = "var(--c-bone)" }: IconProps) => (
 	<svg
+		aria-hidden="true"
 		width={size}
 		height={size}
 		viewBox="0 0 24 24"
 		fill="none"
-		aria-hidden="true"
 	>
-		<path
-			d="M5.2 6.4a2.6 2.6 0 1 1 3.7 3.7l-0.4 0.4 6 6 0.4-0.4a2.6 2.6 0 1 1 3.7 3.7 2.6 2.6 0 1 1-3.7 3.7l0.4-0.4-6-6-0.4 0.4a2.6 2.6 0 1 1-3.7-3.7 2.6 2.6 0 1 1 3.7-3.7Z"
-			stroke={color}
-			strokeWidth="1.4"
-		/>
+		<circle cx="6" cy="9.4" r="2.9" fill={color} />
+		<circle cx="6" cy="14.6" r="2.9" fill={color} />
+		<circle cx="18" cy="9.4" r="2.9" fill={color} />
+		<circle cx="18" cy="14.6" r="2.9" fill={color} />
+		<rect x="5" y="10.1" width="14" height="3.8" rx="1" fill={color} />
 	</svg>
 );
 
@@ -29,16 +29,12 @@ export const IconCoin = ({ size = 14, color = "var(--c-coin)" }: IconProps) => (
 		viewBox="0 0 24 24"
 		fill="none"
 	>
-		<circle cx="12" cy="12" r="8" stroke={color} strokeWidth="1.4" />
-		<circle
-			cx="12"
-			cy="12"
-			r="4"
-			stroke={color}
-			strokeWidth="1.4"
-			opacity="0.6"
+		<path
+			fillRule="evenodd"
+			d="M12 2.6a9.4 9.4 0 1 0 0 18.8 9.4 9.4 0 1 0 0-18.8zm0 2.5a6.9 6.9 0 1 1 0 13.8 6.9 6.9 0 1 1 0-13.8z"
+			fill={color}
 		/>
-		<circle cx="12" cy="12" r="1.2" fill={color} />
+		<path d="M12 7.3l3.1 4.7-3.1 4.7-3.1-4.7z" fill={color} />
 	</svg>
 );
 
@@ -51,30 +47,69 @@ export const IconSoul = ({ size = 14, color = "var(--c-soul)" }: IconProps) => (
 		fill="none"
 	>
 		<path
-			d="M12 3c2.5 2 4 4 4 6.5 0 1.6-1 2.5-2 3-1 0.5-1.5 1.4-1.5 2.5 0 1.4 1.2 2.5 2.5 2.5"
-			stroke={color}
-			strokeWidth="1.4"
-			strokeLinecap="round"
+			d="M12 2.4c.6 2.6 2.2 3.9 3.6 5.6 1.4 1.7 2.3 3.3 2.3 5.4 0 3.4-2.6 6-5.9 6s-5.9-2.6-5.9-6c0-2.4 1.3-4 2.6-5.2.3 1 .9 1.7 1.7 2 .1-3.1.4-5.6 1.6-7.8z"
+			fill={color}
 		/>
-		<circle cx="12" cy="20" r="1.3" fill={color} opacity="0.8" />
-		<circle cx="9.5" cy="17.5" r="0.8" fill={color} opacity="0.5" />
+		<circle cx="5.1" cy="6.2" r="1.5" fill={color} />
+		<circle cx="19" cy="5.3" r="1.1" fill={color} />
 	</svg>
 );
 
-export const IconHex = ({
-	size = 14,
-	color = "currentColor",
-	filled = false,
-}: IconProps & { filled?: boolean }) => (
-	<svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24">
-		<polygon
-			points="12,2 22,7 22,17 12,22 2,17 2,7"
-			fill={filled ? color : "none"}
-			stroke={color}
-			strokeWidth="1.4"
-		/>
-	</svg>
-);
+// export const IconDust = ({ size = 14, color = "var(--c-dust)" }: IconProps) => (
+// 	<svg
+// 		aria-hidden="true"
+// 		width={size}
+// 		height={size}
+// 		viewBox="0 0 24 24"
+// 		fill="none"
+// 	>
+// 		<path d="M2.6 20.4c1.4-4.2 4.9-7 9.4-7s8 2.8 9.4 7z" fill={color} />
+// 		<circle cx="7.2" cy="8.4" r="1.5" fill={color} />
+// 		<circle cx="12.4" cy="4.4" r="1.9" fill={color} />
+// 		<circle cx="17.2" cy="9.1" r="1.2" fill={color} />
+// 		<circle cx="12.2" cy="9.9" r="1" fill={color} />
+// 	</svg>
+// );
+
+// export const IconCorpse = ({
+// 	size = 14,
+// 	color = "var(--c-corpse)",
+// }: IconProps) => (
+// 	<svg
+// 		aria-hidden="true"
+// 		width={size}
+// 		height={size}
+// 		viewBox="0 0 24 24"
+// 		fill="none"
+// 	>
+// 		<circle cx="6.4" cy="10.8" r="2.9" fill={color} />
+// 		<path d="M7.4 16.4c0-2.6 2.4-4.6 5.6-4.6s5.6 2 5.6 4.6z" fill={color} />
+// 		<rect x="2.4" y="16.2" width="19.2" height="2.6" rx="1" fill={color} />
+// 		<rect x="4.6" y="18.8" width="2.4" height="2.6" fill={color} />
+// 		<rect x="17" y="18.8" width="2.4" height="2.6" fill={color} />
+// 	</svg>
+// );
+
+// export const IconCrypt = ({
+// 	size = 14,
+// 	color = "var(--c-crypt)",
+// }: IconProps) => (
+// 	<svg
+// 		aria-hidden="true"
+// 		width={size}
+// 		height={size}
+// 		viewBox="0 0 24 24"
+// 		fill="none"
+// 	>
+// 		<path d="M12 2.2l9.4 6.3v1.7H2.6V8.5z" fill={color} />
+// 		<path
+// 			fillRule="evenodd"
+// 			d="M4.4 10.8h15.2v9.4H4.4zm7.6 1.9c-2 0-3.6 1.6-3.6 3.6v3.9h7.2v-3.9c0-2-1.6-3.6-3.6-3.6z"
+// 			fill={color}
+// 		/>
+// 		<rect x="2.4" y="19.8" width="19.2" height="2" rx=".6" fill={color} />
+// 	</svg>
+// );
 
 export const IconSkull = ({ size = 14, color = "currentColor" }: IconProps) => (
 	<svg
@@ -129,7 +164,10 @@ export const IconTower = ({ size = 14, color = "currentColor" }: IconProps) => (
 	</svg>
 );
 
-export const IconCrypt = ({ size = 14, color = "currentColor" }: IconProps) => (
+export const IconCrypt = ({
+	size = 14,
+	color = "var(--c-crypt)",
+}: IconProps) => (
 	<svg
 		aria-hidden="true"
 		width={size}
@@ -137,17 +175,20 @@ export const IconCrypt = ({ size = 14, color = "currentColor" }: IconProps) => (
 		viewBox="0 0 24 24"
 		fill="none"
 	>
+		<path d="M12 2.2l9.4 6.3v1.7H2.6V8.5z" fill={color} />
 		<path
-			d="M4 20V10l8-6 8 6v10M10 20v-6h4v6"
-			stroke={color}
-			strokeWidth="1.3"
-			strokeLinejoin="round"
+			fillRule="evenodd"
+			d="M4.4 10.8h15.2v9.4H4.4zm7.6 1.9c-2 0-3.6 1.6-3.6 3.6v3.9h7.2v-3.9c0-2-1.6-3.6-3.6-3.6z"
+			fill={color}
 		/>
-		<circle cx="12" cy="9" r="1" fill={color} />
+		<rect x="2.4" y="19.8" width="19.2" height="2" rx=".6" fill={color} />
 	</svg>
 );
 
-export const IconChest = ({ size = 14, color = "currentColor" }: IconProps) => (
+export const IconReliquary = ({
+	size = 14,
+	color = "var(--c-reliquary)",
+}: IconProps) => (
 	<svg
 		aria-hidden="true"
 		width={size}
@@ -155,12 +196,43 @@ export const IconChest = ({ size = 14, color = "currentColor" }: IconProps) => (
 		viewBox="0 0 24 24"
 		fill="none"
 	>
-		<rect x="4" y="9" width="16" height="11" stroke={color} strokeWidth="1.3" />
 		<path
-			d="M4 9c0-2 2-4 8-4s8 2 8 4M11 13h2v3h-2z"
-			stroke={color}
-			strokeWidth="1.3"
+			d="M2.8 10.6C2.8 7.2 6.9 4.4 12 4.4s9.2 2.8 9.2 6.2v1.1H2.8z"
+			fill={color}
 		/>
+		<path
+			fillRule="evenodd"
+			d="M3.6 12.2h16.8v7.4H3.6zm8.4 1.7l2.2 2.1-2.2 2.1-2.2-2.1z"
+			fill={color}
+		/>
+		<rect x="2.6" y="20.2" width="4.4" height="2" rx=".6" fill={color} />
+		<rect x="17" y="20.2" width="4.4" height="2" rx=".6" fill={color} />
+		<rect x="10.8" y="1.8" width="2.4" height="2.4" rx=".7" fill={color} />
+	</svg>
+);
+
+export const IconRitual = ({
+	size = 14,
+	color = "var(--c-ritual)",
+}: IconProps) => (
+	<svg
+		aria-hidden="true"
+		width={size}
+		height={size}
+		viewBox="0 0 24 24"
+		fill="none"
+	>
+		<path
+			fillRule="evenodd"
+			d="M12 1.8a10.2 10.2 0 1 0 0 20.4 10.2 10.2 0 1 0 0-20.4zm0 2.4a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 1 1 0-15.6z"
+			fill={color}
+		/>
+		<path
+			fillRule="evenodd"
+			d="M12 19.3L4.9 6.5h14.2zm0-3.9l3.6-6.5H8.4z"
+			fill={color}
+		/>
+		<circle cx="12" cy="10.8" r="1.5" fill={color} />
 	</svg>
 );
 
@@ -184,7 +256,7 @@ export const IconArrow = ({ size = 14, color = "currentColor" }: IconProps) => (
 
 export const IconDust = ({
 	size = 14,
-	color = "var(--ink-muted)",
+	color = "var(--ink-parchm)",
 }: IconProps) => (
 	<svg
 		aria-hidden="true"
@@ -193,11 +265,11 @@ export const IconDust = ({
 		viewBox="0 0 24 24"
 		fill="none"
 	>
-		<circle cx="12" cy="12" r="3" fill={color} opacity="0.8" />
-		<circle cx="6" cy="8" r="1.5" fill={color} opacity="0.4" />
-		<circle cx="18" cy="8" r="1.5" fill={color} opacity="0.4" />
-		<circle cx="6" cy="16" r="1.5" fill={color} opacity="0.4" />
-		<circle cx="18" cy="16" r="1.5" fill={color} opacity="0.4" />
+		<path d="M2.6 20.4c1.4-4.2 4.9-7 9.4-7s8 2.8 9.4 7z" fill={color} />
+		<circle cx="7.2" cy="8.4" r="1.5" fill={color} />
+		<circle cx="12.4" cy="4.4" r="1.9" fill={color} />
+		<circle cx="17.2" cy="9.1" r="1.2" fill={color} />
+		<circle cx="12.2" cy="9.9" r="1" fill={color} />
 	</svg>
 );
 
@@ -212,13 +284,11 @@ export const IconCorpse = ({
 		viewBox="0 0 24 24"
 		fill="none"
 	>
-		<path
-			d="M5 18 L12 6 L19 18"
-			stroke={color}
-			strokeWidth="1.3"
-			strokeLinecap="round"
-		/>
-		<path d="M8 14h8" stroke={color} strokeWidth="1" opacity="0.6" />
+		<circle cx="6.4" cy="10.8" r="2.9" fill={color} />
+		<path d="M7.4 16.4c0-2.6 2.4-4.6 5.6-4.6s5.6 2 5.6 4.6z" fill={color} />
+		<rect x="2.4" y="16.2" width="19.2" height="2.6" rx="1" fill={color} />
+		<rect x="4.6" y="18.8" width="2.4" height="2.6" fill={color} />
+		<rect x="17" y="18.8" width="2.4" height="2.6" fill={color} />
 	</svg>
 );
 

@@ -1,8 +1,8 @@
 # Relics
 
-Equippable items that feed `derived`. Obtained only from the Ritual of Calling (gacha); can be equipped, sacrificed for dust, or fused.
+Equippable items that feed `derived`. Obtained only from the Ritual of Calling (gacha); can be equipped or sacrificed for dust.
 
-Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`, `SET_DEFS`); rolling and fusion in `game/relics.ts`; affix application in `recomputeDerived`.
+Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`); rolling in `game/relics.ts`; affix application in `recomputeDerived`.
 
 ## Anatomy
 
@@ -42,9 +42,11 @@ boosted = value × (1 + upgradeLevel × 0.1) / 100
 
 Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true | false`; an unimplemented affix still rolls and still displays, but has no effect. Currently unimplemented: `rarityWeight` (wants gacha wiring), `dispatchBonus`, `firstStrikeBonus`, `overwhelm`, `berserk`, `lastStand`, `undyingFlesh`, `spectralStrike` (all want combat wiring), and `boneYieldFromKills` (needs reworking to per-kill). `corpseYield` is marked implemented and reaches `derived.corpseYieldBonus`, but nothing reads that field yet.
 
-## Fusion and sacrifice
+## Sacrifice
 
-Fusion needs 5 relics of the same base **and** rarity: the highest-quality one survives with `upgradeLevel + 1` (capped at 5), the other four are consumed. Sacrifice returns dust by rarity (1 / 2 / 5 / 10 / 30).
+Sacrifice returns dust by rarity (1 / 2 / 5 / 10 / 30) and removes the relic from any slot it occupies. It is the only way to dispose of a relic.
+
+There is **no fusion**. `upgradeLevel` (0–5) is read when applying affixes and displaying values, but nothing ever raises it above 0, so the `× (1 + upgradeLevel × 0.1)` boost is always a no-op today.
 
 ## Equipping
 
@@ -56,5 +58,5 @@ Saves predating the guard may still hold a relic in a slot its base doesn't list
 
 ## Known gaps
 
-- **Sets are a shell.** `SET_DEFS` is an empty array and no base sets `set:`, so the Set Progress panel always renders empty and no set perk exists. `RelicBase.set` and `RelicCard`'s set label are vestigial.
-- **Duplicates aren't merged.** The dedupe/auto-fuse path in `store.pull` is commented out; every pull pushes a new inventory entry and `duplicateCount` is never incremented.
+- **Sets don't exist.** No base sets `set:`, so `RelicBase.set` and `RelicCard`'s set label never render anything.
+- **Duplicates aren't merged.** Every pull pushes a new inventory entry; `duplicateCount` is never incremented, so `InvCard`'s `×n` badge and `RelicDetail`'s `n/5 DUPES` pip row are permanently stuck at zero.

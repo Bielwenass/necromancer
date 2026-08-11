@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { type ComponentType, useState } from "react";
 import { UPGRADE_NODES } from "../../game/data/upgrades";
+import { canAffordCost } from "../../game/resources";
 import { useGameStore } from "../../game/store";
 import type { Resources } from "../../game/types";
 import { canPurchaseUpgrade } from "../../game/upgrades";
 import {
 	CRYPT_CONFIG,
-	canAffordCost,
 	cryptCost,
 	GARDEN_BASE_YIELD,
 	GARDEN_PLOT_NAMES,
@@ -13,32 +13,54 @@ import {
 	UNIT_STAT_CONFIG,
 	unitStatCost,
 } from "../../game/workshopUpgrades";
-import { NodeIcon } from "../components/Icons";
+import {
+	IconBone,
+	IconCoin,
+	IconCorpse,
+	IconSoul,
+	NodeIcon,
+} from "../components/Icons";
 import { formatNumber } from "../theme";
+
+type ResIcon = ComponentType<{ size?: number; color?: string }>;
 
 const Icon = ({
 	kind,
 	size = 16,
 	color = "currentColor",
 }: {
-	kind: string;
+	kind: string | ResIcon;
 	size?: number;
 	color?: string;
-}) => <NodeIcon kind={kind} size={size} color={color} />;
+}) => {
+	if (typeof kind === "string") {
+		return <NodeIcon kind={kind} size={size} color={color} />;
+	}
+	const IconComponent = kind;
+	return <IconComponent size={size} color={color} />;
+};
 
 // ─── resource display ─────────────────────────────────────────
-const RES: Record<string, { icon: string; color: string; label: string }> = {
-	bones: { icon: "bone", color: "var(--c-bone)", label: "Bones" },
-	coins: { icon: "circle", color: "var(--c-coin)", label: "Gold" },
-	souls: { icon: "soul", color: "var(--c-soul)", label: "Souls" },
-	corpses: { icon: "zombie", color: "var(--sq-zombie)", label: "Corpses" },
+const RES: Record<string, { icon: ResIcon; color: string; label: string }> = {
+	bones: { icon: IconBone, color: "var(--c-bone)", label: "Bones" },
+	coins: { icon: IconCoin, color: "var(--c-coin)", label: "Gold" },
+	souls: { icon: IconSoul, color: "var(--c-soul)", label: "Souls" },
+	corpses: {
+		icon: IconCorpse,
+		color: "var(--sq-zombie)",
+		label: "Corpses",
+	},
 };
 
 function costLines(cost: Partial<Resources>, res: Resources) {
 	return Object.entries(cost)
 		.filter(([, v]) => (v ?? 0) > 0)
 		.map(([k, v]) => {
-			const d = RES[k] ?? { icon: "bone", color: "var(--c-bone)", label: k };
+			const d = RES[k] ?? {
+				icon: IconBone,
+				color: "var(--c-bone)",
+				label: k,
+			};
 			const ok = (res[k as keyof Resources] ?? 0) >= (v as number);
 			return { key: k, amount: v as number, ok, ...d };
 		});

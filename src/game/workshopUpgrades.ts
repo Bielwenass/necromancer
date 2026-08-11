@@ -89,25 +89,3 @@ export function gardenCost(level: number): Partial<Resources> {
 	if (level === 0) return { coins: 100 };
 	return { bones: Math.floor(30 * 1.35 ** level) };
 }
-
-export function canAffordCost(
-	cost: Partial<Resources>,
-	res: Resources,
-): boolean {
-	return (
-		(cost.bones ?? 0) <= res.bones &&
-		(cost.coins ?? 0) <= res.coins &&
-		(cost.souls ?? 0) <= res.souls &&
-		(cost.corpses ?? 0) <= res.corpses
-	);
-}
-
-export function applyCost(cost: Partial<Resources>, res: Resources): Resources {
-	return {
-		...res,
-		bones: res.bones - (cost.bones ?? 0),
-		coins: res.coins - (cost.coins ?? 0),
-		souls: res.souls - (cost.souls ?? 0),
-		corpses: res.corpses - (cost.corpses ?? 0),
-	};
-}

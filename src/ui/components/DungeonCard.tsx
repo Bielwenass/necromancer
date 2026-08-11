@@ -1,6 +1,5 @@
 import type { DungeonDef, DungeonState, Squad } from "../../game/types";
 import { formatTime } from "../theme";
-import { HPBar } from "./HPBar";
 
 export function tierColor(tier: 1 | 2 | 3 | 4): string {
 	if (tier === 4) return "var(--r-epic)";
@@ -13,17 +12,6 @@ export function squadColor(squad: Squad): string {
 	if (squad.composition.wraith > 0) return "var(--sq-wraith)";
 	if (squad.composition.zombie > 0) return "var(--sq-zombie)";
 	return "var(--sq-skeleton)";
-}
-
-export function squadHpPct(squad: Squad): number {
-	const cur =
-		squad.currentHp.skeleton + squad.currentHp.zombie + squad.currentHp.wraith;
-	const max =
-		squad.composition.skeleton * 10 +
-		squad.composition.zombie * 25 +
-		squad.composition.wraith * 6;
-	if (max === 0) return 1;
-	return Math.max(0, Math.min(1, cur / max));
 }
 
 export function DungeonCard({
@@ -49,7 +37,6 @@ export function DungeonCard({
 	const activeSquad = fightingSquad ?? travelingSquad ?? returningSquad;
 
 	const locked = !ds.unlocked;
-	const hpPct = activeSquad ? squadHpPct(activeSquad) : 1;
 	const totalUnits = activeSquad
 		? activeSquad.composition.skeleton +
 			activeSquad.composition.zombie +
@@ -139,7 +126,7 @@ export function DungeonCard({
 									×{totalUnits}
 								</span>
 							</div>
-							<div className="mono text-[13px] text-muted mb-[9px]">
+							<div className="mono text-[13px] text-muted">
 								{activeSquad.state === "traveling" && eta
 									? `→ TRAVELING · ${eta}`
 									: activeSquad.state === "fighting"
@@ -147,12 +134,6 @@ export function DungeonCard({
 										: eta
 											? `⇠ RETURNING · ${eta}`
 											: "⇠ RETURNING"}
-							</div>
-							<div className="flex items-center justify-end gap-2.5">
-								<HPBar pct={hpPct} w={150} />
-								<span className="mono text-xs text-muted">
-									{Math.round(hpPct * 100)}%
-								</span>
 							</div>
 						</div>
 					) : (

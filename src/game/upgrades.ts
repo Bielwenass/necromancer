@@ -1,4 +1,3 @@
-import { RELIC_BASES } from "./data/relics";
 import { UPGRADE_NODES } from "./data/upgrades";
 import type { GameState } from "./types";
 import { GARDEN_BASE_YIELD, UNIT_STAT_CONFIG } from "./workshopUpgrades";
@@ -351,8 +350,3 @@ export function canPurchaseUpgrade(state: GameState, nodeId: string): boolean {
 }
 
 export { UPGRADE_NODES };
-
-// Determine which relic bases can drop for a given rarity in a pool context
-export function getValidBasesForRarity(_rarity: string): string[] {
-	return RELIC_BASES.map((b) => b.id);
-}

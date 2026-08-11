@@ -1,5 +1,5 @@
 import type React from "react";
-import { IconChest, IconHex, IconSoul, IconTower } from "./Icons";
+import { IconCrypt, IconReliquary, IconRitual, IconTower } from "./Icons";
 
 export type TabId = "crypt" | "reliquary" | "ritual" | "upgrades";
 
@@ -14,9 +14,9 @@ const TABS: {
 	k: string;
 	Icon: React.FC<{ size?: number; color?: string }>;
 }[] = [
-	{ id: "crypt", label: "Crypt", k: "1", Icon: IconHex },
-	{ id: "reliquary", label: "Reliquary", k: "2", Icon: IconChest },
-	{ id: "ritual", label: "Ritual", k: "3", Icon: IconSoul },
+	{ id: "crypt", label: "Crypt", k: "1", Icon: IconCrypt },
+	{ id: "reliquary", label: "Reliquary", k: "2", Icon: IconReliquary },
+	{ id: "ritual", label: "Ritual", k: "3", Icon: IconRitual },
 	{ id: "upgrades", label: "Upgrades", k: "4", Icon: IconTower },
 ];
 

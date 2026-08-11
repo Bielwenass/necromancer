@@ -4,7 +4,7 @@ import type { SideConfig } from "./types";
 export const COMBAT_W = 360;
 export const COMBAT_H = 180;
 
-export const PLAYER_COLORS = {
+const PLAYER_COLORS = {
 	skeleton: "#D4B88C",
 	zombie: "#7A9E6E",
 	wraith: "#9B7ED4",
@@ -31,7 +31,6 @@ export function buildAttackerConfig(
 			speed: derived.wraith.speedFlat * (1 + derived.wraith.speedBonus),
 		},
 	};
-	console.log("Attacker stats with bonuses:", statsByUnit);
 
 	return {
 		units: Object.entries(composition).map(([key, value]) => {

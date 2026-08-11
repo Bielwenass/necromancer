@@ -103,7 +103,7 @@ export function getAffixLabel(affixId: string): string {
 	return AFFIX_DEFS[affixId]?.label ?? affixId;
 }
 
-export function getAffixUnit(affixId: string): string {
+function getAffixUnit(affixId: string): string {
 	return AFFIX_DEFS[affixId]?.unit ?? "";
 }
 
@@ -118,30 +118,4 @@ export function formatAffixValue(
 		return `+${Math.round(boosted)}%`;
 	}
 	return `+${Math.round(boosted)}`;
-}
-
-export function fuseRelics(
-	inventory: Relic[],
-	baseId: string,
-	rarity: Rarity,
-): { newInventory: Relic[]; success: boolean } {
-	const dupes = inventory.filter(
-		(r) => r.baseId === baseId && r.rarity === rarity,
-	);
-	if (dupes.length < 5) return { newInventory: inventory, success: false };
-
-	// Keep highest quality, sacrifice rest
-	dupes.sort((a, b) => b.quality - a.quality);
-	const keeper = dupes[0];
-	const toRemove = dupes.slice(1, 5).map((r) => r.id);
-
-	const newInventory = inventory.filter((r) => !toRemove.includes(r.id));
-	const keeperIdx = newInventory.findIndex((r) => r.id === keeper.id);
-	if (keeperIdx >= 0) {
-		newInventory[keeperIdx] = {
-			...keeper,
-			upgradeLevel: Math.min(5, keeper.upgradeLevel + 1),
-		};
-	}
-	return { newInventory, success: true };
 }

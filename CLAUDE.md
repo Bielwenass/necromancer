@@ -57,11 +57,10 @@ An idle/incremental game: three React tabs over a fixed-timestep simulation, per
 
 `GameState.derived` is a single computed projection of *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads (`maxSquadSize`, `bonesPerTick`, per-unit `hpFlat`/`dmgBonus`/…). It is recomputed by `recomputeDerived()` in `src/game/upgrades.ts` and is **never persisted**.
 
-Nothing recomputes it on a timer. Any action that changes upgrades, workshop, or equipped relics must recompute explicitly, following the established shape:
+Nothing recomputes it on a timer. Any action that changes upgrades, workshop, or equipped relics must recompute explicitly, via the `withDerived` helper in `src/game/slices/helpers.ts`:
 
 ```ts
-const newState = { ...prev, /* mutation */ };
-return { ...newState, derived: recomputeDerived(newState) };
+return withDerived(prev, { /* patch */ });
 ```
 
 Forgetting this produces stale stats that only correct themselves on the next unrelated action — a slow, confusing bug class. When adding a stat, add it in three places: the `derived` type in `types.ts`, its accumulator + return in `recomputeDerived`, and the consumer.
@@ -92,11 +91,17 @@ Two intentional deviations from house style live here: it mutates its own cloned
 
 ### Persistence
 
-`src/game/save.ts` serializes an explicit allowlist of state slices (never `derived`) under `necromancer_save_v1` and gates on `SAVE_VERSION`. `loadGame()` results are spread over `buildInitialState()`, so new state fields get their defaults for free on old saves. If you add a persisted slice, add it to `saveGame`'s object **and** `importSave`'s `required` list.
+`src/game/save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1` and gates on `SAVE_VERSION`. `loadGame()` results are spread over defaults by `buildHydratedState()` in `src/game/initialState.ts`, so new state fields get their defaults for free on old saves. **Adding a persisted slice means adding it to `PERSISTED_KEYS` and nothing else** — that one list drives writing, import validation, and the required-field check.
+
+Import and reset are store actions (`persistenceSlice`), not direct `save.ts` calls, and both call `suspendPersistence()` before touching `localStorage`. The tick loop keeps running during the ~1s before the page reloads, so without the guard an autosave or the tail of an in-flight offline catchup overwrites the save that was just installed. If you add another path that writes a save and then reloads, suspend first.
 
 ### Store conventions
 
-`src/game/store.ts` is one Zustand store holding state + actions + engine runtime. Actions are reducers: `set(prev => …)` returning a partial, immutable spread copies, and an early `return prev` to reject an invalid operation rather than throwing or asserting. Preconditions are checked at the top of the action, not by the caller — callers may fire freely.
+`src/game/store.ts` composes one Zustand store from five slice creators in `src/game/slices/` (`combat`, `squad`, `relic`, `progression`, `persistence`). The split is by domain only — every slice is a `StateCreator` over the whole `StoreState`, so a slice may read anything through `get()`. Put a new action in the slice that owns its state; only genuinely cross-cutting primitives belong in `slices/helpers.ts` (`withDerived`, `applyUnitDelta`, `hasUnitsAvailable`, `withoutRelic`).
+
+Actions are reducers: `set(prev => …)` returning a partial, immutable spread copies, and an early `return prev` to reject an invalid operation rather than throwing or asserting. Preconditions are checked at the top of the action, not by the caller — callers may fire freely.
+
+`slices/types.ts` and the slice files import each other's types circularly. That's fine — every such import is `import type` and erases at compile time; don't "fix" it by moving interfaces away from their implementations.
 
 ## Styling
 
@@ -131,9 +136,8 @@ Screens are keyboard-routed from `App.tsx` (keys `1`–`4`) and each renders its
 
 Don't mistake these for intentional design:
 
-- `Squad.currentHp` is vestigial. `dispatchSquad` seeds it from hardcoded per-unit values (marked `TODO remove`) and combat never writes it back, so the HP bars via `squadHpPct` are decorative. The commented-out HP-restore blocks in `tick.ts` and `store.ts` are the unfinished other half.
 - Several upgrade and affix descriptions promise effects that aren't implemented (`implemented: false`, `case "x": break;`). Check the switch before assuming a described effect exists.
 - `derived.corpseYieldBonus` is computed from the `corpseYield` affix and the `n3a` upgrade but nothing reads it, so neither has any effect. Wiring it into loot is a balance change, hence left alone — see `docs/relics.md`.
-- The relic set system is an empty shell — `SET_DEFS` is `[]` and no base declares `set:`, so Set Progress always renders empty.
 - Saves made before slot validation existed may still hold a relic in a slot its base doesn't list. Nothing corrects those on load, and `recomputeDerived` applies affixes regardless of slot.
-- `buildAttackerConfig` has a `console.log` on every fight setup.
+- Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `InvCard`'s `×n` badge, `RelicDetail`'s `n/5 DUPES` pips) but never written — there is no fusion or dedupe path, so both are permanently 0 and that UI is inert.
+- `derived.maxActiveSquads` is enforced only in `DispatchModal` (the button disables at capacity), not in the `dispatchSquad` action. That's the one place the "preconditions live in the action, not the caller" rule is broken — `maxSquadSize` is checked in `createSquad` as it should be.

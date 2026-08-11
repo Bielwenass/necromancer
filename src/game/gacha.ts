@@ -80,24 +80,6 @@ function pickBase(_rarity: Rarity): string {
 	return bases[Math.floor(Math.random() * bases.length)].id;
 }
 
-export function canAffordPull(
-	state: GameState,
-	poolId: PoolId,
-	count: 1 | 10,
-): boolean {
-	const config = POOL_CONFIGS[poolId];
-	const costConfig = count === 1 ? config.cost1 : config.cost10;
-	return (
-		state.resources[
-			costConfig.resource === "bones"
-				? "bones"
-				: costConfig.resource === "coins"
-					? "coins"
-					: "souls"
-		] >= costConfig.amount
-	);
-}
-
 export function executePull(
 	state: GameState,
 	poolId: PoolId,
