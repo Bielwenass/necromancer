@@ -66,7 +66,7 @@ export function RevealOverlay({
 					<button
 						type="button"
 						onClick={skipAll}
-						className="!px-6 !py-[10px] !border !border-rule-strong display !text-xs !tracking-[0.22em] !text-muted"
+						className="px-6 py-[10px] border border-rule-strong display text-xs tracking-[0.22em] text-muted"
 					>
 						SKIP ALL
 					</button>
@@ -75,7 +75,7 @@ export function RevealOverlay({
 					<button
 						type="button"
 						onClick={onClose}
-						className="!px-8 !py-3 !border !border-coin display !text-xs !tracking-[0.28em] !text-coin !bg-[rgba(212,168,87,0.06)]"
+						className="px-8 py-3 border border-coin display text-xs tracking-[0.28em] text-coin bg-[rgba(212,168,87,0.06)]"
 					>
 						COLLECT
 					</button>

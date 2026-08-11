@@ -9,20 +9,8 @@ interface TopBarProps {
 	phase?: string; // kept for API compat, no longer displayed
 }
 
-const btnBase: React.CSSProperties = {
-	display: "block",
-	width: "100%",
-	padding: "10px 16px",
-	border: "1px solid var(--rule-strong)",
-	color: "var(--ink-parchm)",
-	fontFamily: "var(--f-display)",
-	fontSize: 11,
-	letterSpacing: "0.18em",
-	background: "transparent",
-	cursor: "pointer",
-	textAlign: "left" as const,
-	textTransform: "uppercase" as const,
-};
+const btnBase =
+	"block w-full py-2.5 px-4 border border-[color:var(--rule-strong)] text-parchm font-display text-[11px] tracking-[0.18em] bg-transparent cursor-pointer text-left uppercase transition-colors duration-150 hover:bg-bg-hover";
 
 export function TopBar({ phase: _phase }: TopBarProps) {
 	const resources = useGameStore((s) => s.resources);
@@ -87,8 +75,8 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 	return (
 		<>
 			<div className="bar-top">
-				<div className="brand">
-					<div className="mark" />
+				<div className="flex items-baseline gap-2.5 font-display tracking-[0.32em] text-sm text-parchm">
+					<div className="w-3.5 h-3.5 bg-parchm [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]" />
 					<span>NECROMANCER</span>
 				</div>
 
@@ -97,31 +85,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 					type="button"
 					onClick={openSettings}
 					title="Settings"
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 7,
-						padding: "4px 12px",
-						border: "1px solid var(--rule)",
-						borderRadius: 2,
-						fontFamily: "var(--f-mono)",
-						fontSize: 10,
-						letterSpacing: "0.14em",
-						color: "var(--ink-muted)",
-						background: "transparent",
-						cursor: "pointer",
-						transition: "color 0.15s, border-color 0.15s",
-					}}
-					onMouseEnter={(e) => {
-						const el = e.currentTarget;
-						el.style.color = "var(--ink-parchm)";
-						el.style.borderColor = "var(--rule-strong)";
-					}}
-					onMouseLeave={(e) => {
-						const el = e.currentTarget;
-						el.style.color = "var(--ink-muted)";
-						el.style.borderColor = "var(--rule)";
-					}}
+					className="flex items-center gap-[7px] py-1 px-3 border border-[color:var(--rule)] rounded-sm font-mono text-[10px] tracking-[0.14em] text-muted bg-transparent cursor-pointer transition-colors duration-150 hover:text-parchm hover:border-[color:var(--rule-strong)]"
 				>
 					{/* Gear icon */}
 					<svg
@@ -140,80 +104,77 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 					SETTINGS
 				</button>
 
-				<div className="meta">
+				<div className="flex gap-[18px] pl-[22px] ml-2 border-l border-[color:var(--rule)] items-center font-mono text-[11px] text-muted">
 					<span>{dayStr}</span>
-					<span style={{ color: "var(--ink-dim)" }}>T:{meta.tickCount}</span>
+					<span className="text-dim">T:{meta.tickCount}</span>
 				</div>
 
-				<div className="currencies">
+				<div className="ml-auto flex gap-[22px] items-center">
 					<button
 						type="button"
 						onClick={digBone}
 						title="Dig a bone"
-						style={{
-							padding: "3px 9px",
-							border: "1px solid var(--rule-strong)",
-							color: "var(--c-bone)",
-							fontFamily: "var(--f-mono)",
-							fontSize: 9,
-							letterSpacing: "0.16em",
-							background: "transparent",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							gap: 5,
-							alignSelf: "center",
-						}}
+						className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center"
 					>
 						<IconBone size={10} />
 						DIG
 					</button>
-					<div className="cur">
+					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconBone size={16} />
 						<div>
-							<div className="lbl">Bones</div>
-							<div className="val">
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Bones
+							</div>
+							<div className="text-bone">
 								{formatNumber(resources.bones)}{" "}
-								<span className="delta">
+								<span className="text-[10px] text-muted">
 									{bonesPerSec > 0 ? formatRate(derived.bonesPerTick) : "+0/s"}
 								</span>
 							</div>
 						</div>
 					</div>
-					<div className="cur">
+					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconCoin size={16} />
 						<div>
-							<div className="lbl">Coin</div>
-							<div className="val">
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Coin
+							</div>
+							<div className="text-bone">
 								{formatNumber(resources.coins)}{" "}
-								<span className="delta">
+								<span className="text-[10px] text-muted">
 									{coinsPerSec > 0 ? formatRate(derived.coinsPerTick) : "+0/s"}
 								</span>
 							</div>
 						</div>
 					</div>
-					<div className="cur">
+					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconSoul size={16} />
 						<div>
-							<div className="lbl">Souls</div>
-							<div className="val">
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Souls
+							</div>
+							<div className="text-bone">
 								{formatNumber(resources.souls)}{" "}
-								<span className="delta">+0/s</span>
+								<span className="text-[10px] text-muted">+0/s</span>
 							</div>
 						</div>
 					</div>
-					<div className="cur" style={{ opacity: 0.7 }}>
-						<div style={{ fontSize: 12, color: "var(--ink-muted)" }}>✦</div>
+					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
+						<div className="text-xs text-muted">✦</div>
 						<div>
-							<div className="lbl">Dust</div>
-							<div className="val">{formatNumber(resources.dust)}</div>
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Dust
+							</div>
+							<div className="text-bone">{formatNumber(resources.dust)}</div>
 						</div>
 					</div>
-					<div className="cur" style={{ opacity: 0.7 }}>
-						<div style={{ fontSize: 12, color: "var(--sq-zombie)" }}>◈</div>
+					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
+						<div className="text-xs text-sq-zombie">◈</div>
 						<div>
-							<div className="lbl">Corpses</div>
-							<div className="val">{formatNumber(resources.corpses)}</div>
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Corpses
+							</div>
+							<div className="text-bone">{formatNumber(resources.corpses)}</div>
 						</div>
 					</div>
 				</div>
@@ -240,22 +201,8 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 				>
 					<div className="bg-bg-panel border border-rule-strong px-9 py-8 min-w-[340px] max-w-[400px]">
 						{/* Header */}
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								marginBottom: 28,
-							}}
-						>
-							<div
-								className="display"
-								style={{
-									fontSize: 13,
-									color: "var(--ink-parchm)",
-									letterSpacing: "0.28em",
-								}}
-							>
+						<div className="flex items-center justify-between mb-7">
+							<div className="font-display text-sm text-parchm tracking-[0.28em]">
 								SETTINGS
 							</div>
 							<button
@@ -264,174 +211,73 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 									setShowSettings(false);
 									setResetConfirm(false);
 								}}
-								style={{
-									color: "var(--ink-dim)",
-									fontSize: 16,
-									lineHeight: 1,
-									padding: "2px 6px",
-									cursor: "pointer",
-								}}
+								className="text-dim text-base leading-none py-0.5 px-1.5 cursor-pointer"
 							>
 								✕
 							</button>
 						</div>
 
 						{/* Save data section */}
-						<div
-							style={{
-								fontFamily: "var(--f-mono)",
-								fontSize: 9,
-								letterSpacing: "0.18em",
-								color: "var(--ink-dim)",
-								textTransform: "uppercase",
-								marginBottom: 10,
-							}}
-						>
+						<div className="font-mono text-[9px] tracking-[0.18em] text-dim uppercase mb-2.5">
 							Save Data
 						</div>
 
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: 8,
-								marginBottom: 20,
-							}}
-						>
-							<button
-								type="button"
-								onClick={exportSave}
-								style={btnBase}
-								onMouseEnter={(e) =>
-									(e.currentTarget.style.background = "var(--bg-hover)")
-								}
-								onMouseLeave={(e) =>
-									(e.currentTarget.style.background = "transparent")
-								}
-							>
-								↓ Export Save (JSON)
+						<div className="flex flex-col gap-2 mb-5">
+							<button type="button" onClick={exportSave} className={btnBase}>
+								Export Save (JSON)
 							</button>
 
 							<button
 								type="button"
 								onClick={() => fileInputRef.current?.click()}
-								style={btnBase}
-								onMouseEnter={(e) =>
-									(e.currentTarget.style.background = "var(--bg-hover)")
-								}
-								onMouseLeave={(e) =>
-									(e.currentTarget.style.background = "transparent")
-								}
+								className={btnBase}
 							>
-								↑ Import Save (JSON)
+								Import Save (JSON)
 							</button>
 
 							{importError && (
-								<div
-									style={{
-										fontFamily: "var(--f-mono)",
-										fontSize: 10,
-										color: "var(--hp-crit)",
-										padding: "6px 0 2px",
-									}}
-								>
-									✗ {importError}
+								<div className="font-mono text-[10px] text-hp-crit pt-1.5 pb-0.5">
+									{importError}
 								</div>
 							)}
 							{importSuccess && (
-								<div
-									style={{
-										fontFamily: "var(--f-mono)",
-										fontSize: 10,
-										color: "var(--hp-good)",
-										padding: "6px 0 2px",
-									}}
-								>
-									✓ Imported — reloading…
+								<div className="font-mono text-[10px] text-hp-good pt-1.5 pb-0.5">
+									Imported — reloading…
 								</div>
 							)}
 						</div>
 
 						{/* Divider */}
-						<div
-							style={{
-								height: 1,
-								background: "var(--rule)",
-								margin: "4px 0 20px",
-							}}
-						/>
+						<div className="h-px bg-[color:var(--rule)] mt-1 mb-5" />
 
 						{/* Reset section */}
 						{!resetConfirm ? (
 							<button
 								type="button"
 								onClick={() => setResetConfirm(true)}
-								style={{
-									...btnBase,
-									borderColor: "rgba(196,90,62,0.35)",
-									color: "var(--hp-crit)",
-								}}
-								onMouseEnter={(e) =>
-									(e.currentTarget.style.background = "rgba(196,90,62,0.07)")
-								}
-								onMouseLeave={(e) =>
-									(e.currentTarget.style.background = "transparent")
-								}
+								className="block w-full py-2.5 px-4 border border-[color:rgba(196,90,62,0.35)] text-hp-crit font-display text-[11px] tracking-[0.18em] bg-transparent cursor-pointer text-left uppercase transition-colors duration-150 hover:bg-[rgba(196,90,62,0.07)]"
 							>
-								⚠ Reset Save
+								Reset Save
 							</button>
 						) : (
 							<div>
-								<div
-									style={{
-										fontFamily: "var(--f-mono)",
-										fontSize: 11,
-										color: "var(--ink-muted)",
-										marginBottom: 14,
-										lineHeight: 1.55,
-									}}
-								>
+								<div className="font-mono text-[11px] text-muted mb-3.5 leading-relaxed">
 									All progress will be lost.
 									<br />
 									The dead cannot be raised again.
 								</div>
-								<div style={{ display: "flex", gap: 10 }}>
+								<div className="flex gap-2.5">
 									<button
 										type="button"
 										onClick={() => setResetConfirm(false)}
-										style={{
-											...btnBase,
-											flex: 1,
-											textAlign: "center" as const,
-										}}
-										onMouseEnter={(e) =>
-											(e.currentTarget.style.background = "var(--bg-hover)")
-										}
-										onMouseLeave={(e) =>
-											(e.currentTarget.style.background = "transparent")
-										}
+										className={`${btnBase} flex-1 text-center`}
 									>
 										Cancel
 									</button>
 									<button
 										type="button"
 										onClick={handleReset}
-										style={{
-											...btnBase,
-											flex: 1,
-											textAlign: "center" as const,
-											borderColor: "var(--hp-crit)",
-											color: "var(--hp-crit)",
-											background: "rgba(196,90,62,0.08)",
-										}}
-										onMouseEnter={(e) =>
-											(e.currentTarget.style.background =
-												"rgba(196,90,62,0.16)")
-										}
-										onMouseLeave={(e) =>
-											(e.currentTarget.style.background =
-												"rgba(196,90,62,0.08)")
-										}
+										className="flex-1 py-2.5 px-4 border border-hp-crit text-hp-crit font-display text-[11px] tracking-[0.18em] bg-[rgba(196,90,62,0.08)] cursor-pointer text-center uppercase transition-colors duration-150 hover:bg-[rgba(196,90,62,0.16)]"
 									>
 										Reset
 									</button>
@@ -444,7 +290,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							ref={fileInputRef}
 							type="file"
 							accept=".json,application/json"
-							style={{ display: "none" }}
+							className="hidden"
 							onChange={handleFileChange}
 						/>
 					</div>

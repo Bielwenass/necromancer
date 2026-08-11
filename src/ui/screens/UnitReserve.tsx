@@ -32,7 +32,7 @@ export function UnitReserve({
 				onClick={onSummon}
 				disabled={!can1}
 				title={`Summon 1 ${type} (${cost})`}
-				className="!px-[10px] !py-[3px] border mono !text-xs tracking-[0.1em]"
+				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
 				style={{
 					borderColor: can1 ? color : "var(--rule)",
 					color: can1 ? color : "var(--ink-faint)",
@@ -50,7 +50,7 @@ export function UnitReserve({
 				}}
 				disabled={!can10}
 				title={`Summon 10 ${type}s (${cost} each)`}
-				className="!px-[10px] !py-[3px] border mono !text-xs tracking-[0.1em]"
+				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
 				style={{
 					borderColor: can10 ? color : "var(--rule)",
 					color: can10 ? color : "var(--ink-faint)",

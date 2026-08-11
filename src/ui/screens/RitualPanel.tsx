@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { POOL_CONFIGS } from "../../game/gacha";
 import { useGameStore } from "../../game/store";
@@ -109,36 +108,27 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 
 	return (
 		<div
-			style={{
-				flex: 1,
-				borderRight: "1px solid var(--rule)",
-				background: meta.featured
-					? "linear-gradient(180deg, #1a140d 0%, #0e0b07 70%)"
-					: "linear-gradient(180deg, #15110b 0%, #0e0b07 80%)",
-				padding: "32px 28px",
-				display: "flex",
-				flexDirection: "column",
-				position: "relative",
-			}}
+			className={`flex-1 border-r border-[color:var(--rule)] py-8 px-7 flex flex-col relative ${
+				meta.featured
+					? "bg-[linear-gradient(180deg,#1a140d_0%,#0e0b07_70%)]"
+					: "bg-[linear-gradient(180deg,#15110b_0%,#0e0b07_80%)]"
+			}`}
 		>
 			{meta.premium &&
 				[0, 1, 2, 3].map((i) => {
-					const pos: React.CSSProperties =
+					const posClass =
 						i === 0
-							? { top: 12, left: 12 }
+							? "top-3 left-3"
 							: i === 1
-								? { top: 12, right: 12 }
+								? "top-3 right-3"
 								: i === 2
-									? { bottom: 12, left: 12 }
-									: { bottom: 12, right: 12 };
+									? "bottom-3 left-3"
+									: "bottom-3 right-3";
 					return (
 						<div
 							key={i}
+							className={`absolute w-[18px] h-[18px] ${posClass}`}
 							style={{
-								position: "absolute",
-								...pos,
-								width: 18,
-								height: 18,
 								borderTop: i < 2 ? `1px solid ${meta.accent}` : "none",
 								borderBottom: i >= 2 ? `1px solid ${meta.accent}` : "none",
 								borderLeft: i % 2 === 0 ? `1px solid ${meta.accent}` : "none",
@@ -149,70 +139,31 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 				})}
 
 			<div
-				className="mono"
-				style={{
-					fontSize: 10,
-					color: meta.accent,
-					letterSpacing: "0.32em",
-					opacity: 0.85,
-				}}
+				className="font-mono text-[10px] tracking-[0.32em] opacity-[0.85]"
+				style={{ color: meta.accent }}
 			>
 				{meta.kicker}
 			</div>
-			<div
-				className="display"
-				style={{
-					fontSize: 32,
-					color: "var(--ink-bone)",
-					letterSpacing: "0.18em",
-					marginTop: 12,
-					textTransform: "uppercase",
-				}}
-			>
+			<div className="font-display text-3xl text-bone tracking-[0.18em] mt-3 uppercase">
 				{meta.name}
 			</div>
 			<div
-				style={{
-					width: 60,
-					height: 1,
-					background: meta.accent,
-					marginTop: 14,
-					opacity: 0.6,
-				}}
+				className="w-15 h-px mt-3.5 opacity-60"
+				style={{ background: meta.accent }}
 			/>
-			<div
-				style={{
-					fontFamily: "var(--f-body)",
-					fontSize: 13,
-					color: "var(--ink-parchm)",
-					fontStyle: "italic",
-					marginTop: 16,
-					lineHeight: 1.5,
-				}}
-			>
+			<div className="font-body text-sm text-parchm italic mt-4 leading-normal">
 				{meta.blurb}
 			</div>
 
 			<div
-				style={{
-					marginTop: 28,
-					height: 180,
-					border: `1px solid ${meta.accent}`,
-					background:
-						"radial-gradient(ellipse at 50% 60%, rgba(212,168,87,0.04), transparent 70%)",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					position: "relative",
-					opacity: 0.95,
-				}}
-				className="cornered"
+				className="cornered mt-7 h-[180px] flex items-center justify-center relative opacity-95 border bg-[radial-gradient(ellipse_at_50%_60%,rgba(212,168,87,0.04),transparent_70%)]"
+				style={{ borderColor: meta.accent }}
 			>
 				<svg
 					aria-hidden="true"
 					width="100%"
 					height="100%"
-					style={{ position: "absolute", inset: 0 }}
+					className="absolute inset-0"
 				>
 					<circle
 						cx="50%"
@@ -235,46 +186,17 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					/>
 				</svg>
 				<RelicGlyph kind={meta.glyph} size={80} color={meta.accent} />
-				<div
-					className="mono"
-					style={{
-						position: "absolute",
-						top: 10,
-						left: 12,
-						fontSize: 9,
-						color: "var(--ink-dim)",
-						letterSpacing: "0.14em",
-					}}
-				>
+				<div className="font-mono absolute top-2.5 left-3 text-[9px] text-dim tracking-[0.14em]">
 					{poolId.toUpperCase()} POOL
 				</div>
 			</div>
 
-			<div style={{ marginTop: 20 }}>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						marginBottom: 8,
-					}}
-				>
-					<span
-						className="display"
-						style={{
-							fontSize: 10,
-							color: "var(--ink-parchm)",
-							letterSpacing: "0.22em",
-							textTransform: "uppercase",
-						}}
-					>
+			<div className="mt-5">
+				<div className="flex justify-between mb-2">
+					<span className="font-display text-[10px] text-parchm tracking-[0.22em] uppercase">
 						Drop Odds
 					</span>
-					<span
-						className="mono"
-						style={{ fontSize: 9, color: "var(--ink-dim)" }}
-					>
-						BASE
-					</span>
+					<span className="font-mono text-[9px] text-dim">BASE</span>
 				</div>
 				<div className="flex h-1.5 mb-2">
 					{config.odds.map((o) => (
@@ -314,62 +236,32 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 			</div>
 
 			{meta.pityGuaranteed && meta.pityMax > 0 && (
-				<div
-					style={{
-						marginTop: 18,
-						padding: "12px 14px",
-						border: "1px solid var(--rule-strong)",
-						background: "var(--bg-inset)",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							marginBottom: 6,
-						}}
-					>
-						<span
-							className="mono"
-							style={{
-								fontSize: 9,
-								color: "var(--ink-dim)",
-								letterSpacing: "0.16em",
-							}}
-						>
+				<div className="mt-[18px] py-3 px-3.5 border border-[color:var(--rule-strong)] bg-bg-inset">
+					<div className="flex justify-between mb-1.5">
+						<span className="font-mono text-[9px] text-dim tracking-[0.16em]">
 							PITY COUNTER
 						</span>
-						<span
-							className="mono"
-							style={{ fontSize: 11, color: "var(--ink-bone)" }}
-						>
+						<span className="font-mono text-[11px] text-bone">
 							{pityCounter}
-							<span style={{ color: "var(--ink-dim)" }}>/{meta.pityMax}</span>
+							<span className="text-dim">/{meta.pityMax}</span>
 						</span>
 					</div>
-					<div className="bar-meter" style={{ height: 5 }}>
+					<div className="h-[5px] bg-bg-inset border border-[color:var(--rule)] relative overflow-hidden">
 						<i
+							className="block h-full"
 							style={{
 								width: `${(pityCounter / meta.pityMax) * 100}%`,
 								background: rarityColor(meta.pityGuaranteed),
 							}}
 						/>
 					</div>
-					<div style={{ marginTop: 6 }}>
-						<span
-							className="mono"
-							style={{ fontSize: 10, color: "var(--ink-parchm)" }}
-						>
+					<div className="mt-1.5">
+						<span className="font-mono text-[10px] text-parchm">
 							{meta.pityMax - pityCounter} to guaranteed{" "}
 						</span>
 						<span
-							className="mono"
-							style={{
-								fontSize: 10,
-								color: rarityColor(meta.pityGuaranteed),
-								letterSpacing: "0.14em",
-								textTransform: "uppercase",
-							}}
+							className="font-mono text-[10px] tracking-[0.14em] uppercase"
+							style={{ color: rarityColor(meta.pityGuaranteed) }}
 						>
 							{rarityName(meta.pityGuaranteed)}
 						</span>
@@ -377,96 +269,58 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 				</div>
 			)}
 
-			<div
-				style={{ marginTop: "auto", paddingTop: 20, display: "flex", gap: 10 }}
-			>
+			<div className="mt-auto pt-5 flex gap-2.5">
 				<button
 					type="button"
 					onClick={() => doPull(1)}
 					disabled={!canPull1}
+					className={`flex-1 py-3.5 px-0 bg-transparent flex flex-col items-center gap-1 ${
+						canPull1 ? "cursor-pointer" : "cursor-not-allowed"
+					}`}
 					style={{
-						flex: 1,
-						padding: "14px 0",
 						border: `1px solid ${canPull1 ? meta.accent : "var(--rule)"}`,
-						background: "transparent",
 						color: canPull1 ? meta.accent : "var(--ink-dim)",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: 4,
-						cursor: canPull1 ? "pointer" : "not-allowed",
 					}}
 				>
-					<span
-						className="display"
-						style={{ fontSize: 12, letterSpacing: "0.28em" }}
-					>
-						PULL
-					</span>
-					<span
-						style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
-					>
+					<span className="font-display text-xs tracking-[0.28em]">PULL</span>
+					<span className="inline-flex items-center gap-1">
 						<ResourceIcon
 							size={14}
 							color={canPull1 ? meta.accent : "var(--ink-dim)"}
 						/>
-						<span className="mono" style={{ fontSize: 12 }}>
-							{formatNumber(cost1)}
-						</span>
+						<span className="font-mono text-xs">{formatNumber(cost1)}</span>
 					</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => doPull(10)}
 					disabled={!canPull10}
+					className={`flex-[1.2] py-3.5 px-0 flex flex-col items-center gap-1 relative ${
+						canPull10 ? "cursor-pointer" : "cursor-not-allowed"
+					} ${
+						meta.featured
+							? "bg-[linear-gradient(180deg,rgba(155,122,214,0.08),transparent_80%)]"
+							: "bg-[linear-gradient(180deg,rgba(212,168,87,0.06),transparent_80%)]"
+					}`}
 					style={{
-						flex: 1.2,
-						padding: "14px 0",
 						border: `1px solid ${canPull10 ? meta.accent : "var(--rule)"}`,
-						background: meta.featured
-							? "linear-gradient(180deg, rgba(155,122,214,0.08), transparent 80%)"
-							: `linear-gradient(180deg, rgba(212,168,87,0.06), transparent 80%)`,
 						color: canPull10 ? "var(--ink-bone)" : "var(--ink-dim)",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: 4,
-						position: "relative",
-						cursor: canPull10 ? "pointer" : "not-allowed",
 					}}
 				>
 					<span
-						className="display"
-						style={{
-							fontSize: 12,
-							letterSpacing: "0.28em",
-							color: canPull10 ? meta.accent : "var(--ink-dim)",
-						}}
+						className="font-display text-xs tracking-[0.28em]"
+						style={{ color: canPull10 ? meta.accent : "var(--ink-dim)" }}
 					>
 						PULL × 10
 					</span>
-					<span
-						style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
-					>
+					<span className="inline-flex items-center gap-1">
 						<ResourceIcon
 							size={14}
 							color={canPull10 ? meta.accent : "var(--ink-dim)"}
 						/>
-						<span className="mono" style={{ fontSize: 12 }}>
-							{formatNumber(cost10)}
-						</span>
+						<span className="font-mono text-xs">{formatNumber(cost10)}</span>
 					</span>
-					<span
-						className="mono"
-						style={{
-							position: "absolute",
-							top: 6,
-							right: 8,
-							fontSize: 8,
-							color: "var(--ink-dim)",
-							letterSpacing: "0.1em",
-						}}
-					>
+					<span className="font-mono absolute top-1.5 right-2 text-[8px] text-dim tracking-widest">
 						+1 BONUS
 					</span>
 				</button>

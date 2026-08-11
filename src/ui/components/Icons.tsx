@@ -445,7 +445,7 @@ export function NodeIcon({
 			width={size}
 			height={size}
 			viewBox="-10 -10 20 20"
-			style={{ display: "block" }}
+			className="block"
 		>
 			{fn(color)}
 		</svg>

@@ -54,7 +54,7 @@ export function RelicGlyph({
 			fill={color}
 			stroke="none"
 			aria-hidden="true"
-			style={{ display: "block" }}
+			className="block"
 		>
 			{GLYPH_PATHS[kind] ?? GLYPH_PATHS.hex}
 		</svg>

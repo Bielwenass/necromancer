@@ -145,8 +145,10 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
 
 					{/* Active legions */}
 					<div className="flex-1 flex flex-col min-h-0">
-						<div className="panel-h">
-							<div className="ttl">Active Legions</div>
+						<div className="flex items-center justify-between py-2.5 px-3.5 border-b border-[color:var(--rule)]">
+							<div className="font-display text-[11px] tracking-[0.28em] uppercase text-parchm">
+								Active Legions
+							</div>
 							<span className="mono text-xs text-dim">
 								{squads.filter((s) => s.state !== "idle").length}/
 								{derived.maxActiveSquads}
@@ -216,7 +218,7 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
 													<button
 														type="button"
 														onClick={() => deleteSquad(squad.id)}
-														className="!px-2 !py-0.5 !border !border-rule-strong !text-hp-crit mono !text-[10px] tracking-[0.1em]"
+														className="px-2 py-0.5 border border-rule-strong text-hp-crit mono text-[10px] tracking-[0.1em]"
 													>
 														DISBAND
 													</button>
@@ -226,7 +228,7 @@ export function CryptMap({ onTabChange }: CryptMapProps) {
 														<button
 															type="button"
 															onClick={() => recallSquad(squad.id)}
-															className="!px-2 !py-0.5 !border !border-rule-strong !text-dim mono !text-[10px] tracking-[0.1em]"
+															className="px-2 py-0.5 border border-rule-strong text-dim mono text-[10px] tracking-[0.1em]"
 														>
 															RECALL
 														</button>

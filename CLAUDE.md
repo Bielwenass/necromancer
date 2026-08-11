@@ -25,7 +25,7 @@ Biome owns formatting — tabs, double quotes, sorted imports, expanded switch c
 
 `--write` applies only safe fixes. `biome check --write --unsafe` exists but rewrites semantics, so read its diff before accepting it rather than running it reflexively.
 
-When a rule genuinely doesn't fit, prefer a narrow escape over weakening the config: an inline `// biome-ignore lint/<rule>: <reason>` with a real reason (see `BranchColumn.tsx`, where an SVG `<g>` can't be a `<button>`). `biome.json` disables exactly one rule, `noUnknownAtRules` for CSS, because Biome doesn't know `@tailwind`.
+When a rule genuinely doesn't fit, prefer a narrow escape over weakening the config: an inline `// biome-ignore lint/<rule>: <reason>` with a real reason. `biome.json` disables exactly one rule, `noUnknownAtRules` for CSS, because Biome doesn't know `@tailwind`.
 
 TypeScript runs with `strict`, `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`, so an unused binding fails the build — this is why you'll see `void mainAffixDef` and `_`-prefixed parameters where a binding is intentionally kept.
 
@@ -104,10 +104,12 @@ Two intentional deviations from house style live here: it mutates its own cloned
 
 Two systems coexist today:
 
-- `src/index.css` — `:root` CSS custom properties (`--ink-bone`, `--c-coin`, `--rule`, …) plus ~145 hand-written component classes (`.necro`, `.bar-top`, `.bar-tabs`, `.panel`, `.stage`, `.display`, `.mono`).
+- `src/index.css` — `:root` CSS custom properties (`--ink-bone`, `--c-coin`, `--rule`, …) plus ~70 hand-written component classes (`.necro`, `.bar-top`, `.bar-tabs`, `.stage`, `.display`, `.mono`) across ~110 rules.
 - Tailwind, with the palette mirrored as named colors in `tailwind.config.ts` (`bone`, `coin`, `soul`, `bg-panel`, `r-legendary`, …).
 
-Current debt: ~174 inline `style={{…}}` props and ~92 `!`-prefixed utilities, plus 145 custom classes.
+Current debt: ~170 inline `style={{…}}` props and ~79 `!`-prefixed utilities, plus those 70 custom classes.
+
+Webfonts load from the `<link>` tags in `index.html`; `index.css` must not re-`@import` them. Those tags still request Cinzel, Courier Prime, and VT323, which no font stack references.
 
 Known token divergence: Tailwind's `rule` (`#1a1a1a`) and `rule-strong` (`#8a795b`) do **not** match `--rule` / `--rule-strong` (translucent warm hairlines), so `border-rule` and `border: 1px solid var(--rule)` render differently. Both spellings are in use. Aligning them is a one-time visual decision, not something to change in passing — use `border-[color:var(--rule-strong)]` when an edit must preserve exact appearance.
 

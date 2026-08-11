@@ -370,7 +370,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 											type="button"
 											onClick={() => handleSendIdle(squad.id)}
 											disabled={atCapacity}
-											className="!px-4 !py-[6px] !border display !text-[10px] !tracking-[0.2em]"
+											className="px-4 py-[6px] border display text-[10px] tracking-[0.2em]"
 											style={{
 												borderColor: atCapacity
 													? "var(--rule)"
@@ -465,7 +465,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 					<button
 						type="button"
 						onClick={onClose}
-						className="!flex-1 !py-3 !border !border-rule-strong display !text-xs !tracking-[0.22em] !uppercase !text-muted"
+						className="flex-1 py-3 border border-rule-strong display text-xs tracking-[0.22em] uppercase text-muted"
 					>
 						Cancel
 					</button>
@@ -473,7 +473,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 						type="button"
 						onClick={handleCreate}
 						disabled={!canCreate}
-						className="!flex-[2] !py-3 !border display !text-xs !tracking-[0.22em] !uppercase"
+						className="flex-[2] py-3 border display text-xs tracking-[0.22em] uppercase"
 						style={{
 							borderColor: canCreate ? "var(--c-coin)" : "var(--rule)",
 							color: canCreate ? "var(--c-coin)" : "var(--ink-dim)",

@@ -259,27 +259,26 @@ function SideNav({
 	anyDot: Record<string, boolean>;
 }) {
 	return (
-		<div className="wkshp-nav">
-			<div
-				style={{
-					padding: "16px 20px 12px",
-					borderBottom: "1px solid var(--rule)",
-				}}
-			>
-				<div className="eyebrow-sm">Crypt Workshop</div>
+		<div className="w-[280px] min-w-[280px] border-r border-[color:var(--rule)] bg-bg-panel flex flex-col overflow-y-auto">
+			<div className="pt-4 px-5 pb-3 border-b border-[color:var(--rule)]">
+				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim">
+					Crypt Workshop
+				</div>
 			</div>
 			{sections.map((s) => (
 				<button
 					type="button"
 					key={s.id}
 					className={
-						"wkshp-nav-item text-left" +
-						(s.id === activeId ? " active" : "") +
-						(!s.unlocked ? " locked" : "")
+						"flex items-center gap-3.5 pt-3.5 pb-3.5 pr-5 border-b border-[color:var(--rule)] text-left w-full transition-colors duration-[120ms] " +
+						(s.id === activeId
+							? "bg-[rgba(214,122,48,0.07)] border-l-2 border-l-ember pl-5"
+							: "pl-[22px] hover:bg-bg-hover ") +
+						(!s.unlocked ? " opacity-50 cursor-not-allowed" : " cursor-pointer")
 					}
 					onClick={() => s.unlocked && onSelect(s.id)}
 				>
-					<div className="nav-icon">
+					<div className="flex items-center">
 						<Icon
 							kind={s.unlocked ? s.icon : "forbid"}
 							size={18}
@@ -292,8 +291,12 @@ function SideNav({
 							}
 						/>
 					</div>
-					<div className="nav-name">{s.name}</div>
-					{anyDot[s.id] && <div className="nav-dot" />}
+					<div className="font-display text-xs tracking-[0.2em] uppercase flex-1 text-parchm">
+						{s.name}
+					</div>
+					{anyDot[s.id] && (
+						<div className="w-[7px] h-[7px] rounded-full bg-ember shadow-[0_0_5px_var(--c-ember)]" />
+					)}
 				</button>
 			))}
 		</div>
@@ -322,18 +325,20 @@ function UpgRow({
 }) {
 	if (row.locked)
 		return (
-			<div className="upg-row" style={{ opacity: 0.5, cursor: "default" }}>
-				<div className="upg-icon">
+			<div className="grid grid-cols-[48px_1fr_90px_90px] items-center gap-4 px-8 py-4 border-b border-[color:var(--rule)] opacity-50 cursor-default">
+				<div className="flex items-center justify-center">
 					<Icon kind="forbid" size={22} color="var(--ink-dim)" />
 				</div>
 				<div>
-					<div className="upg-name" style={{ color: "var(--ink-muted)" }}>
+					<div className="font-display text-sm tracking-[0.12em] text-muted">
 						{row.name}
 					</div>
-					<div className="upg-desc">{row.unlockText}</div>
+					<div className="text-xs text-muted mt-[3px] leading-snug">
+						{row.unlockText}
+					</div>
 				</div>
-				<div className="upg-current">
-					<div className="lv" style={{ color: "var(--ink-dim)" }}>
+				<div className="text-right">
+					<div className="font-mono text-[10px] tracking-[0.16em] text-dim">
 						LOCKED
 					</div>
 				</div>
@@ -355,7 +360,11 @@ function UpgRow({
 	return (
 		<button
 			type="button"
-			className={`upg-row w-full text-left${focused ? " focused" : ""}`}
+			className={`grid grid-cols-[48px_1fr_90px_90px] items-center gap-4 py-4 w-full text-left transition-colors duration-100 border-b border-[color:var(--rule)] ${
+				focused
+					? "bg-bg-hover border-l-2 border-l-ember pl-[30px] pr-8"
+					: "px-8 hover:bg-bg-hover"
+			}`}
 			onMouseEnter={() => onFocus(row.id)}
 			onClick={() => onFocus(row.id)}
 			onContextMenu={(e) => {
@@ -363,7 +372,7 @@ function UpgRow({
 				if (!maxed && affordable) onBuy(row.id);
 			}}
 		>
-			<div className="upg-icon">
+			<div className="flex items-center justify-center">
 				<Icon
 					kind={row.icon}
 					size={26}
@@ -371,33 +380,36 @@ function UpgRow({
 				/>
 			</div>
 			<div>
-				<div className="upg-name">{row.name}</div>
-				<div className="upg-desc">{row.description}</div>
+				<div className="font-display text-sm tracking-[0.12em] text-bone">
+					{row.name}
+				</div>
+				<div className="text-xs text-muted mt-[3px] leading-snug">
+					{row.description}
+				</div>
 			</div>
-			<div className="upg-current">
-				<div className="lv" style={maxed ? { color: "var(--hp-good)" } : {}}>
+			<div className="text-right">
+				<div
+					className={`font-mono text-[10px] tracking-[0.16em] ${maxed ? "text-hp-good" : "text-ember"}`}
+				>
 					{maxed ? "DONE" : `LV ${row.level}`}
 				</div>
-				<div className="upg-val">
+				<div className="font-mono text-[11px] text-parchm mt-0.5">
 					{valueNumerical ? valueNumerical : row.valueFn(row.level)}
 				</div>
 			</div>
-			<div className="upg-cost">
+			<div className="text-right">
 				{maxed ? (
-					<div
-						className="mono"
-						style={{
-							fontSize: 9,
-							color: "var(--hp-good)",
-							letterSpacing: "0.12em",
-						}}
-					>
+					<div className="font-mono text-[9px] tracking-[0.12em] text-hp-good">
 						MAXED
 					</div>
 				) : isSkill ? (
 					<>
-						<div className="cost-label">Points</div>
-						<div className={`cost-line ${affordable ? "ok" : "short"}`}>
+						<div className="font-mono text-[9px] tracking-[0.14em] text-dim mb-1">
+							Points
+						</div>
+						<div
+							className={`flex items-center gap-1.5 justify-end font-mono text-[11px] ${affordable ? "text-parchm" : "text-hp-crit"}`}
+						>
 							<Icon
 								kind="triple"
 								size={12}
@@ -408,7 +420,10 @@ function UpgRow({
 					</>
 				) : cost ? (
 					costLines(cost, res).map((cl) => (
-						<div key={cl.key} className={`cost-line ${cl.ok ? "ok" : "short"}`}>
+						<div
+							key={cl.key}
+							className={`flex items-center gap-1.5 justify-end font-mono text-[11px] ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
+						>
 							<Icon
 								kind={cl.icon}
 								size={12}
@@ -447,7 +462,11 @@ function PlotCard({
 	return (
 		<button
 			type="button"
-			className={`plot-card text-left${focused ? " focused" : ""}`}
+			className={`border bg-bg-panel-2 p-3.5 cursor-pointer transition-colors duration-[120ms] flex flex-col gap-2.5 text-left w-full ${
+				focused
+					? "border-ember"
+					: "border-[color:var(--rule)] hover:border-ember"
+			}`}
 			onMouseEnter={() => onFocus(id)}
 			onClick={() => onFocus(id)}
 			onContextMenu={(e) => {
@@ -455,35 +474,35 @@ function PlotCard({
 				if (canBuy) onBuy(id);
 			}}
 		>
-			<div className="plot-head">
+			<div className="flex items-center gap-2">
 				<div
-					className="dot"
-					style={{ background: canBuy ? "var(--c-ember)" : "var(--ink-dim)" }}
+					className={`w-[7px] h-[7px] rounded-full shrink-0 ${canBuy ? "bg-ember" : "bg-dim"}`}
 				/>
-				<div className="plot-name">{GARDEN_PLOT_NAMES[idx]}</div>
+				<div className="font-display text-[11px] tracking-[0.16em] uppercase text-parchm">
+					{GARDEN_PLOT_NAMES[idx]}
+				</div>
 			</div>
-			<div className="plot-stats">
-				<div className="ps-k">YIELD</div>
-				<div className="ps-v">{yieldNow}/s</div>
-				<div className="ps-k">LEVEL</div>
-				<div className="ps-v">LV {level}</div>
+			<div className="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 items-baseline">
+				<div className="font-mono text-[9px] tracking-[0.14em] text-dim uppercase">
+					YIELD
+				</div>
+				<div className="font-mono text-xs text-parchm">{yieldNow}/s</div>
+				<div className="font-mono text-[9px] tracking-[0.14em] text-dim uppercase">
+					LEVEL
+				</div>
+				<div className="font-mono text-xs text-parchm">LV {level}</div>
 			</div>
-			<div className="plot-cost">
+			<div className="flex flex-col gap-[3px] mt-0.5 border-t border-[color:var(--rule)] pt-2">
 				{level === 0 && (
-					<div
-						className="mono"
-						style={{
-							fontSize: 9,
-							color: "var(--ink-dim)",
-							letterSpacing: "0.12em",
-							marginBottom: 4,
-						}}
-					>
+					<div className="font-mono text-[9px] text-dim tracking-[0.12em] mb-1">
 						PURCHASE
 					</div>
 				)}
 				{costEntry.map((cl) => (
-					<div key={cl.key} className={`cost-row-sm ${cl.ok ? "ok" : "short"}`}>
+					<div
+						key={cl.key}
+						className={`flex items-center gap-[5px] font-mono text-[10px] ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
+					>
 						<Icon
 							kind={cl.icon}
 							size={11}
@@ -544,60 +563,28 @@ function Detail({
 		const yieldNow = (GARDEN_BASE_YIELD * level).toFixed(2);
 		const yieldNext = (GARDEN_BASE_YIELD * (level + 1)).toFixed(2);
 		return (
-			<div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+			<div className="flex flex-col gap-[18px]">
 				<div>
-					<div className="eyebrow-sm">Bone Garden Plot</div>
-					<div
-						className="display"
-						style={{
-							fontSize: 24,
-							color: "var(--ink-bone)",
-							letterSpacing: "0.06em",
-							marginTop: 8,
-						}}
-					>
+					<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim">
+						Bone Garden Plot
+					</div>
+					<div className="font-display text-2xl tracking-wider text-bone mt-2">
 						{GARDEN_PLOT_NAMES[gardenIdx]}
 					</div>
-					<div
-						className="mono"
-						style={{
-							fontSize: 10,
-							color: "var(--c-ember)",
-							letterSpacing: "0.20em",
-							marginTop: 8,
-						}}
-					>
+					<div className="font-mono text-[10px] text-ember tracking-[0.2em] mt-2">
 						LV {level}
 					</div>
 				</div>
 				<div>
-					<div className="eyebrow-sm" style={{ marginBottom: 8 }}>
+					<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
 						Yield
 					</div>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "baseline",
-							gap: 14,
-							padding: "10px 0",
-						}}
-					>
-						<span
-							className="display"
-							style={{ fontSize: 22, color: "var(--ink-bone)" }}
-						>
+					<div className="flex items-baseline gap-3.5 py-2.5">
+						<span className="font-display text-2xl text-bone">
 							{yieldNow}/s
 						</span>
-						<span
-							className="mono"
-							style={{ fontSize: 16, color: "var(--ink-dim)" }}
-						>
-							→
-						</span>
-						<span
-							className="display"
-							style={{ fontSize: 22, color: "var(--c-ember)" }}
-						>
+						<span className="font-mono text-base text-dim">→</span>
+						<span className="font-display text-2xl text-ember">
 							{yieldNext}/s
 						</span>
 					</div>
@@ -605,7 +592,7 @@ function Detail({
 				<CostBlock cost={cost} res={res} />
 				<button
 					type="button"
-					className="cta-purchase"
+					className="block w-full py-3 border border-ember bg-[rgba(214,122,48,0.06)] text-ember font-display text-[11px] tracking-[0.22em] uppercase cursor-pointer transition-colors duration-[120ms] hover:enabled:bg-[rgba(214,122,48,0.14)] disabled:border-[color:var(--rule-strong)] disabled:text-dim disabled:bg-transparent disabled:cursor-not-allowed"
 					disabled={!canBuy || !rowId}
 					onClick={() => rowId && onBuy(rowId)}
 				>
@@ -621,16 +608,7 @@ function Detail({
 
 	if (!row)
 		return (
-			<div
-				className="mono"
-				style={{
-					fontSize: 10,
-					color: "var(--ink-dim)",
-					letterSpacing: "0.14em",
-					textAlign: "center",
-					marginTop: 40,
-				}}
-			>
+			<div className="font-mono text-[10px] text-dim tracking-[0.14em] text-center mt-10">
 				HOVER A ROW TO SEE DETAILS
 			</div>
 		);
@@ -638,32 +616,13 @@ function Detail({
 	if (row.locked)
 		return (
 			<div>
-				<div className="eyebrow-sm" style={{ marginBottom: 6 }}>
+				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-1.5">
 					Locked
 				</div>
-				<div
-					className="display"
-					style={{
-						fontSize: 22,
-						color: "var(--ink-parchm)",
-						letterSpacing: "0.10em",
-					}}
-				>
+				<div className="font-display text-2xl text-parchm tracking-widest">
 					{row.name}
 				</div>
-				<div
-					style={{
-						marginTop: 14,
-						padding: 16,
-						border: "1px solid var(--rule)",
-						background: "var(--bg-inset)",
-						color: "var(--ink-muted)",
-						fontFamily: "var(--f-body)",
-						fontStyle: "italic",
-						fontSize: 14,
-						lineHeight: 1.5,
-					}}
-				>
+				<div className="mt-3.5 p-4 border border-[color:var(--rule)] bg-bg-inset text-muted font-body italic text-sm leading-normal">
 					{row.unlockText}
 				</div>
 			</div>
@@ -686,90 +645,39 @@ function Detail({
 		Math.round(Number(row.nextFn(row.level)) * 100) / 100;
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+		<div className="flex flex-col gap-[18px]">
 			<div>
-				<div className="eyebrow-sm">
+				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim">
 					{isSkill ? "One-time Upgrade" : "Leveled Upgrade"}
 				</div>
-				<div
-					className="display"
-					style={{
-						fontSize: 26,
-						color: "var(--ink-bone)",
-						letterSpacing: "0.06em",
-						marginTop: 8,
-						lineHeight: 1.2,
-					}}
-				>
+				<div className="font-display text-2xl text-bone tracking-wider mt-2 leading-tight">
 					{row.name}
 				</div>
 				<div
-					className="mono"
-					style={{
-						fontSize: 10,
-						color: maxed ? "var(--hp-good)" : "var(--c-ember)",
-						letterSpacing: "0.20em",
-						marginTop: 8,
-					}}
+					className={`font-mono text-[10px] tracking-[0.2em] mt-2 ${maxed ? "text-hp-good" : "text-ember"}`}
 				>
 					{maxed ? "INSCRIBED" : `LV ${row.level}`}
 				</div>
 			</div>
-			<div
-				style={{
-					padding: 16,
-					border: "1px solid var(--rule)",
-					background: "var(--bg-inset)",
-					fontFamily: "var(--f-body)",
-					fontSize: 14,
-					color: "var(--ink-parchm)",
-					lineHeight: 1.6,
-				}}
-			>
+			<div className="p-4 border border-[color:var(--rule)] bg-bg-inset font-body text-sm text-parchm leading-relaxed">
 				{row.description}
 			</div>
 			{row.flavor && (
-				<div
-					style={{
-						fontFamily: "var(--f-body)",
-						fontStyle: "italic",
-						fontSize: 13,
-						color: "var(--ink-muted)",
-						lineHeight: 1.5,
-					}}
-				>
+				<div className="font-body italic text-sm text-muted leading-normal">
 					"{row.flavor}"
 				</div>
 			)}
 			{!maxed && (
 				<div>
-					<div className="eyebrow-sm" style={{ marginBottom: 8 }}>
+					<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
 						Current → Next
 					</div>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "baseline",
-							gap: 14,
-							padding: "10px 0",
-						}}
-					>
-						<span
-							className="display"
-							style={{ fontSize: 22, color: "var(--ink-bone)" }}
-						>
+					<div className="flex items-baseline gap-3.5 py-2.5">
+						<span className="font-display text-2xl text-bone">
 							{valueNumerical ? valueNumerical : row.valueFn(row.level)}
 						</span>
-						<span
-							className="mono"
-							style={{ fontSize: 16, color: "var(--ink-dim)" }}
-						>
-							→
-						</span>
-						<span
-							className="display"
-							style={{ fontSize: 22, color: "var(--c-ember)" }}
-						>
+						<span className="font-mono text-base text-dim">→</span>
+						<span className="font-display text-2xl text-ember">
 							{valueNextNumerical ? valueNextNumerical : row.nextFn(row.level)}
 						</span>
 					</div>
@@ -784,7 +692,7 @@ function Detail({
 			{!maxed && (
 				<button
 					type="button"
-					className="cta-purchase"
+					className="block w-full py-3 border border-ember bg-[rgba(214,122,48,0.06)] text-ember font-display text-[11px] tracking-[0.22em] uppercase cursor-pointer transition-colors duration-[120ms] hover:enabled:bg-[rgba(214,122,48,0.14)] disabled:border-[color:var(--rule-strong)] disabled:text-dim disabled:bg-transparent disabled:cursor-not-allowed"
 					disabled={!canBuy}
 					onClick={() =>
 						isSkill
@@ -802,22 +710,8 @@ function Detail({
 				</button>
 			)}
 			{maxed && (
-				<div
-					style={{
-						padding: 14,
-						border: "1px solid var(--hp-good)",
-						background: "rgba(111,169,98,0.06)",
-						textAlign: "center",
-					}}
-				>
-					<div
-						className="mono"
-						style={{
-							fontSize: 10,
-							color: "var(--hp-good)",
-							letterSpacing: "0.16em",
-						}}
-					>
+				<div className="p-3.5 border border-hp-good bg-[rgba(111,169,98,0.06)] text-center">
+					<div className="font-mono text-[10px] text-hp-good tracking-[0.16em]">
 						INSCRIBED · ACTIVE
 					</div>
 				</div>
@@ -836,30 +730,31 @@ function CostBlock({
 	const lines = costLines(cost, res);
 	return (
 		<div>
-			<div className="eyebrow-sm" style={{ marginBottom: 8 }}>
+			<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
 				Cost
 			</div>
-			<div
-				style={{
-					border: "1px solid var(--rule)",
-					background: "var(--bg-inset)",
-					padding: "0 14px",
-				}}
-			>
+			<div className="border border-[color:var(--rule)] bg-bg-inset px-3.5">
 				{lines.map((cl) => (
-					<div key={cl.key} className={`cb-row ${cl.ok ? "ok" : "short"}`}>
+					<div
+						key={cl.key}
+						className={`flex items-center gap-2.5 py-2.5 border-b border-[color:var(--rule)] last:border-b-0 font-mono text-xs ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
+					>
 						<Icon
 							kind={cl.icon}
 							size={18}
 							color={cl.ok ? cl.color : "var(--hp-crit)"}
 						/>
-						<div className="cb-name">{cl.label}</div>
-						<div className="cb-stock">
+						<div className="flex-1 text-[11px] tracking-[0.1em]">
+							{cl.label}
+						</div>
+						<div className="text-dim min-w-[50px]">
 							{formatNumber(
 								Math.floor(res[cl.key as keyof Resources] as number),
 							)}
 						</div>
-						<div className="cb-req">/ {formatNumber(cl.amount)}</div>
+						<div className="min-w-[40px] text-right">
+							/ {formatNumber(cl.amount)}
+						</div>
 					</div>
 				))}
 			</div>
@@ -877,26 +772,26 @@ function PointsCostBlock({
 	const ok = pts >= skillCost;
 	return (
 		<div>
-			<div className="eyebrow-sm" style={{ marginBottom: 8 }}>
+			<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
 				Cost
 			</div>
-			<div
-				style={{
-					border: "1px solid var(--rule)",
-					background: "var(--bg-inset)",
-					padding: "0 14px",
-				}}
-			>
-				<div className={`cb-row ${ok ? "ok" : "short"}`}>
+			<div className="border border-[color:var(--rule)] bg-bg-inset px-3.5">
+				<div
+					className={`flex items-center gap-2.5 py-2.5 font-mono text-xs ${ok ? "text-parchm" : "text-hp-crit"}`}
+				>
 					<Icon
 						kind="triple"
 						size={18}
 						color={ok ? "var(--c-coin)" : "var(--hp-crit)"}
 					/>
-					<div className="cb-name">Skill Points</div>
-					<div className="cb-req">{skillCost}</div>
-					<div className="cb-stock">/ {pts}</div>
-					<div className="cb-mark">{ok ? "✓" : "✗"}</div>
+					<div className="flex-1 text-[11px] tracking-[0.1em]">
+						Skill Points
+					</div>
+					<div className="min-w-[40px] text-right">{skillCost}</div>
+					<div className="text-dim min-w-[50px]">/ {pts}</div>
+					<div className="min-w-[18px] text-center text-xs">
+						{ok ? "✓" : "✗"}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -952,7 +847,7 @@ export function Workshop() {
 	).toFixed(2);
 
 	return (
-		<div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+		<div className="flex size-full">
 			<SideNav
 				sections={sections}
 				activeId={activeId}
@@ -963,53 +858,19 @@ export function Workshop() {
 				anyDot={anyDot}
 			/>
 
-			<div className="wkshp-center">
-				<div className="wkshp-section-head">
-					<div
-						className="mono"
-						style={{
-							fontSize: 11,
-							color: "var(--ink-dim)",
-							letterSpacing: "0.32em",
-						}}
-					>
-						SECTION · {sections.indexOf(active) + 1} OF {sections.length}
-					</div>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "flex-end",
-							gap: 22,
-							marginTop: 10,
-						}}
-					>
+			<div className="flex-1 overflow-y-auto flex flex-col">
+				<div className="px-8 pt-6 pb-5 border-b border-[color:var(--rule)] shrink-0">
+					<div className="flex items-end gap-[22px] mt-2.5">
 						<Icon
 							kind={active.icon}
 							size={44}
 							color={active.unlocked ? "var(--ink-bone)" : "var(--ink-dim)"}
 						/>
 						<div>
-							<div
-								className="display"
-								style={{
-									fontSize: 36,
-									color: "var(--ink-bone)",
-									letterSpacing: "0.16em",
-									textTransform: "uppercase",
-									lineHeight: 1,
-								}}
-							>
+							<div className="font-display text-4xl text-bone tracking-[0.16em] uppercase leading-none">
 								{active.name}
 							</div>
-							<div
-								style={{
-									fontFamily: "var(--f-body)",
-									fontStyle: "italic",
-									fontSize: 14,
-									color: "var(--ink-parchm)",
-									marginTop: 6,
-								}}
-							>
+							<div className="font-body italic text-sm text-parchm mt-1.5">
 								{active.subtitle}
 							</div>
 						</div>
@@ -1017,32 +878,33 @@ export function Workshop() {
 				</div>
 
 				{!active.unlocked && (
-					<div className="lock-banner">
-						<div className="ico">
+					<div className="flex items-start gap-[18px] p-6 my-4 mx-8 border border-[color:var(--rule)] bg-bg-inset">
+						<div className="pt-0.5">
 							<Icon kind="forbid" size={26} color="var(--ink-dim)" />
 						</div>
-						<div className="body">
-							<h3>{active.lockedTitle}</h3>
-							<p>{active.lockedBody}</p>
+						<div>
+							<h3 className="text-sm text-muted tracking-[0.12em] mb-2">
+								{active.lockedTitle}
+							</h3>
+							<p className="text-[13px] text-dim font-body italic leading-relaxed">
+								{active.lockedBody}
+							</p>
 						</div>
 					</div>
 				)}
 
 				{active.unlocked && active.type === "garden" && (
 					<>
-						<div className="aff-strip">
-							<div className="aff-label">Garden Yield</div>
-							<div
-								className="mono"
-								style={{ fontSize: 13, color: "var(--c-bone)" }}
-							>
+						<div className="py-2.5 px-8 border-b border-[color:var(--rule)] flex items-center gap-4 shrink-0 min-h-[44px]">
+							<div className="font-mono text-[10px] tracking-[0.16em] text-dim whitespace-nowrap">
+								Garden Yield
+							</div>
+							<div className="font-mono text-sm text-bone">
 								{gardenTotalYield}{" "}
-								<span style={{ fontSize: 10, color: "var(--ink-dim)" }}>
-									BONES/SEC
-								</span>
+								<span className="text-[10px] text-dim">BONES/SEC</span>
 							</div>
 						</div>
-						<div className="plots-grid">
+						<div className="grid grid-cols-3 gap-3.5 py-5 px-8">
 							{(active.gardenLevels ?? []).map((lv, i) => (
 								<PlotCard
 									key={GARDEN_PLOT_NAMES[i]}
@@ -1083,7 +945,7 @@ export function Workshop() {
 				)}
 			</div>
 
-			<div className="wkshp-right">
+			<div className="w-[360px] min-w-[360px] border-l border-[color:var(--rule)] bg-bg-panel px-5 py-6 overflow-y-auto flex flex-col gap-5">
 				<Detail
 					rowId={focusedId}
 					sections={sections}
@@ -1093,23 +955,8 @@ export function Workshop() {
 					onSkillBuy={purchaseUpgrade}
 					gameState={gameState}
 				/>
-				<div
-					style={{
-						marginTop: "auto",
-						padding: 14,
-						border: "1px solid var(--rule)",
-						background: "var(--bg-inset)",
-					}}
-				>
-					<div
-						className="mono"
-						style={{
-							fontSize: 10,
-							color: "var(--ink-dim)",
-							letterSpacing: "0.14em",
-							lineHeight: 1.7,
-						}}
-					>
+				<div className="mt-auto p-3.5 border border-[color:var(--rule)] bg-bg-inset">
+					<div className="font-mono text-[10px] text-dim tracking-[0.14em] leading-relaxed">
 						HOVER A ROW TO SEE DETAILS.
 						<br />
 						RIGHT-CLICK TO UPGRADE INSTANTLY.

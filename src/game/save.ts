@@ -20,6 +20,7 @@ export function saveGame(state: GameState): void {
 			meta: state.meta,
 			version: SAVE_VERSION,
 		};
+		console.log("Saving game state:", toSave);
 		localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
 	} catch (e) {
 		console.warn("Save failed:", e);
@@ -86,6 +87,9 @@ export function importSave(json: string): ImportResult {
 			if (!(key in parsed))
 				return { ok: false, error: `Missing field: ${key}` };
 		}
+		console.log("Importing save:", parsed);
+		console.log("Importing save stringified:", JSON.stringify(parsed));
+		console.log("Importing save keys:", Object.keys(parsed));
 		localStorage.setItem(SAVE_KEY, json);
 		return { ok: true };
 	} catch {

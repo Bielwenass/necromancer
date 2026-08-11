@@ -45,10 +45,7 @@ export function RelicDetail({
 						<span className="text-dim">/100</span>
 					</span>
 				</div>
-				<div
-					className="bg-bg-inset border border-rule relative overflow-hidden mt-1"
-					style={{ height: 5 }}
-				>
+				<div className="bg-bg-inset border border-rule relative overflow-hidden mt-1 h-[5px]">
 					<i
 						className="block h-full"
 						style={{ width: `${relic.quality}%`, background: c }}

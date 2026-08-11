@@ -35,6 +35,8 @@ export default {
 				"hp-good": "#6fa962",
 				"hp-warn": "#d4a857",
 				"hp-crit": "#c45a3e",
+
+				ember: "#d67a30",
 			},
 			fontFamily: {
 				display: ["var(--f-display)"],
