@@ -13,7 +13,10 @@ export function saveGame(state: GameState): void {
 			dungeons: state.dungeons,
 			relics: state.relics,
 			upgrades: state.upgrades,
-			gacha: state.gacha,
+			gacha: {
+				pityCounters: state.gacha.pityCounters,
+				lastPulledRelics: state.gacha.lastPulledRelics,
+			},
 			meta: state.meta,
 			version: SAVE_VERSION,
 		};

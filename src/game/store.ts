@@ -49,8 +49,6 @@ function buildInitialState(): GameState {
 		upgrades: { purchased: [], availablePoints: 0 },
 		gacha: {
 			pityCounters: { bone: 0, soul: 0, forbidden: 0 },
-			pullHistory: [],
-			sessionTotals: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
 			lastPulledRelics: null,
 		},
 		meta: { tickCount: 0, dayCount: 0, version: 1, lastTickAt: Date.now() },
@@ -476,13 +474,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 						count,
 					);
 
-					// Build pull records (assembled inline below)
-
-					const newSessionTotals = { ...prev.gacha.sessionTotals };
-					for (const r of newRelics) {
-						newSessionTotals[r.rarity]++;
-					}
-
 					// Update pity
 					const newPityCounters = {
 						...prev.gacha.pityCounters,
@@ -497,7 +488,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 
 					// Add relics to inventory (check duplicates)
 					const newInventory = [...prev.relics.inventory];
-					const pullRecords = [];
 
 					for (const relic of newRelics) {
 						// Find existing same base+rarity
@@ -523,19 +513,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 						// } else {
 						newInventory.push({ ...relic, isNew: true });
 						// }
-
-						// Get the base for glyph info
-						const base = prev.relics.inventory.find(
-							(r) => r.baseId === relic.baseId,
-						);
-						pullRecords.push({
-							relicId: relic.id,
-							relicName: relic.baseId,
-							rarity: relic.rarity,
-							poolId,
-							glyph: base?.baseId ?? relic.baseId,
-							tickCount: prev.meta.tickCount,
-						});
 					}
 
 					return {
@@ -544,15 +521,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 						gacha: {
 							...prev.gacha,
 							pityCounters: newPityCounters,
-							pullHistory: [
-								...pullRecords.map((pr, i) => ({
-									...pr,
-									relicName: newRelics[i].baseId,
-									glyph: newRelics[i].baseId,
-								})),
-								...prev.gacha.pullHistory,
-							].slice(0, 50),
-							sessionTotals: newSessionTotals,
 							lastPulledRelics: newRelics,
 						},
 					};

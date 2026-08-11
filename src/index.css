@@ -363,13 +363,6 @@
 	text-transform: uppercase;
 	color: var(--ink-parchm);
 }
-.panel-h .act {
-	font-family: var(--f-mono);
-	font-size: 10px;
-	color: var(--ink-muted);
-	letter-spacing: 0.1em;
-}
-
 /* corner tick — gives panels a "carved" feel */
 .cornered {
 	position: relative;

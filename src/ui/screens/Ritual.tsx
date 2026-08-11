@@ -1,7 +1,6 @@
 import type { TabId } from "../components/TabBar";
 import { TabBar } from "../components/TabBar";
 import { TopBar } from "../components/TopBar";
-import { PullHistoryPanel } from "./PullHistoryPanel";
 import { RitualPanel } from "./RitualPanel";
 
 interface RitualProps {
@@ -13,7 +12,6 @@ export function Ritual({ onTabChange }: RitualProps) {
 		<div className="necro">
 			<TopBar />
 			<div className="stage">
-				<PullHistoryPanel />
 				<div className="flex-1 flex">
 					<RitualPanel poolId="bone" />
 					<RitualPanel poolId="soul" />

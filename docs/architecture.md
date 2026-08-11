@@ -44,7 +44,7 @@ squads      Squad[] — composition, state, position, pendingLoot
 dungeons    DungeonState[] — clearCount, unlocked
 relics      { inventory, equipped }
 upgrades    { purchased, availablePoints }
-gacha       { pityCounters, pullHistory, sessionTotals, lastPulledRelics }
+gacha       { pityCounters, lastPulledRelics }
 workshop    per-unit stat levels, crypt levels, garden plots
 meta        tickCount, dayCount, version, lastTickAt
 derived     computed, never persisted
@@ -62,7 +62,7 @@ Live `CombatEngine` instances live in `store.combatEngines`, a runtime-only `Map
 |-----|--------|-------|
 | 1 | Crypt Map | Dungeon list, squad roster, live combat canvases |
 | 2 | Reliquary | Equipped slots, relic detail, inventory, set progress |
-| 3 | Ritual | Three gacha pools, pull history, reveal overlay |
+| 3 | Ritual | Three gacha pools, reveal overlay |
 | 4 | Upgrades | Skill tree and Workshop sub-views |
 
 Each screen renders its own `TopBar`/`TabBar`. `TabId` is declared in both `App.tsx` and `TabBar.tsx` and the two must agree.

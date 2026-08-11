@@ -119,15 +119,6 @@ export interface UpgradeNode {
 	capstone?: boolean;
 }
 
-export interface PullRecord {
-	relicId: string;
-	relicName: string;
-	rarity: Rarity;
-	poolId: PoolId;
-	glyph: string;
-	tickCount: number;
-}
-
 export interface Resources {
 	bones: number;
 	coins: number;
@@ -174,8 +165,6 @@ export interface GameState {
 	};
 	gacha: {
 		pityCounters: Record<PoolId, number>;
-		pullHistory: PullRecord[];
-		sessionTotals: Record<Rarity, number>;
 		lastPulledRelics: Relic[] | null;
 	};
 	workshop: WorkshopState;
