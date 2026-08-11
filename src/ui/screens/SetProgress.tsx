@@ -12,37 +12,45 @@ export function SetProgress({ equipped, inventory }: {
     .filter(Boolean) as string[];
 
   return (
-    <div style={{ height: 152, background: 'var(--bg-panel)', borderTop: '1px solid var(--rule)', padding: '14px 24px', display: 'flex', gap: 16 }}>
-      <div style={{ width: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div className="display" style={{ fontSize: 12, color: 'var(--ink-parchm)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>Set Progress</div>
-        <div className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', lineHeight: 1.5 }}>
+    <div className="h-[152px] bg-bg-panel border-t border-rule py-[14px] px-6 flex gap-4">
+      <div className="w-[180px] flex flex-col justify-between">
+        <div className="display text-xs text-parchm !tracking-[0.28em] uppercase">Set Progress</div>
+        <div className="mono text-[10px] text-muted leading-[1.5]">
           Collect set pieces to<br />unlock cumulative perks.<br />
-          <span style={{ color: 'var(--ink-dim)' }}>{equippedBaseIds.length} EQUIPPED</span>
+          <span className="text-dim">{equippedBaseIds.length} EQUIPPED</span>
         </div>
       </div>
+
       {SET_DEFS.map(s => {
         const collected = s.pieces.filter(p => equippedBaseIds.includes(p)).length;
         return (
-          <div key={s.id} style={{ flex: 1, border: '1px solid var(--rule)', padding: '10px 14px', display: 'flex', gap: 14, alignItems: 'center', background: 'var(--bg-panel-2)' }}>
-            <div style={{ width: 64, height: 64, border: '1px solid var(--rule-strong)', background: 'var(--bg-inset)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <div key={s.id} className="flex-1 border border-rule px-[14px] py-[10px] flex gap-[14px] items-center bg-bg-panel-2">
+            <div className="w-16 h-16 border border-rule-strong bg-bg-inset flex items-center justify-center relative">
               <RelicGlyph kind={s.glyph} size={36} color="var(--ink-parchm)" />
-              <div className="mono" style={{ position: 'absolute', bottom: -1, right: -1, fontSize: 9, color: 'var(--ink-bone)', background: 'var(--bg-panel)', padding: '0 4px', border: '1px solid var(--rule)' }}>
+              <div className="mono absolute -bottom-px -right-px text-[9px] text-bone bg-bg-panel px-1 border border-rule">
                 {collected}/{s.pieces.length}
               </div>
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="display" style={{ fontSize: 14, color: 'var(--ink-bone)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>{s.name}</div>
-              <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
+
+            <div className="flex-1 min-w-0">
+              <div className="display text-sm text-bone !tracking-[0.18em] uppercase">{s.name}</div>
+              <div className="flex gap-[3px] mt-[6px]">
                 {s.pieces.map((p, i) => {
                   const has = equippedBaseIds.includes(p);
-                  return <div key={i} style={{ width: 14, height: 14, border: '1px solid var(--rule-strong)', background: has ? 'var(--ink-parchm)' : 'transparent', opacity: has ? 1 : 0.4 }} />;
+                  return (
+                    <div
+                      key={i}
+                      className="w-[14px] h-[14px] border border-rule-strong"
+                      style={{ background: has ? 'var(--ink-parchm)' : 'transparent', opacity: has ? 1 : 0.4 }}
+                    />
+                  );
                 })}
               </div>
-              <div style={{ marginTop: 8 }}>
+              <div className="mt-2">
                 {s.perks.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '1px 0' }}>
-                    <span className="mono" style={{ fontSize: 9, color: collected >= p.at ? 'var(--c-coin)' : 'var(--ink-dim)', minWidth: 22 }}>({p.at})</span>
-                    <span style={{ fontSize: 10, color: collected >= p.at ? 'var(--ink-bone)' : 'var(--ink-dim)' }}>{p.label}</span>
+                  <div key={i} className="flex items-baseline gap-2 py-px">
+                    <span className="mono text-[9px] min-w-[22px]" style={{ color: collected >= p.at ? 'var(--c-coin)' : 'var(--ink-dim)' }}>({p.at})</span>
+                    <span className="text-[10px]" style={{ color: collected >= p.at ? 'var(--ink-bone)' : 'var(--ink-dim)' }}>{p.label}</span>
                   </div>
                 ))}
               </div>

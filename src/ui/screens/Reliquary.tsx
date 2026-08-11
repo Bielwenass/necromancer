@@ -10,7 +10,11 @@ import { EquippedSlotCard } from './EquippedSlotCard';
 import { InvCard } from './InvCard';
 import { RelicDetail } from './RelicDetail';
 
-const SLOT_GROUPS: { title: string; slots: { id: SlotId; label: string }[]; unitType?: 'skeleton' | 'zombie' | 'wraith' }[] = [
+const SLOT_GROUPS: {
+  title: string;
+  slots: { id: SlotId; label: string }[];
+  unitType?: 'skeleton' | 'zombie' | 'wraith';
+}[] = [
   {
     title: 'The Crypt',
     slots: [{ id: 'C1', label: 'C-I' }, { id: 'C2', label: 'C-II' }, { id: 'C3', label: 'C-III' }],
@@ -34,20 +38,25 @@ interface ReliquaryProps {
 }
 
 export function Reliquary({ onTabChange }: ReliquaryProps) {
-  const inventory = useGameStore(s => s.relics.inventory);
-  const equipped = useGameStore(s => s.relics.equipped);
-  const derived = useGameStore(s => s.derived);
-  const equipRelic = useGameStore(s => s.equipRelic);
-  const unequipRelic = useGameStore(s => s.unequipRelic);
-  const markRelicSeen = useGameStore(s => s.markRelicSeen);
+  const inventory      = useGameStore(s => s.relics.inventory);
+  const equipped       = useGameStore(s => s.relics.equipped);
+  const derived        = useGameStore(s => s.derived);
+  const equipRelic     = useGameStore(s => s.equipRelic);
+  const unequipRelic   = useGameStore(s => s.unequipRelic);
+  const markRelicSeen  = useGameStore(s => s.markRelicSeen);
   const sacrificeRelic = useGameStore(s => s.sacrificeRelic);
 
-  const [selectedRelicId, setSelectedRelicId] = useState<string | null>(null);
-  const [filterRarity, setFilterRarity] = useState<Rarity | null>(null);
-  const [confirmSacrifice, setConfirmSacrifice] = useState(false);
+  const [selectedRelicId,  setSelectedRelicId]  = useState<string | null>(null);
+  const [filterRarity,     setFilterRarity]      = useState<Rarity | null>(null);
+  const [confirmSacrifice, setConfirmSacrifice]  = useState(false);
 
-  const selectedRelic = inventory.find(r => r.id === selectedRelicId) ??
-    (selectedRelicId ? Object.values(equipped).map(id => inventory.find(r => r.id === id)).find(r => r?.id === selectedRelicId) : null);
+  const selectedRelic =
+    inventory.find(r => r.id === selectedRelicId) ??
+    (selectedRelicId
+      ? Object.values(equipped)
+          .map(id => inventory.find(r => r.id === id))
+          .find(r => r?.id === selectedRelicId)
+      : null);
 
   const filteredInventory = filterRarity
     ? inventory.filter(r => r.rarity === filterRarity)
@@ -70,7 +79,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
       setSelectedRelicId(relicId);
       markRelicSeen(relicId);
     }
-  }
+  };
 
   const handleSacrifice = () => {
     if (!selectedRelicId) return;
@@ -83,77 +92,100 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
     <div className="necro">
       <TopBar />
 
-      <div className="stage" style={{ flexDirection: 'column' }}>
-        {/* Sub-tabs */}
-        <div style={{ height: 40, display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--rule)', padding: '0 24px', background: 'var(--bg-panel)' }}>
-          <div style={{ display: 'flex', gap: 22 }}>
-            {['All', 'By Slot', 'Sets', 'New'].map((label, i) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 6, paddingBottom: 4, borderBottom: i === 0 ? '1px solid var(--c-coin)' : 'none' }}>
-                <span className="display" style={{
-                  fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase',
-                  color: i === 0 ? 'var(--ink-bone)' : 'var(--ink-muted)',
-                }}>{label}</span>
-                <span className="mono" style={{ fontSize: 9, color: label === 'New' ? 'var(--c-coin)' : 'var(--ink-dim)' }}>
-                  {label === 'All' ? inventory.length : label === 'New' ? inventory.filter(r => r.isNew).length : ''}
+      {/* flex-col to stack sub-tabs above the 3-column body */}
+      <div className="stage flex-col">
+
+        {/* ── Sub-tabs ──────────────────────────────────── */}
+        <div className="h-10 flex items-center border-b border-rule px-6 bg-bg-panel shrink-0">
+          <div className="flex gap-[22px]">
+            {(['All', 'By Slot', 'Sets', 'New'] as const).map((label, i) => (
+              <div
+                key={label}
+                className={`flex items-baseline gap-1.5 pb-1 ${i === 0 ? 'border-b border-coin' : ''}`}
+              >
+                <span className={`display !tracking-[0.22em] uppercase text-[12px] ${i === 0 ? 'text-bone' : 'text-muted'}`}>
+                  {label}
+                </span>
+                <span className={`mono text-[9px] ${label === 'New' ? 'text-coin' : 'text-dim'}`}>
+                  {label === 'All'
+                    ? inventory.length
+                    : label === 'New'
+                    ? inventory.filter(r => r.isNew).length
+                    : ''}
                 </span>
               </div>
             ))}
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.14em' }}>FILTER</span>
+
+          {/* Rarity filter */}
+          <div className="ml-auto flex gap-2 items-center">
+            <span className="mono text-[9px] text-dim tracking-[0.14em]">FILTER</span>
             {(['common', 'uncommon', 'rare', 'epic', 'legendary'] as Rarity[]).map(r => (
               <div
                 key={r}
                 onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+                className="mono text-[9px] px-2 py-0.5 cursor-pointer tracking-[0.12em] uppercase border"
                 style={{
-                  fontSize: 9, padding: '3px 8px',
-                  border: `1px solid ${filterRarity === r ? rarityColor(r) : 'var(--rule)'}`,
-                  color: filterRarity === r ? rarityColor(r) : 'var(--ink-muted)',
-                  letterSpacing: '0.12em', textTransform: 'uppercase',
-                  cursor: 'pointer', fontFamily: 'var(--f-mono)',
+                  borderColor: filterRarity === r ? rarityColor(r) : 'var(--rule)',
+                  color:       filterRarity === r ? rarityColor(r) : 'var(--ink-muted)',
                 }}
-              >{r}</div>
+              >
+                {r}
+              </div>
             ))}
           </div>
         </div>
 
-        {/* 3-column body */}
-        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* ── 3-column body ─────────────────────────────── */}
+        <div className="flex-1 flex min-h-0">
+
           {/* LEFT — Equipped */}
-          <div className='scr-ghost' style={{ width: 560, padding: '22px 24px', borderRight: '1px solid var(--rule)', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
-            <div className="display" style={{ fontSize: 13, color: 'var(--ink-parchm)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>Equipped</div>
+          <div className="scr-ghost w-[560px] py-[22px] px-6 border-r border-rule flex flex-col gap-[18px] overflow-y-auto">
+            <div className="display text-[13px] text-parchm !tracking-[0.28em] uppercase">
+              Equipped
+            </div>
+
             {SLOT_GROUPS.map(group => {
               if (group.unitType === 'zombie' && !derived.zombiesUnlocked) return null;
               if (group.unitType === 'wraith' && !derived.wraithsUnlocked) return null;
-              const dotColor = group.unitType === 'skeleton' ? 'var(--sq-skeleton)'
-                : group.unitType === 'zombie' ? 'var(--sq-zombie)'
-                : group.unitType === 'wraith' ? 'var(--sq-wraith)'
-                : null;
+
+              const dotColor =
+                group.unitType === 'skeleton' ? 'var(--sq-skeleton)' :
+                group.unitType === 'zombie'   ? 'var(--sq-zombie)'   :
+                group.unitType === 'wraith'   ? 'var(--sq-wraith)'   : null;
+
               return (
                 <div key={group.title}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  {/* Group header */}
+                  <div className="flex items-center gap-2 mb-2">
                     {dotColor
-                      ? <div style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor }} />
+                      ? <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: dotColor }} />
                       : <IconCrypt size={12} color="var(--ink-muted)" />
                     }
-                    <span className="display" style={{ fontSize: 10, color: 'var(--ink-bone)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{group.title}</span>
-                    <div style={{ flex: 1, height: 1, background: 'var(--rule)', marginLeft: 6 }} />
+                    <span className="display text-bone !tracking-widest uppercase">
+                      {group.title}
+                    </span>
+                    <div className="flex-1 h-px bg-rule ml-1.5" />
                   </div>
+
+                  {/* Derived stats */}
                   {(() => {
                     const ut = group.unitType;
                     if (!ut) return null;
                     return (
-                      <div className="flex flex-col">
-                        <div>HP: {`${Math.floor(derived[ut].hpFlat)} (+${Math.floor(derived[ut].hpFlat * derived[ut].hpBonus)})`} </div>
-                        <div>Damage: {`${Math.floor(derived[ut].dmgFlat)} (+${Math.floor(derived[ut].dmgFlat * derived[ut].dmgBonus)})`} </div>
-                        <div>Speed: {`${Math.floor(derived[ut].speedFlat * 100) / 100} (+${Math.floor(derived[ut].speedFlat * derived[ut].speedBonus * 100) / 100})`} </div>
+                      <div className="flex flex-col mono text-sm mb-4">
+                        <div>HP: {`${Math.floor(derived[ut].hpFlat)} (+${Math.floor(derived[ut].hpFlat * derived[ut].hpBonus)})`}</div>
+                        <div>Damage: {`${Math.floor(derived[ut].dmgFlat)} (+${Math.floor(derived[ut].dmgFlat * derived[ut].dmgBonus)})`}</div>
+                        <div>Speed: {`${Math.floor(derived[ut].speedFlat * 100) / 100} (+${Math.floor(derived[ut].speedFlat * derived[ut].speedBonus * 100) / 100})`}</div>
                       </div>
                     );
                   })()}
-                  <div style={{ display: 'flex', gap: 10 }}>
+
+                  {/* Slot cards */}
+                  <div className="flex gap-2.5">
                     {group.slots.map(slot => {
                       const relicId = equipped[slot.id];
-                      const relic = relicId ? inventory.find(r => r.id === relicId) : null;
+                      const relic   = relicId ? inventory.find(r => r.id === relicId) : null;
                       return (
                         <EquippedSlotCard
                           key={slot.id}
@@ -173,7 +205,10 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
           </div>
 
           {/* CENTER — Detail */}
-          <div style={{ width: 380, borderRight: '1px solid var(--rule)', background: 'linear-gradient(180deg, #15110b 0%, #0f0c08 100%)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div
+            className="w-[380px] border-r border-rule flex flex-col overflow-hidden"
+            style={{ background: 'linear-gradient(180deg, #15110b 0%, #0f0c08 100%)' }}
+          >
             {selectedRelic ? (
               <RelicDetail
                 relic={selectedRelic}
@@ -183,8 +218,8 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
                 onCancelSacrifice={() => setConfirmSacrifice(false)}
               />
             ) : (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--ink-dim)', letterSpacing: '0.14em', textAlign: 'center' }}>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="mono text-[11px] text-dim tracking-[0.14em] text-center">
                   SELECT A RELIC<br />TO VIEW DETAILS
                 </div>
               </div>
@@ -192,22 +227,24 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
           </div>
 
           {/* RIGHT — Inventory */}
-          <div style={{ flex: 1, padding: '22px 24px', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div className="display" style={{ fontSize: 13, color: 'var(--ink-parchm)', letterSpacing: '0.28em', textTransform: 'uppercase' }}>Inventory</div>
-              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', letterSpacing: '0.1em' }}>{inventory.length} RELICS</div>
+          <div className="flex-1 px-6 py-[22px] flex flex-col min-w-0 overflow-hidden">
+            <div className="flex items-baseline justify-between mb-3.5">
+              <div className="display text-[13px] text-parchm !tracking-[0.28em] uppercase">
+                Inventory
+              </div>
+              <div className="mono text-[10px] text-muted tracking-[0.1em]">
+                {inventory.length} RELICS
+              </div>
             </div>
+
             {inventory.length === 0 ? (
-              <div style={{ padding: 24, textAlign: 'center' }}>
-                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-dim)', letterSpacing: '0.14em' }}>
+              <div className="p-6 text-center">
+                <div className="mono text-[10px] text-dim tracking-[0.14em]">
                   NO RELICS · PERFORM RITUALS TO OBTAIN
                 </div>
               </div>
             ) : (
-              <div className="scr-ghost" style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 124px)',
-                gap: 10, alignContent: 'start', overflowY: 'auto', flex: 1,
-              }}>
+              <div className="scr-ghost grid grid-cols-[repeat(auto-fill,124px)] gap-2.5 content-start overflow-y-auto flex-1">
                 {filteredInventory.map(relic => (
                   <InvCard
                     key={relic.id}
@@ -219,6 +256,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
               </div>
             )}
           </div>
+
         </div>
       </div>
 

@@ -45,19 +45,21 @@ export function BranchColumn({
   });
 
   return (
-    <div style={{ flex: 1, padding: '20px 0 0', borderRight: idx < 2 ? '1px solid var(--rule)' : 'none', position: 'relative' }}>
-      <div style={{ textAlign: 'center', marginBottom: 10 }}>
-        <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.24em' }}>BRANCH {['I', 'II', 'III'][idx]}</div>
-        <div className="display" style={{ fontSize: 22, color: 'var(--ink-bone)', letterSpacing: '0.28em', textTransform: 'uppercase', marginTop: 4 }}>{branch.name}</div>
-        <div style={{ fontFamily: 'var(--f-body)', fontStyle: 'italic', fontSize: 11, color: 'var(--ink-muted)', marginTop: 4 }}>{branch.epigraph}</div>
-        <div style={{ display: 'flex', gap: 3, justifyContent: 'center', marginTop: 12 }}>
+    <div
+      className={`flex-1 pt-5 relative ${idx < 2 ? 'border-r border-rule' : ''}`}
+    >
+      <div className="text-center mb-[10px]">
+        <div className="mono text-[9px] text-dim tracking-[0.24em]">BRANCH {['I', 'II', 'III'][idx]}</div>
+        <div className="display text-2xl text-bone !tracking-[0.28em] uppercase mt-1">{branch.name}</div>
+        <div className="font-body italic text-xs text-muted mt-1">{branch.epigraph}</div>
+        <div className="flex gap-[3px] justify-center mt-3">
           {branchNodes.map((n, i) => (
-            <div key={i} style={{ width: 12, height: 3, background: purchased.includes(n.id) ? branch.accent : 'var(--rule)' }} />
+            <div key={i} className="w-3 h-[3px]" style={{ background: purchased.includes(n.id) ? branch.accent : 'var(--rule)' }} />
           ))}
         </div>
       </div>
 
-      <svg viewBox={`-${W / 2} 0 ${W} ${H}`} width="100%" height={H} style={{ display: 'block' }}>
+      <svg viewBox={`-${W / 2} 0 ${W} ${H}`} width="100%" height={H} className="block">
         {edges.map(([aId, bId], i) => {
           const na = branchNodes.find(n => n.id === aId);
           const nb = branchNodes.find(n => n.id === bId);
@@ -65,8 +67,8 @@ export function BranchColumn({
           const stateA = nodeState(na);
           const stateB = nodeState(nb);
           const bothPurchased = stateA === 'purchased' && stateB === 'purchased';
-          const oneUnlocked = stateA === 'purchased' && stateB === 'unlocked';
-          const bothLocked = stateA === 'locked' || stateB === 'locked';
+          const oneUnlocked   = stateA === 'purchased' && stateB === 'unlocked';
+          const bothLocked    = stateA === 'locked' || stateB === 'locked';
           const stroke = bothLocked ? 'rgba(212,184,140,0.18)' : bothPurchased ? branch.accent : oneUnlocked ? branch.accent : 'rgba(212,184,140,0.18)';
           const w = bothPurchased ? 1.5 : oneUnlocked ? 1 : 0.8;
           const dash = bothLocked ? '3 5' : '';
@@ -77,26 +79,26 @@ export function BranchColumn({
         })}
 
         {branchNodes.map(n => {
-          const state = nodeState(n);
-          const isVisible = filter === 'all' || filteredNodes.includes(n);
+          const state      = nodeState(n);
+          const isVisible  = filter === 'all' || filteredNodes.includes(n);
           const isSelected = selectedNode?.id === n.id;
-          const r = n.capstone ? 30 : 22;
-          const ringColor = state === 'purchased' ? branch.accent : state === 'unlocked' ? branch.accent : 'var(--ink-faint)';
-          const opacity = (!isVisible) ? 0.2 : state === 'locked' ? 0.4 : 1;
-          const iconColor = state === 'purchased' ? 'var(--bg-canvas)' : state === 'unlocked' ? branch.accent : 'var(--ink-dim)';
-          const fillColor = state === 'purchased' ? branch.accent : 'var(--bg-canvas)';
+          const r          = n.capstone ? 30 : 22;
+          const ringColor  = state === 'purchased' ? branch.accent : state === 'unlocked' ? branch.accent : 'var(--ink-faint)';
+          const opacity    = (!isVisible) ? 0.2 : state === 'locked' ? 0.4 : 1;
+          const iconColor  = state === 'purchased' ? 'var(--bg-canvas)' : state === 'unlocked' ? branch.accent : 'var(--ink-dim)';
+          const fillColor  = state === 'purchased' ? branch.accent : 'var(--bg-canvas)';
 
           return (
             <g
               key={n.id}
               transform={`translate(${n.x} ${n.y})`}
               opacity={opacity}
-              style={{ cursor: state === 'locked' ? 'default' : 'pointer' }}
+              className={state === 'locked' ? 'cursor-default' : 'cursor-pointer'}
               onClick={() => onSelectNode(isSelected ? null : n)}
             >
               {n.capstone && (
                 <>
-                  <circle r={r + 8} fill="none" stroke={ringColor} strokeWidth="1" opacity="0.5" />
+                  <circle r={r + 8}  fill="none" stroke={ringColor} strokeWidth="1"   opacity="0.5" />
                   <circle r={r + 12} fill="none" stroke={ringColor} strokeWidth="0.5" strokeDasharray="2 4" opacity="0.4" />
                 </>
               )}
@@ -110,7 +112,7 @@ export function BranchColumn({
                 </>
               )}
               <circle r={r} fill={fillColor} stroke={ringColor} strokeWidth={state === 'purchased' ? 0 : state === 'unlocked' ? 2 : 1.2} />
-              <g className='-translate-x-3.5 -translate-y-3.5'>
+              <g className="-translate-x-3.5 -translate-y-3.5">
                 <NodeIcon size={28} kind={n.icon} color={iconColor} />
               </g>
               <g transform={`translate(${r - 2} ${-r + 2})`}>

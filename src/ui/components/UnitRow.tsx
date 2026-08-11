@@ -11,38 +11,28 @@ export function UnitRow({
   const canDecrease = count > 0;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--rule)' }}>
-      <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: 13, color: 'var(--ink-bone)' }}>{label}</span>
-      <span className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', minWidth: 60, textAlign: 'right' }}>
+    <div className="flex items-center gap-3 py-2 border-b border-rule">
+      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+      <span className="flex-1 text-sm text-bone">{label}</span>
+      <span className="mono text-[10px] text-muted min-w-[60px] text-right">
         {available} available
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="flex items-center gap-2">
         <button
           onClick={() => onAdjust(-1)} disabled={!canDecrease}
-          style={{
-            width: 24, height: 24, border: '1px solid var(--rule-strong)',
-            color: canDecrease ? 'var(--ink-bone)' : 'var(--ink-faint)',
-            fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+          className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center"
+          style={{ color: canDecrease ? 'var(--ink-bone)' : 'var(--ink-faint)' }}
         >−</button>
-        <span className="mono" style={{ fontSize: 14, color: 'var(--ink-bone)', minWidth: 20, textAlign: 'center' }}>
-          {count}
-        </span>
+        <span className="mono text-sm text-bone min-w-[20px] text-center">{count}</span>
         <button
           onClick={() => onAdjust(1)} disabled={!canIncrease}
-          style={{
-            width: 24, height: 24, border: '1px solid var(--rule-strong)',
-            color: canIncrease ? 'var(--ink-bone)' : 'var(--ink-faint)',
-            fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+          className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center"
+          style={{ color: canIncrease ? 'var(--ink-bone)' : 'var(--ink-faint)' }}
         >+</button>
-        <button onClick={() => onAdjust(available - count)} disabled={!canIncrease}
-          style={{
-            width: 48, height: 24, border: '1px solid var(--rule-strong)',
-            color: canIncrease ? 'var(--ink-bone)' : 'var(--ink-faint)',
-            fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+        <button
+          onClick={() => onAdjust(available - count)} disabled={!canIncrease}
+          className="!w-12 !h-6 !border !border-rule-strong !text-sm flex items-center justify-center"
+          style={{ color: canIncrease ? 'var(--ink-bone)' : 'var(--ink-faint)' }}
         >Max</button>
       </div>
     </div>

@@ -21,90 +21,76 @@ export function NecroticSurge() {
     setShowBuff(false);
   };
 
+  const ringColor = surge.activeBuff ? 'var(--c-coin)' : 'var(--c-soul)';
+
   return (
-    <div style={{
-      padding: 20,
-      borderTop: '1px solid var(--rule)',
-      background: 'linear-gradient(180deg, var(--bg-panel) 0%, #110d08 100%)',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
-        <div className="display" style={{ fontSize: 11, color: 'var(--ink-parchm)', letterSpacing: '0.24em', textTransform: 'uppercase' }}>
+    <div className="p-5 border-t border-rule bg-gradient-to-b from-bg-panel to-[#110d08]">
+      <div className="flex justify-between items-baseline mb-[14px]">
+        <div className="display text-xs text-parchm !tracking-[0.24em] uppercase">
           Necrotic Surge
         </div>
-        <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.1em' }}>R · ULT</div>
+        <div className="mono text-[9px] text-dim tracking-[0.1em]">R · ULT</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+      <div className="flex gap-[14px] items-center">
         {/* Cooldown ring */}
-        <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
-          <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
+        <div className="relative w-[92px] h-[92px] shrink-0">
+          <svg width="92" height="92" className="-rotate-90">
             <circle cx="46" cy="46" r={R} fill="none" stroke="var(--rule)" strokeWidth="2" />
             <circle
               cx="46" cy="46" r={R}
               fill="none"
-              stroke={surge.activeBuff ? 'var(--c-coin)' : 'var(--c-soul)'}
+              stroke={ringColor}
               strokeWidth="2"
               strokeDasharray={C}
               strokeDashoffset={C * (1 - cdPct)}
-              style={{ filter: `drop-shadow(0 0 4px ${surge.activeBuff ? 'var(--c-coin)' : 'var(--c-soul)'})` }}
+              style={{ filter: `drop-shadow(0 0 4px ${ringColor})` }}
             />
           </svg>
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <div className="display" style={{ fontSize: 16, color: 'var(--ink-bone)', letterSpacing: '0.08em' }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="display text-base text-bone !tracking-[0.08em]">
               {surge.activeBuff ? timeLeft : surge.cooldownTicks > 0 ? timeLeft : '—'}
             </div>
-            <div className="mono" style={{
-              fontSize: 8, color: surge.activeBuff ? 'var(--c-coin)' : surge.charges > 0 ? 'var(--c-soul)' : 'var(--ink-dim)',
-              letterSpacing: '0.12em',
-            }}>
+            <div
+              className="mono text-[8px] tracking-[0.12em]"
+              style={{ color: surge.activeBuff ? 'var(--c-coin)' : surge.charges > 0 ? 'var(--c-soul)' : 'var(--ink-dim)' }}
+            >
               {label}
             </div>
           </div>
         </div>
 
-        <div style={{ flex: 1 }}>
+        <div className="flex-1">
           {/* Charges */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div className="flex gap-[6px] mb-2">
             {[0, 1, 2].map(i => (
               <div
                 key={i}
+                className="w-[18px] h-[18px] border"
                 style={{
-                  width: 18, height: 18,
-                  border: `1px solid ${i < surge.charges ? 'var(--c-soul)' : 'var(--rule)'}`,
-                  background: i < surge.charges ? 'rgba(155,122,214,0.2)' : 'transparent',
-                  boxShadow: i < surge.charges ? '0 0 6px var(--c-soul)' : 'none',
+                  borderColor: i < surge.charges ? 'var(--c-soul)' : 'var(--rule)',
+                  background:  i < surge.charges ? 'rgba(155,122,214,0.2)' : 'transparent',
+                  boxShadow:   i < surge.charges ? '0 0 6px var(--c-soul)' : 'none',
                 }}
               />
             ))}
-            <span className="mono" style={{ fontSize: 9, color: 'var(--ink-muted)', marginLeft: 4, lineHeight: '18px' }}>
+            <span className="mono text-[9px] text-muted ml-1 leading-[18px]">
               {surge.charges}/3 CHARGES
             </span>
           </div>
 
-          {/* Active buff description */}
           {surge.activeBuff && (
-            <div className="mono" style={{ fontSize: 10, color: 'var(--c-coin)', lineHeight: 1.4 }}>
+            <div className="mono text-[10px] text-coin leading-[1.4]">
               {surge.activeBuff === 'yield' ? '×2 Resource Yield' :
                surge.activeBuff === 'speed' ? '×2 Squad Speed' :
                '×2 Squad Damage'}
             </div>
           )}
 
-          {/* Activate button */}
           {canActivate && !surge.activeBuff && (
             <button
               onClick={() => setShowBuff(v => !v)}
-              style={{
-                padding: '8px 16px',
-                border: '1px solid var(--c-soul)',
-                color: 'var(--c-soul)',
-                fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-                background: 'rgba(155,122,214,0.06)',
-                marginTop: 4,
-              }}
+              className="!px-4 !py-2 !border !border-soul !text-soul display !text-xs !tracking-[0.22em] !uppercase !bg-[rgba(155,122,214,0.06)] mt-1"
             >
               ACTIVATE
             </button>
@@ -114,18 +100,12 @@ export function NecroticSurge() {
 
       {/* Buff selection */}
       {showBuff && (
-        <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+        <div className="flex gap-2 mt-[14px]">
           {(['yield', 'speed', 'damage'] as const).map(buff => (
             <button
               key={buff}
               onClick={() => handleActivate(buff)}
-              style={{
-                flex: 1, padding: '8px 0',
-                border: '1px solid var(--c-soul)',
-                color: 'var(--ink-bone)',
-                fontFamily: 'var(--f-display)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
-                background: 'rgba(155,122,214,0.08)',
-              }}
+              className="!flex-1 !py-2 !border !border-soul !text-bone display !text-[10px] !tracking-[0.16em] !uppercase !bg-[rgba(155,122,214,0.08)]"
             >
               ×2 {buff}
             </button>

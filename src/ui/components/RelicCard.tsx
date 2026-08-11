@@ -453,7 +453,9 @@ export function RelicCard({
               </div>
 
               <div className="rc-title">
-                <h2 className={`rc-name text-md ${isLarge ? 'text-2xl' : ''}`}>{name}</h2>
+                <h2 className={`rc-name text-md ${isLarge ? 'text-2xl' : ''}`} style={{ color: 'var(--accent-1, #a8a39a)' }}>
+                  {name}
+                </h2>
                 {flavor && <p className="rc-flavor">{flavor}</p>}
               </div>
 

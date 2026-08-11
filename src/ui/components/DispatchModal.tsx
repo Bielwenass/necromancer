@@ -82,15 +82,15 @@ const SQUAD_NAMES = [
 
 export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
   const def = DUNGEON_DEFS[dungeonId];
-  const units = useGameStore(s => s.units);
-  const derived = useGameStore(s => s.derived);
-  const squads = useGameStore(s => s.squads);
+  const units       = useGameStore(s => s.units);
+  const derived     = useGameStore(s => s.derived);
+  const squads      = useGameStore(s => s.squads);
   const createSquad = useGameStore(s => s.createSquad);
   const dispatchSquad = useGameStore(s => s.dispatchSquad);
 
-  const idleSquads = squads.filter(s => s.state === 'idle');
+  const idleSquads  = squads.filter(s => s.state === 'idle');
   const activeCount = squads.filter(s => s.state !== 'idle').length;
-  const atCapacity = activeCount >= derived.maxActiveSquads;
+  const atCapacity  = activeCount >= derived.maxActiveSquads;
 
   const [composition, setComposition] = useState<Record<UnitType, number>>({
     skeleton: 0, zombie: 0, wraith: 0,
@@ -127,55 +127,57 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
   };
 
   const tierColor = def.tier === 1 ? 'var(--r-uncommon)' : def.tier === 2 ? 'var(--r-rare)' : 'var(--r-epic)';
-  const danger = def.tier === 1 ? 'LOW' : def.tier === 2 ? 'MODERATE' : 'HIGH';
+  const danger    = def.tier === 1 ? 'LOW' : def.tier === 2 ? 'MODERATE' : 'HIGH';
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+      className="fixed inset-0 bg-[rgba(0,0,0,0.7)] flex items-center justify-center z-[100]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="cornered" style={{ width: 500, background: 'var(--bg-panel)', border: '1px solid var(--rule-strong)', padding: 28, maxHeight: '80vh', overflowY: 'auto' }}>
-        <div style={{ marginBottom: 20 }}>
-          <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.18em' }}>DISPATCH LEGION · TIER {def.tier}</div>
-          <div className="display" style={{ fontSize: 22, color: 'var(--ink-bone)', letterSpacing: '0.12em', marginTop: 6 }}>{def.name}</div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-            <span className="mono" style={{ fontSize: 10, color: tierColor }}>DANGER · {danger}</span>
+      <div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] overflow-y-auto">
+        {/* Header */}
+        <div className="mb-5">
+          <div className="mono text-[9px] text-dim tracking-[0.18em]">
+            DISPATCH LEGION · TIER {def.tier}
+          </div>
+          <div className="display text-2xl text-bone !tracking-[0.12em] mt-[6px]">{def.name}</div>
+          <div className="flex gap-4 mt-2">
+            <span className="mono text-[10px]" style={{ color: tierColor }}>DANGER · {danger}</span>
           </div>
         </div>
 
         {atCapacity && (
-          <div className="mono" style={{ fontSize: 10, color: 'var(--hp-crit)', marginBottom: 16, letterSpacing: '0.1em' }}>
+          <div className="mono text-[10px] text-hp-crit mb-4 tracking-[0.1em]">
             SQUAD LIMIT REACHED · {activeCount}/{derived.maxActiveSquads} ACTIVE
           </div>
         )}
 
         {idleSquads.length > 0 && (
           <>
-            <div style={{ height: 1, background: 'var(--rule)', marginBottom: 16 }} />
-            <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.16em', marginBottom: 10 }}>IDLE LEGIONS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+            <div className="h-px bg-rule mb-4" />
+            <div className="mono text-[9px] text-dim tracking-[0.16em] mb-[10px]">IDLE LEGIONS</div>
+            <div className="flex flex-col gap-[6px] mb-5">
               {idleSquads.map(squad => {
-                const totalSq = squad.composition.skeleton + squad.composition.zombie + squad.composition.wraith;
-                const skLabel = squad.composition.skeleton > 0 ? `${squad.composition.skeleton}sk` : '';
-                const zmLabel = squad.composition.zombie > 0 ? `${squad.composition.zombie}zm` : '';
-                const wrLabel = squad.composition.wraith > 0 ? `${squad.composition.wraith}wr` : '';
-                const compStr = [skLabel, zmLabel, wrLabel].filter(Boolean).join(' ');
+                const totalSq  = squad.composition.skeleton + squad.composition.zombie + squad.composition.wraith;
+                const skLabel  = squad.composition.skeleton > 0 ? `${squad.composition.skeleton}sk` : '';
+                const zmLabel  = squad.composition.zombie   > 0 ? `${squad.composition.zombie}zm`   : '';
+                const wrLabel  = squad.composition.wraith   > 0 ? `${squad.composition.wraith}wr`   : '';
+                const compStr  = [skLabel, zmLabel, wrLabel].filter(Boolean).join(' ');
                 return (
-                  <div key={squad.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: '1px solid var(--rule)', background: 'var(--bg-inset)' }}>
-                    <div style={{ flex: 1 }}>
-                      <div className="display" style={{ fontSize: 13, color: 'var(--ink-bone)', letterSpacing: '0.14em' }}>{squad.name}</div>
-                      <div className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', marginTop: 2 }}>×{totalSq} · {compStr}</div>
+                  <div key={squad.id} className="flex items-center gap-3 px-[14px] py-[10px] border border-rule bg-bg-inset">
+                    <div className="flex-1">
+                      <div className="display text-sm text-bone !tracking-[0.14em]">{squad.name}</div>
+                      <div className="mono text-[10px] text-muted mt-0.5">×{totalSq} · {compStr}</div>
                     </div>
                     <button
                       onClick={() => handleSendIdle(squad.id)}
                       disabled={atCapacity}
+                      className="!px-4 !py-[6px] !border display !text-[10px] !tracking-[0.2em]"
                       style={{
-                        padding: '6px 16px',
-                        border: `1px solid ${atCapacity ? 'var(--rule)' : 'var(--c-coin)'}`,
-                        color: atCapacity ? 'var(--ink-dim)' : 'var(--c-coin)',
-                        fontFamily: 'var(--f-display)', fontSize: 10, letterSpacing: '0.2em',
-                        background: atCapacity ? 'transparent' : 'rgba(212,168,87,0.05)',
-                        cursor: atCapacity ? 'not-allowed' : 'pointer',
+                        borderColor: atCapacity ? 'var(--rule)' : 'var(--c-coin)',
+                        color:       atCapacity ? 'var(--ink-dim)' : 'var(--c-coin)',
+                        background:  atCapacity ? 'transparent' : 'rgba(212,168,87,0.05)',
+                        cursor:      atCapacity ? 'not-allowed' : 'pointer',
                       }}
                     >SEND →</button>
                   </div>
@@ -185,26 +187,27 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
           </>
         )}
 
-        <div style={{ height: 1, background: 'var(--rule)', marginBottom: 16 }} />
-        <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.16em', marginBottom: 14 }}>FORM NEW LEGION</div>
+        <div className="h-px bg-rule mb-4" />
+        <div className="mono text-[9px] text-dim tracking-[0.16em] mb-[14px]">FORM NEW LEGION</div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.14em', marginBottom: 6 }}>SQUAD NAME</div>
+        {/* Squad name */}
+        <div className="mb-4">
+          <div className="mono text-[9px] text-dim tracking-[0.14em] mb-[6px]">SQUAD NAME</div>
           <input
             value={squadName}
             onChange={e => setSquadName(e.target.value.trim())}
-            style={{
-              width: '100%', background: 'var(--bg-inset)', border: '1px solid var(--rule-strong)',
-              color: 'var(--ink-bone)', fontFamily: 'var(--f-display)', fontSize: 14,
-              letterSpacing: '0.12em', padding: '8px 12px', outline: 'none',
-            }}
+            className="w-full bg-bg-inset border border-rule-strong text-bone display text-sm !tracking-[0.12em] px-3 py-2 outline-none"
           />
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.14em' }}>COMPOSITION</span>
-            <span className="mono" style={{ fontSize: 10, color: totalUnits > maxSize ? 'var(--hp-crit)' : 'var(--ink-muted)' }}>
+        {/* Composition */}
+        <div className="mb-5">
+          <div className="flex justify-between mb-2">
+            <span className="mono text-[9px] text-dim tracking-[0.14em]">COMPOSITION</span>
+            <span
+              className="mono text-[10px]"
+              style={{ color: totalUnits > maxSize ? 'var(--hp-crit)' : 'var(--ink-muted)' }}
+            >
               {totalUnits}/{maxSize} UNITS
             </span>
           </div>
@@ -229,24 +232,21 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        {/* Footer buttons */}
+        <div className="flex gap-[10px]">
           <button
             onClick={onClose}
-            style={{
-              flex: 1, padding: '12px 0', border: '1px solid var(--rule-strong)',
-              color: 'var(--ink-muted)', fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-            }}
+            className="!flex-1 !py-3 !border !border-rule-strong display !text-xs !tracking-[0.22em] !uppercase !text-muted"
           >Cancel</button>
           <button
             onClick={handleCreate}
             disabled={!canCreate}
+            className="!flex-[2] !py-3 !border display !text-xs !tracking-[0.22em] !uppercase"
             style={{
-              flex: 2, padding: '12px 0',
-              border: `1px solid ${canCreate ? 'var(--c-coin)' : 'var(--rule)'}`,
-              color: canCreate ? 'var(--c-coin)' : 'var(--ink-dim)',
-              fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-              background: canCreate ? 'rgba(212,168,87,0.06)' : 'transparent',
-              cursor: canCreate ? 'pointer' : 'not-allowed',
+              borderColor: canCreate ? 'var(--c-coin)' : 'var(--rule)',
+              color:       canCreate ? 'var(--c-coin)' : 'var(--ink-dim)',
+              background:  canCreate ? 'rgba(212,168,87,0.06)' : 'transparent',
+              cursor:      canCreate ? 'pointer' : 'not-allowed',
             }}
           >Form &amp; Dispatch</button>
         </div>

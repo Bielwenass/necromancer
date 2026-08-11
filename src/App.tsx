@@ -12,23 +12,21 @@ export default function App() {
   const { catchup, dismissCatchup } = useGameLifecycle();
   const [activeTab, setActiveTab] = useState<TabId>('crypt');
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-      // Dismiss catchup overlay when done
       if (catchup?.done && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
         dismissCatchup();
         return;
       }
       switch (e.key) {
-        case '1': setActiveTab('crypt'); break;
+        case '1': setActiveTab('crypt');      break;
         case '2': setActiveTab('reliquary'); break;
-        case '3': setActiveTab('ritual'); break;
-        case '4': setActiveTab('upgrades'); break;
-        case '5': setActiveTab('codex'); break;
+        case '3': setActiveTab('ritual');    break;
+        case '4': setActiveTab('upgrades');  break;
+        case '5': setActiveTab('codex');     break;
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -36,68 +34,54 @@ export default function App() {
   }, [catchup?.done, dismissCatchup]);
 
   return (
-    <div style={{ width: '100%', height: '100%', background: 'var(--bg-canvas)', position: 'relative' }}>
-      {activeTab === 'crypt' && <CryptMap onTabChange={setActiveTab} />}
-      {activeTab === 'reliquary' && <Reliquary onTabChange={setActiveTab} />}
-      {activeTab === 'ritual' && <Ritual onTabChange={setActiveTab} />}
-      {activeTab === 'upgrades' && <Upgrades onTabChange={setActiveTab} />}
-      {activeTab === 'codex' && <Codex onTabChange={setActiveTab} />}
+    <div className="w-full h-full bg-bg-canvas relative">
+      {activeTab === 'crypt'      && <CryptMap   onTabChange={setActiveTab} />}
+      {activeTab === 'reliquary'  && <Reliquary  onTabChange={setActiveTab} />}
+      {activeTab === 'ritual'     && <Ritual     onTabChange={setActiveTab} />}
+      {activeTab === 'upgrades'   && <Upgrades   onTabChange={setActiveTab} />}
+      {activeTab === 'codex'      && <Codex      onTabChange={setActiveTab} />}
 
       {/* Offline catchup overlay */}
       {catchup !== null && (
-        <div style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.88)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          zIndex: 500,
-        }}>
-          <div className="display" style={{ color: 'var(--ink-bone)', fontSize: 13, letterSpacing: '0.22em', marginBottom: 18 }}>
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.88)] flex flex-col items-center justify-center z-[500]">
+          <div className="display text-sm text-bone !tracking-[0.22em] mb-[18px]">
             {catchup.done ? 'CAUGHT UP' : 'CATCHING UP...'}
           </div>
 
-          <div style={{ width: 240, height: 2, background: 'var(--rule)', marginBottom: 24 }}>
-            <div style={{ width: `${catchup.progress * 100}%`, height: '100%', background: 'var(--ink-bone)', transition: 'width 0.1s linear' }} />
+          <div className="w-60 h-0.5 bg-rule mb-6">
+            <div
+              className="h-full bg-bone transition-[width] duration-100"
+              style={{ width: `${catchup.progress * 100}%` }}
+            />
           </div>
 
-          <div style={{ display: 'flex', gap: 24, marginBottom: 14 }}>
+          <div className="flex gap-6 mb-[14px]">
             {[
               { label: 'BONES', value: catchup.stats.bonesGained },
               { label: 'COINS', value: catchup.stats.coinsGained },
               { label: 'SOULS', value: catchup.stats.soulsGained },
             ].map(({ label, value }) => (
-              <div key={label} style={{ textAlign: 'center', minWidth: 52 }}>
-                <div style={{ fontFamily: 'var(--f-mono)', fontSize: 14, color: 'var(--ink-bone)' }}>
-                  +{value.toLocaleString()}
-                </div>
-                <div style={{ fontFamily: 'var(--f-mono)', fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.1em', marginTop: 3 }}>
-                  {label}
-                </div>
+              <div key={label} className="text-center min-w-[52px]">
+                <div className="mono text-sm text-bone">+{value.toLocaleString()}</div>
+                <div className="mono text-[9px] text-dim tracking-[0.1em] mt-[3px]">{label}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ fontFamily: 'var(--f-mono)', fontSize: 10, color: 'var(--ink-dim)', letterSpacing: '0.08em', marginBottom: catchup.done ? 24 : 0 }}>
+          <div className={`mono text-[10px] text-dim tracking-[0.08em] ${catchup.done ? 'mb-6' : ''}`}>
             {catchup.stats.eventsProcessed} events processed
           </div>
 
           {catchup.done && (
             <button
               onClick={dismissCatchup}
-              style={{
-                padding: '8px 28px',
-                border: '1px solid var(--ink-bone)',
-                color: 'var(--ink-bone)',
-                background: 'transparent',
-                fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em',
-                cursor: 'pointer',
-              }}
+              className="px-7 py-2 border border-bone text-bone bg-transparent cursor-pointer display text-xs !tracking-[0.22em]"
             >
               CONTINUE
             </button>
           )}
         </div>
       )}
-
     </div>
   );
 }

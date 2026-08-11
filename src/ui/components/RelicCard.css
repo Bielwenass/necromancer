@@ -463,7 +463,6 @@
 
 .rc-name {
   font-family: var(--f-display, serif) !important;
-  color: #e8dcc0 !important;
   letter-spacing: 0.05em;
   line-height: 1.2;
   margin: 0 !important;

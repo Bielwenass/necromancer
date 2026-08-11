@@ -12,9 +12,9 @@ export function Ritual({ onTabChange }: RitualProps) {
   return (
     <div className="necro">
       <TopBar />
-      <div className="stage h-[calc(100%-120px)]" style={{ position: 'relative' }}>
+      <div className="stage">
         <PullHistoryPanel />
-        <div style={{ flex: 1, display: 'flex' }}>
+        <div className="flex-1 flex">
           <RitualPanel poolId="bone" />
           <RitualPanel poolId="soul" />
           <RitualPanel poolId="forbidden" />

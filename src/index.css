@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Spectral&family=Tagesschrift&family=VT323&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -48,7 +49,7 @@
   --hp-crit:      #c45a3e;
 
   /* type */
-  --f-display: 'Cinzel', 'Trajan Pro', serif;
+  --f-display: 'Tagesschrift', 'Trajan Pro', serif;
   --f-body:    'Spectral', 'Iowan Old Style', Georgia, serif;
   --f-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
@@ -61,7 +62,6 @@
   background: var(--bg-canvas);
   color: var(--ink-bone);
   font-family: var(--f-body);
-  font-size: 14px;
   line-height: 1.45;
   position: relative;
   overflow: hidden;
@@ -72,7 +72,6 @@
 
 .necro h1, .necro h2, .necro h3, .necro h4 { margin: 0; font-weight: 500; font-family: var(--f-display); letter-spacing: 0.04em; }
 .necro p, .necro ul, .necro ol { margin: 0; }
-.necro button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
 .necro ul { list-style: none; padding: 0; }
 
 .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }

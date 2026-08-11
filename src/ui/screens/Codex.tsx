@@ -12,9 +12,9 @@ export function Codex({ onTabChange }: CodexProps) {
     <div className="necro">
       <TopBar phase="PHASE III · DOMINION" />
 
-      <div className="stage" style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 32 }}>
-        {/* Decorative SVG hex pattern */}
-        <svg style={{ position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none' }} width="1920" height="960">
+      <div className="stage items-center justify-center flex-col gap-8">
+        {/* Decorative hex pattern */}
+        <svg className="absolute inset-0 opacity-[0.04] pointer-events-none" width="1920" height="960">
           {Array.from({ length: 8 }).map((_, row) =>
             Array.from({ length: 12 }).map((_, col) => {
               const x = col * 160 + (row % 2 === 0 ? 0 : 80);
@@ -31,58 +31,36 @@ export function Codex({ onTabChange }: CodexProps) {
           )}
         </svg>
 
-        {/* Soul wisps floating */}
-        <div style={{ display: 'flex', gap: 40, opacity: 0.3 }}>
-          {[0, 1, 2].map(i => (
-            <IconSoul key={i} size={24} color="var(--c-soul)" />
-          ))}
+        <div className="flex gap-10 opacity-30">
+          {[0, 1, 2].map(i => <IconSoul key={i} size={24} color="var(--c-soul)" />)}
         </div>
 
-        {/* Main content */}
-        <div style={{ textAlign: 'center', zIndex: 1 }}>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--c-soul)', letterSpacing: '0.48em', marginBottom: 16 }}>
-            PHASE III · DOMINION
-          </div>
-          <div className="display" style={{ fontSize: 64, color: 'var(--ink-bone)', letterSpacing: '0.24em', textTransform: 'uppercase', lineHeight: 1 }}>
-            Soul Codex
-          </div>
-          <div style={{ width: 80, height: 1, background: 'var(--c-soul)', margin: '24px auto', opacity: 0.5 }} />
-          <div style={{ fontFamily: 'var(--f-body)', fontStyle: 'italic', fontSize: 16, color: 'var(--ink-parchm)', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>
+        <div className="text-center z-[1]">
+          <div className="mono text-xs text-soul tracking-[0.48em] mb-4">PHASE III · DOMINION</div>
+          <div className="display text-[64px] text-bone !tracking-[0.24em] uppercase leading-none">Soul Codex</div>
+          <div className="w-20 h-px bg-soul mx-auto my-6 opacity-50" />
+          <div className="font-body italic text-base text-parchm leading-[1.7] max-w-[600px] mx-auto">
             The souls of the departed await binding.<br />
             Their names are not yet spoken.<br />
             Their deeds are not yet recorded.
           </div>
-          <div className="mono" style={{ marginTop: 32, fontSize: 12, color: 'var(--ink-dim)', letterSpacing: '0.32em' }}>
-            — COMING SOON —
-          </div>
+          <div className="mono text-xs text-dim !tracking-[0.32em] mt-8">— COMING SOON —</div>
         </div>
 
-        {/* Phase II requirement note */}
-        <div style={{
-          zIndex: 1,
-          padding: '16px 32px',
-          border: '1px solid var(--rule)',
-          background: 'var(--bg-panel)',
-          maxWidth: 480, textAlign: 'center',
-        }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', letterSpacing: '0.18em', marginBottom: 8 }}>
-            UNLOCKS UPON ASCENSION
-          </div>
-          <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+        <div className="z-[1] px-8 py-4 border border-rule bg-bg-panel max-w-[480px] text-center">
+          <div className="mono text-[10px] text-muted tracking-[0.18em] mb-2">UNLOCKS UPON ASCENSION</div>
+          <div className="flex gap-6 justify-center">
             {['Clear Ossuary of Vael', 'Reach 500 souls', 'Purchase Apotheosis'].map((req, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: 'var(--ink-dim)', fontSize: 11 }}>○</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>{req}</span>
+              <div key={i} className="flex items-center gap-[6px]">
+                <span className="text-dim text-xs">○</span>
+                <span className="text-xs text-muted">{req}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Hex icon decoration */}
-        <div style={{ display: 'flex', gap: 16, opacity: 0.15, zIndex: 1 }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <IconHex key={i} size={20} color="var(--c-soul)" />
-          ))}
+        <div className="flex gap-4 opacity-[0.15] z-[1]">
+          {Array.from({ length: 5 }).map((_, i) => <IconHex key={i} size={20} color="var(--c-soul)" />)}
         </div>
       </div>
 

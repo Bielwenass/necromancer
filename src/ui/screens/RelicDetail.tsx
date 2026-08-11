@@ -18,84 +18,84 @@ export function RelicDetail({
   const dustValue = DUST_VALUES[relic.rarity];
 
   return (
-    <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: 300 }}>
+    <div className="px-4 py-[14px] flex flex-col h-full">
+      {/* Card preview */}
+      <div className="flex justify-center">
+        <div className="w-[300px]">
           <RelicCard relic={relic} variant="pull" tweaks={{ idleDrift: true, tilt: 6 }} />
         </div>
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span className="mono" style={{ fontSize: 9, color: 'var(--ink-muted)', letterSpacing: '0.14em' }}>QUALITY</span>
-          <span className="mono" style={{ fontSize: 11, color: c }}>
-            {relic.quality}<span style={{ color: 'var(--ink-dim)' }}>/100</span>
+      {/* Quality */}
+      <div className="mt-[14px]">
+        <div className="flex justify-between">
+          <span className="mono text-[9px] text-muted tracking-[0.14em]">QUALITY</span>
+          <span className="mono text-xs" style={{ color: c }}>
+            {relic.quality}<span className="text-dim">/100</span>
           </span>
         </div>
-        <div className="bar-meter" style={{ marginTop: 4, height: 5 }}>
-          <i style={{ width: `${relic.quality}%`, background: c }} />
+        <div
+          className="bg-bg-inset border border-rule relative overflow-hidden mt-1"
+          style={{ height: 5 }}
+        >
+          <i className="block h-full" style={{ width: `${relic.quality}%`, background: c }} />
         </div>
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.14em' }}>FUSION PROGRESS</span>
-          <span className="mono" style={{ fontSize: 9, color: 'var(--ink-muted)' }}>{relic.duplicateCount}/5 DUPES</span>
+      {/* Fusion progress */}
+      <div className="mt-3">
+        <div className="flex justify-between mb-[6px]">
+          <span className="mono text-[9px] text-dim tracking-[0.14em]">FUSION PROGRESS</span>
+          <span className="mono text-[9px] text-muted">{relic.duplicateCount}/5 DUPES</span>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="flex gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} style={{
-              flex: 1, height: 10,
-              background: i < relic.duplicateCount ? c : 'var(--bg-inset)',
-              border: `1px solid ${i < relic.duplicateCount ? c : 'var(--rule)'}`,
-              opacity: i < relic.duplicateCount ? 1 : 0.4,
-            }} />
+            <div
+              key={i}
+              className="flex-1 h-[10px] border"
+              style={{
+                background:  i < relic.duplicateCount ? c : 'var(--bg-inset)',
+                borderColor: i < relic.duplicateCount ? c : 'var(--rule)',
+                opacity:     i < relic.duplicateCount ? 1 : 0.4,
+              }}
+            />
           ))}
         </div>
       </div>
 
-      <div style={{ marginTop: 'auto', display: 'flex', gap: 8, paddingTop: 16 }}>
+      {/* Action buttons */}
+      <div className="mt-auto flex gap-2 pt-4">
         {!confirmSacrifice ? (
           <button
             onClick={onSacrifice}
-            style={{
-              flex: 1, padding: '10px 0',
-              border: '1px solid var(--rule-strong)',
-              color: 'var(--ink-parchm)',
-              fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-            }}
+            className="flex-1 py-[10px] border border-rule-strong display text-xs tracking-[0.22em] uppercase text-parchm"
           >
             Sacrifice (+{dustValue} dust)
           </button>
         ) : (
           <>
-            <button onClick={onCancelSacrifice} style={{
-              flex: 1, padding: '10px 0', border: '1px solid var(--rule-strong)', color: 'var(--ink-muted)',
-              fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-            }}>Cancel</button>
-            <button onClick={onSacrifice} style={{
-              flex: 1, padding: '10px 0', border: '1px solid var(--hp-crit)', color: 'var(--hp-crit)',
-              fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-              background: 'rgba(196,90,62,0.08)',
-            }}>Confirm</button>
+            <button
+              onClick={onCancelSacrifice}
+              className="flex-1 py-[10px] border border-rule-strong display text-xs tracking-[0.22em] uppercase text-muted"
+            >Cancel</button>
+            <button
+              onClick={onSacrifice}
+              className="flex-1 py-[10px] border border-hp-crit display text-xs tracking-[0.22em] uppercase text-hp-crit bg-[rgba(196,90,62,0.08)]"
+            >Confirm</button>
           </>
         )}
       </div>
 
+      {/* Equip slots */}
       {base && (
-        <div style={{ marginTop: 8 }}>
-          <div className="mono" style={{ fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.14em', marginBottom: 4 }}>EQUIP TO SLOT</div>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        <div className="mt-2">
+          <div className="mono text-[9px] text-dim tracking-[0.14em] mb-1">EQUIP TO SLOT</div>
+          <div className="flex gap-1 flex-wrap">
             {base.slotIds.map(slotId => (
               <button
                 key={slotId}
                 onClick={() => onEquip(slotId)}
-                style={{
-                  padding: '4px 10px',
-                  border: '1px solid var(--rule-strong)',
-                  color: 'var(--ink-muted)',
-                  fontFamily: 'var(--f-mono)', fontSize: 10, letterSpacing: '0.1em',
-                }}
+                className="px-[10px] py-1 border border-rule-strong mono text-[10px] tracking-[0.1em] text-muted"
               >{slotId}</button>
             ))}
           </div>

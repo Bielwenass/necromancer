@@ -87,7 +87,7 @@ export function CombatWindow({ squad, def: _def }: { squad: Squad; def: DungeonD
       ref={canvasRef}
       width={COMBAT_W}
       height={COMBAT_H}
-      style={{ display: 'block', width: '100%' }}
+      className="block w-full"
     />
   );
 }

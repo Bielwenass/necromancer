@@ -6,7 +6,7 @@ export function tierColor(tier: 1 | 2 | 3 | 4): string {
   if (tier === 4) return 'var(--r-epic)';
   if (tier === 3) return 'var(--r-rare)';
   if (tier === 2) return 'var(--r-uncommon)';
-  return 'var(--ink-dim)';
+  return 'var(--r-common)';
 }
 
 export function squadColor(squad: Squad): string {
@@ -25,13 +25,13 @@ export function squadHpPct(squad: Squad): number {
 export function DungeonCard({ def, ds, squads, onDispatch }: {
   def: DungeonDef; ds: DungeonState; squads: Squad[]; onDispatch: (id: string) => void;
 }) {
-  const fightingSquad = squads.find(s => s.targetDungeonId === def.id && s.state === 'fighting');
+  const fightingSquad  = squads.find(s => s.targetDungeonId === def.id && s.state === 'fighting');
   const travelingSquad = squads.find(s => s.targetDungeonId === def.id && s.state === 'traveling');
   const returningSquad = squads.find(s => s.targetDungeonId === def.id && s.state === 'returning');
   const activeSquad = fightingSquad ?? travelingSquad ?? returningSquad;
 
-  const locked = !ds.unlocked;
-  const hpPct = activeSquad ? squadHpPct(activeSquad) : 1;
+  const locked     = !ds.unlocked;
+  const hpPct      = activeSquad ? squadHpPct(activeSquad) : 1;
   const totalUnits = activeSquad
     ? activeSquad.composition.skeleton + activeSquad.composition.zombie + activeSquad.composition.wraith
     : 0;
@@ -42,46 +42,49 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
     ? formatTime(Math.round(activeSquad.position * def.travelTimeTicks))
     : null;
 
-  const clearMult = (1 + Math.sqrt(ds.clearCount + 1) * 0.07);
+  const clearMult        = 1 + Math.sqrt(ds.clearCount + 1) * 0.07;
   const clearMultDisplay = clearMult.toFixed(2);
+  const tc               = tierColor(def.tier);
 
   return (
     <div
       onClick={() => !locked && onDispatch(def.id)}
-      style={{
-        position: 'relative', height: 140, flexShrink: 0, borderBottom: '1px solid var(--rule)',
-        overflow: 'hidden', cursor: locked ? 'default' : 'pointer', opacity: locked ? 0.55 : 1,
-      }}
+      className={`relative h-[140px] shrink-0 border-b border-rule overflow-hidden
+        ${locked ? 'opacity-[0.55] cursor-default' : 'cursor-pointer'}`}
     >
-      <div style={{ position: 'relative', padding: '0 32px', height: '100%', display: 'flex', alignItems: 'center', gap: 28 }}>
-        <div style={{
-          flexShrink: 0, border: `1px solid ${tierColor(def.tier)}`,
-          padding: '6px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-        }}>
-          <span className="mono" style={{ fontSize: 11, color: tierColor(def.tier), letterSpacing: '0.2em' }}>TIER</span>
-          <span className="display" style={{ fontSize: 20, color: tierColor(def.tier) }}>{def.tier}</span>
+      <div className="relative px-8 h-full flex items-center gap-7">
+
+        {/* Tier badge — border/text color are dynamic */}
+        <div
+          className="shrink-0 px-3 py-1.5 flex flex-col items-center gap-0.5"
+          style={{ border: `1px solid ${tc}` }}
+        >
+          <span className="mono !tracking-[0.2em] text-[11px]" style={{ color: tc }}>TIER</span>
+          <span className="display text-xl"                    style={{ color: tc }}>{def.tier}</span>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="display" style={{
-            fontSize: 20, letterSpacing: '0.24em', textTransform: 'uppercase', marginBottom: 7,
-            color: locked ? 'var(--ink-muted)' : 'var(--ink-bone)',
-          }}>
+        {/* Name + stats */}
+        <div className="flex-1 min-w-0">
+          <div className={`display text-2xl mb-2 ${locked ? 'text-muted' : 'text-bone'}`}>
             {def.name}
           </div>
           {locked ? (
-            <div className="mono" style={{ fontSize: 13, color: 'var(--ink-dim)', letterSpacing: '0.12em' }}>
+            <div className="mono text-dim text-sm">
               SEALED — {def.unlockCondition}
             </div>
           ) : (
-            <div className="mono" style={{ fontSize: 13, color: 'var(--ink-muted)', display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+            <div className="mono text-muted text-sm flex flex-wrap gap-x-5">
               <span>{def.travelTimeTicks / 10}s travel</span>
-              <span>{Math.floor(def.lootTable.bonesMin * clearMult)}–{Math.floor(def.lootTable.bonesMax * clearMult)} bones</span>
-              <span>{Math.floor(def.lootTable.coinsMin * clearMult)}–{Math.floor(def.lootTable.coinsMax * clearMult)} coins</span>
+              <span>
+                {Math.floor(def.lootTable.bonesMin * clearMult)}–{Math.floor(def.lootTable.bonesMax * clearMult)} bones
+              </span>
+              <span>
+                {Math.floor(def.lootTable.coinsMin * clearMult)}–{Math.floor(def.lootTable.coinsMax * clearMult)} coins
+              </span>
               <span>{(def.lootTable.soulChance * 100).toFixed(0)}% soul</span>
               {ds.clearCount > 0 && (
                 <>
-                  <span style={{ color: 'var(--c-coin)' }}>{ds.clearCount}× cleared</span>
+                  <span className="text-coin">{ds.clearCount}× cleared</span>
                   <span>x{clearMultDisplay} clear mult</span>
                 </>
               )}
@@ -89,31 +92,35 @@ export function DungeonCard({ def, ds, squads, onDispatch }: {
           )}
         </div>
 
-        <div style={{ flexShrink: 0, minWidth: 260, textAlign: 'right' }}>
+        {/* Squad status */}
+        <div className="shrink-0 min-w-[260px] text-right">
           {activeSquad ? (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginBottom: 7 }}>
-                <span className="display" style={{ fontSize: 15, color: 'var(--ink-parchm)', letterSpacing: '0.16em' }}>
+              <div className="flex items-center justify-end gap-2.5 mb-[7px]">
+                <span className="display text-parchm !tracking-[0.16em]">
                   {activeSquad.name}
                 </span>
-                <span className="mono" style={{ fontSize: 13, color: squadColor(activeSquad) }}>×{totalUnits}</span>
+                <span className="mono text-[13px]" style={{ color: squadColor(activeSquad) }}>
+                  ×{totalUnits}
+                </span>
               </div>
-              <div className="mono" style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 9 }}>
+              <div className="mono text-[13px] text-muted mb-[9px]">
                 {activeSquad.state === 'traveling' && eta ? `→ TRAVELING · ${eta}` :
-                 activeSquad.state === 'fighting' ? '⚔ FIGHTING' :
-                 eta ? `⇠ RETURNING · ${eta}` : '⇠ RETURNING'}
+                 activeSquad.state === 'fighting'          ? '⚔ FIGHTING' :
+                 eta                                        ? `⇠ RETURNING · ${eta}` : '⇠ RETURNING'}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+              <div className="flex items-center justify-end gap-2.5">
                 <HPBar pct={hpPct} w={150} />
-                <span className="mono" style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{Math.round(hpPct * 100)}%</span>
+                <span className="mono text-xs text-muted">{Math.round(hpPct * 100)}%</span>
               </div>
             </div>
           ) : (
-            <div className="mono" style={{ fontSize: 14, color: 'var(--ink-dim)', letterSpacing: '0.2em' }}>
+            <div className="mono text-[14px] text-dim !tracking-[0.2em]">
               {locked ? 'SEALED' : 'AVAILABLE'}
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

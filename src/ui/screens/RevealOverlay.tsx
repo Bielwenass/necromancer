@@ -20,29 +20,25 @@ export function RevealOverlay({ relics, onClose }: { relics: Relic[]; onClose: (
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,0.85)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      zIndex: 200,
-    }}>
-      <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} width="100%" height="100%">
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.85)] flex flex-col items-center justify-center z-[200]">
+      {/* Ray burst */}
+      <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
         <defs>
           <radialGradient id="raysFade2" cx="50%" cy="45%" r="40%">
-            <stop offset="0%" stopColor="var(--c-coin)" stopOpacity="0.15" />
+            <stop offset="0%"   stopColor="var(--c-coin)" stopOpacity="0.15" />
             <stop offset="100%" stopColor="var(--c-coin)" stopOpacity="0" />
           </radialGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#raysFade2)" />
       </svg>
 
-      <div className="display" style={{ fontSize: 14, color: 'var(--c-coin)', letterSpacing: '0.36em', marginBottom: 24, zIndex: 1 }}>
+      <div className="display text-sm text-coin !tracking-[0.36em] mb-6 z-[1]">
         REVELATION · {relics.length} OF {relics.length}
       </div>
 
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1600, zIndex: 1 }}>
+      <div className="flex gap-[14px] flex-wrap justify-center max-w-[1600px] z-[1]">
         {relics.map((relic, i) => (
-          <div key={relic.id} style={{ width: 280 }}>
+          <div key={relic.id} className="w-[280px]">
             <RelicCard
               relic={relic}
               variant="pull"
@@ -54,16 +50,11 @@ export function RevealOverlay({ relics, onClose }: { relics: Relic[]; onClose: (
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 32, zIndex: 1 }}>
+      <div className="flex gap-3 mt-8 z-[1]">
         {!allRevealed && (
           <button
             onClick={skipAll}
-            style={{
-              padding: '10px 24px',
-              border: '1px solid var(--rule-strong)',
-              color: 'var(--ink-muted)',
-              fontFamily: 'var(--f-display)', fontSize: 11, letterSpacing: '0.22em',
-            }}
+            className="!px-6 !py-[10px] !border !border-rule-strong display !text-xs !tracking-[0.22em] !text-muted"
           >
             SKIP ALL
           </button>
@@ -71,13 +62,7 @@ export function RevealOverlay({ relics, onClose }: { relics: Relic[]; onClose: (
         {allRevealed && (
           <button
             onClick={onClose}
-            style={{
-              padding: '12px 32px',
-              border: '1px solid var(--c-coin)',
-              color: 'var(--c-coin)',
-              fontFamily: 'var(--f-display)', fontSize: 12, letterSpacing: '0.28em',
-              background: 'rgba(212,168,87,0.06)',
-            }}
+            className="!px-8 !py-3 !border !border-coin display !text-xs !tracking-[0.28em] !text-coin !bg-[rgba(212,168,87,0.06)]"
           >
             COLLECT
           </button>
