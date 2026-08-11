@@ -3,10 +3,10 @@ import type { CombatEngine } from "../combat/engine";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { makeDungeonState } from "./dungeons";
 import { executePull, POOL_CONFIGS } from "./gacha";
-import { canEquipInSlot, DUST_VALUES, fuseRelics } from "./relics";
+import { canEquipInSlot, DUST_VALUES } from "./relics";
 import { clearSave, loadGame, saveGame } from "./save";
 import { gameTick, generateLoot } from "./tick";
-import type { GameState, PoolId, Rarity, SlotId, UnitType } from "./types";
+import type { GameState, PoolId, SlotId, UnitType } from "./types";
 import {
 	canPurchaseUpgrade,
 	recomputeDerived,
@@ -78,7 +78,6 @@ interface StoreActions {
 	unequipRelic: (slotId: SlotId) => void;
 	markRelicSeen: (relicId: string) => void;
 	sacrificeRelic: (relicId: string) => void;
-	fuseRelicsAction: (baseId: string, rarity: Rarity) => void;
 	purchaseUpgrade: (nodeId: string) => void;
 	pull: (poolId: PoolId, count: 1 | 10) => void;
 	clearLastPulled: () => void;
@@ -89,7 +88,6 @@ interface StoreActions {
 	) => void;
 	recomputeDerivedAction: () => void;
 	resetSave: () => void;
-	markRelicsOld: () => void;
 	summonUnits: (type: UnitType, count: number) => void;
 	levelUpWorkshop: (key: string) => void;
 	digBone: () => void;
@@ -357,6 +355,14 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 					if (!canEquipInSlot(relic.baseId, slotId)) return prev;
 
 					const newEquipped = { ...prev.relics.equipped };
+
+					for (const [prevSlotId, prevItemId] of Object.entries(newEquipped)) {
+						if (prevItemId === relicId) {
+							// Unequip from previous slot
+							delete newEquipped[prevSlotId as SlotId];
+						}
+					}
+
 					// If slot already has something, unequip it (it stays in inventory)
 					newEquipped[slotId] = relicId;
 
@@ -414,22 +420,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 							dust: prev.resources.dust + dustGain,
 						},
 						relics: { inventory: newInventory, equipped: newEquipped },
-					};
-					return { ...newState, derived: recomputeDerived(newState) };
-				});
-			},
-
-			fuseRelicsAction: (baseId: string, rarity: Rarity) => {
-				set((prev) => {
-					const { newInventory, success } = fuseRelics(
-						prev.relics.inventory,
-						baseId,
-						rarity,
-					);
-					if (!success) return prev;
-					const newState = {
-						...prev,
-						relics: { ...prev.relics, inventory: newInventory },
 					};
 					return { ...newState, derived: recomputeDerived(newState) };
 				});
@@ -541,18 +531,6 @@ export const useGameStore = create<GameState & StoreActions & StoreRuntime>()(
 				clearSave();
 				const freshState = buildInitialState();
 				set(freshState);
-			},
-
-			markRelicsOld: () => {
-				set((prev) => ({
-					relics: {
-						...prev.relics,
-						inventory: prev.relics.inventory.map((r) => ({
-							...r,
-							isNew: false,
-						})),
-					},
-				}));
 			},
 
 			levelUpWorkshop: (key: string) => {
