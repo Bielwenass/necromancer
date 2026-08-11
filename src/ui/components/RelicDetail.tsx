@@ -1,8 +1,8 @@
 import { RELIC_BASES } from "../../game/data/relics";
 import { DUST_VALUES } from "../../game/relics";
 import type { Relic, SlotId } from "../../game/types";
-import { RelicCard } from "../components/RelicCard";
 import { rarityColor } from "../theme";
+import { RelicCard } from "./RelicCard";
 
 export function RelicDetail({
 	relic,

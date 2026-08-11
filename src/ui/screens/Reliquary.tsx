@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useGameStore } from "../../game/store";
 import type { Rarity, SlotId } from "../../game/types";
+import { EquippedSlotCard } from "../components/EquippedSlotCard";
 import { IconCrypt } from "../components/Icons";
+import { InvCard } from "../components/InvCard";
+import { RelicDetail } from "../components/RelicDetail";
 import type { TabId } from "../components/TabBar";
 import { TabBar } from "../components/TabBar";
 import { TopBar } from "../components/TopBar";
 import { rarityColor } from "../theme";
-import { EquippedSlotCard } from "./EquippedSlotCard";
-import { InvCard } from "./InvCard";
-import { RelicDetail } from "./RelicDetail";
 
 const SLOT_GROUPS: {
 	title: string;
@@ -140,7 +140,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 									) : (
 										<IconCrypt size={12} color="var(--ink-muted)" />
 									)}
-									<span className="display text-bone !tracking-widest uppercase">
+									<span className="display text-bone tracking-widest">
 										{group.title}
 									</span>
 									<div className="flex-1 h-px bg-rule ml-1.5" />
@@ -262,7 +262,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 							</div>
 						</div>
 					) : (
-						<div className="scr-ghost grid grid-cols-[repeat(auto-fill,124px)] gap-2.5 content-start overflow-y-auto flex-1">
+						<div className="scr-ghost grid grid-cols-[repeat(auto-fill,124px)] gap-2.5 content-start overflow-y-auto flex-1 p-1">
 							{filteredInventory.map((relic) => (
 								<InvCard
 									key={relic.id}

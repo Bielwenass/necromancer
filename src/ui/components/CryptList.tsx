@@ -2,21 +2,21 @@ import { useEffect, useState } from "react";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
 import { useGameStore } from "../../game/store";
 import type { DungeonDef } from "../../game/types";
-import { CombatWindow } from "../components/CombatWindow";
-import { DispatchModal } from "../components/DispatchModal";
-import { HPBar } from "../components/HPBar";
-import type { TabId } from "../components/TabBar";
-import { TabBar } from "../components/TabBar";
-import { TopBar } from "../components/TopBar";
 import { formatTime } from "../theme";
+import { CombatWindow } from "./CombatWindow";
+import { DispatchModal } from "./DispatchModal";
 import { DungeonCard, squadColor, squadHpPct } from "./DungeonCard";
+import { HPBar } from "./HPBar";
+import type { TabId } from "./TabBar";
+import { TabBar } from "./TabBar";
+import { TopBar } from "./TopBar";
 import { UnitReserve } from "./UnitReserve";
 
-interface CryptMapProps {
+interface CryptListProps {
 	onTabChange: (tab: TabId) => void;
 }
 
-export function CryptMap({ onTabChange }: CryptMapProps) {
+export function CryptList({ onTabChange }: CryptListProps) {
 	const squads = useGameStore((s) => s.squads);
 	const dungeons = useGameStore((s) => s.dungeons);
 	const units = useGameStore((s) => s.units);

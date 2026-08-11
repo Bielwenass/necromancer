@@ -1,5 +1,5 @@
 import type { Relic, SlotId } from "../../game/types";
-import { RelicCard } from "../components/RelicCard";
+import { RelicCard } from "./RelicCard";
 
 export function EquippedSlotCard({
 	slotId,

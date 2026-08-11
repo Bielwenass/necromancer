@@ -99,10 +99,10 @@ const STAR_ANGLES = [-90, -30, 30, 90, 150, 210];
 
 // Corner brackets: [x, y, rotation].
 const CARD_CORNERS: [number, number, number][] = [
-	[16, 16, 0],
-	[304, 16, 90],
-	[16, 444, 180],
-	[304, 444, 270],
+	[15, 15, 0],
+	[305, 15, 90],
+	[15, 445, 270],
+	[305, 445, 180],
 ];
 
 const SLOT_ART_LABELS: Record<string, string> = {
@@ -647,7 +647,7 @@ export function RelicCard({
 										d="M -8 0 L 0 0 L 0 -8"
 										fill="none"
 										stroke="currentColor"
-										strokeOpacity="0.8"
+										strokeOpacity="0.5"
 										strokeWidth="0.9"
 									/>
 								</g>

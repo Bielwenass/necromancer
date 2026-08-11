@@ -1,5 +1,5 @@
 import type { Relic } from "../../game/types";
-import { RelicCard } from "../components/RelicCard";
+import { RelicCard } from "./RelicCard";
 
 export function InvCard({
 	relic,

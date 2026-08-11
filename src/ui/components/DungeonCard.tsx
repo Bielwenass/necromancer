@@ -1,6 +1,6 @@
 import type { DungeonDef, DungeonState, Squad } from "../../game/types";
-import { HPBar } from "../components/HPBar";
 import { formatTime } from "../theme";
+import { HPBar } from "./HPBar";
 
 export function tierColor(tier: 1 | 2 | 3 | 4): string {
 	if (tier === 4) return "var(--r-epic)";

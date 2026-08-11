@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useGameLifecycle } from "./game/useGameLifecycle";
-import { CryptMap } from "./ui/screens/CryptMap";
+import { CryptList } from "./ui/components/CryptList";
 import { Reliquary } from "./ui/screens/Reliquary";
 import { Ritual } from "./ui/screens/Ritual";
 import { Upgrades } from "./ui/screens/Upgrades";
@@ -41,7 +41,7 @@ export default function App() {
 
 	return (
 		<div className="w-full h-full bg-bg-canvas relative">
-			{activeTab === "crypt" && <CryptMap onTabChange={setActiveTab} />}
+			{activeTab === "crypt" && <CryptList onTabChange={setActiveTab} />}
 			{activeTab === "reliquary" && <Reliquary onTabChange={setActiveTab} />}
 			{activeTab === "ritual" && <Ritual onTabChange={setActiveTab} />}
 			{activeTab === "upgrades" && <Upgrades onTabChange={setActiveTab} />}
