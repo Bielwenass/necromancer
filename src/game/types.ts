@@ -1,207 +1,217 @@
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-export type UnitType = 'skeleton' | 'zombie' | 'wraith';
-export type SquadState = 'idle' | 'traveling' | 'fighting' | 'returning';
-export type SlotId = 'C1' | 'C2' | 'C3' | 'I1' | 'I2' | 'II1' | 'II2' | 'III1' | 'III2';
-export type PoolId = 'bone' | 'soul' | 'forbidden';
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type UnitType = "skeleton" | "zombie" | "wraith";
+export type SquadState = "idle" | "traveling" | "fighting" | "returning";
+export type SlotId =
+	| "C1"
+	| "C2"
+	| "C3"
+	| "I1"
+	| "I2"
+	| "II1"
+	| "II2"
+	| "III1"
+	| "III2";
+export type PoolId = "bone" | "soul" | "forbidden";
 
 export interface Affix {
-  id: string;
-  value: number;
-  rollPosition: number; // 0-1
+	id: string;
+	value: number;
+	rollPosition: number; // 0-1
 }
 
 export interface Relic {
-  id: string;
-  baseId: string;
-  rarity: Rarity;
-  mainAffix: Affix;
-  minorAffixes: Affix[];
-  uniqueAffix?: string;
-  upgradeLevel: number; // 0-5
-  duplicateCount: number;
-  quality: number; // 0-100, derived
-  isNew?: boolean;
+	id: string;
+	baseId: string;
+	rarity: Rarity;
+	mainAffix: Affix;
+	minorAffixes: Affix[];
+	uniqueAffix?: string;
+	upgradeLevel: number; // 0-5
+	duplicateCount: number;
+	quality: number; // 0-100, derived
+	isNew?: boolean;
 }
 
 export interface RelicBase {
-  id: string;
-  name: string;
-  slot: 'crypt' | 'skeleton' | 'zombie' | 'wraith';
-  slotIds: SlotId[];
-  mainAffixId: string;
-  mainAffixRange: [number, number];
-  minorAffixPool: string[];
-  glyph: string;
-  set?: string;
-  description: string;
+	id: string;
+	name: string;
+	slot: "crypt" | "skeleton" | "zombie" | "wraith";
+	slotIds: SlotId[];
+	mainAffixId: string;
+	mainAffixRange: [number, number];
+	minorAffixPool: string[];
+	glyph: string;
+	set?: string;
+	description: string;
 }
 
 export interface AffixDef {
-  id: string;
-  label: string;
-  unit: string; // '%' or '' for flat
-  range: [number, number];
+	id: string;
+	label: string;
+	unit: string; // '%' or '' for flat
+	range: [number, number];
 }
 
 export type CombatOutcome = {
-  winner: 'a' | 'b' | 'draw';
-  survivorsByType: Record<string, number>;
+	winner: "a" | "b" | "draw";
+	survivorsByType: Record<string, number>;
 };
 
 export interface Squad {
-  id: string;
-  name: string;
-  composition: Record<UnitType, number>;
-  currentHp: Record<UnitType, number>;
-  targetDungeonId: string | null;
-  state: SquadState;
-  position: number; // 0-1 along route
-  pendingLoot: Partial<Resources> | null;
-  fightSeed?: number;
-  fightStartWallTime?: number;
-  manualRecall?: boolean;
+	id: string;
+	name: string;
+	composition: Record<UnitType, number>;
+	currentHp: Record<UnitType, number>;
+	targetDungeonId: string | null;
+	state: SquadState;
+	position: number; // 0-1 along route
+	pendingLoot: Partial<Resources> | null;
+	fightSeed?: number;
+	fightStartWallTime?: number;
+	manualRecall?: boolean;
 }
 
 export type EnemyDef = {
-  name: string;
-  amount: number;
-  color: string;
-  stats: { hp: number; dmg: number; speed: number };
+	name: string;
+	amount: number;
+	color: string;
+	stats: { hp: number; dmg: number; speed: number };
 };
 
 export interface DungeonDef {
-  id: string;
-  name: string;
-  tier: 1 | 2 | 3 | 4;
-  enemies: EnemyDef[],
-  lootTable: { bonesMin: number; bonesMax: number; coinsMin: number; coinsMax: number; soulChance: number; corpseMin: number; corpseMax: number };
-  travelTimeTicks: number;
-  unlockCondition: string | null;
-  kind: 'ruin' | 'tower' | 'skull';
+	id: string;
+	name: string;
+	tier: 1 | 2 | 3 | 4;
+	enemies: EnemyDef[];
+	lootTable: {
+		bonesMin: number;
+		bonesMax: number;
+		coinsMin: number;
+		coinsMax: number;
+		soulChance: number;
+		corpseMin: number;
+		corpseMax: number;
+	};
+	travelTimeTicks: number;
+	unlockCondition: string | null;
+	kind: "ruin" | "tower" | "skull";
 }
 
-
 export interface DungeonState {
-  id: string;
-  clearCount: number;
-  unlocked: boolean;
+	id: string;
+	clearCount: number;
+	unlocked: boolean;
 }
 
 export interface UpgradeNode {
-  id: string;
-  branch: 'summoning' | 'command' | 'necromancy';
-  name: string;
-  description: string;
-  flavor?: string;
-  tier: number;
-  cost: number;
-  prerequisites: string[];
-  unlocks: string[];
-  icon: string;
-  x: number;
-  y: number;
-  capstone?: boolean;
+	id: string;
+	branch: "summoning" | "command" | "necromancy";
+	name: string;
+	description: string;
+	flavor?: string;
+	tier: number;
+	cost: number;
+	prerequisites: string[];
+	unlocks: string[];
+	icon: string;
+	x: number;
+	y: number;
+	capstone?: boolean;
 }
 
 export interface PullRecord {
-  relicId: string;
-  relicName: string;
-  rarity: Rarity;
-  poolId: PoolId;
-  glyph: string;
-  tickCount: number;
-}
-
-export interface SurgeState {
-  cooldownTicks: number;
-  charges: number;
-  activeBuff: 'yield' | 'speed' | 'damage' | null;
-  buffTicksRemaining: number;
+	relicId: string;
+	relicName: string;
+	rarity: Rarity;
+	poolId: PoolId;
+	glyph: string;
+	tickCount: number;
 }
 
 export interface Resources {
-  bones: number;
-  coins: number;
-  souls: number;
-  dust: number;
-  corpses: number;
+	bones: number;
+	coins: number;
+	souls: number;
+	dust: number;
+	corpses: number;
 }
 
 export interface WorkshopState {
-  skeleton: { hp: number; dmg: number; speed: number };
-  zombie:   { hp: number; dmg: number; speed: number };
-  wraith:   { hp: number; dmg: number; speed: number };
-  crypt: { squadSize: number; travelSpeed: number };
-  garden: number[]; // 6 plots; 0 = not purchased, ≥1 = level
+	skeleton: { hp: number; dmg: number; speed: number };
+	zombie: { hp: number; dmg: number; speed: number };
+	wraith: { hp: number; dmg: number; speed: number };
+	crypt: { squadSize: number; travelSpeed: number };
+	garden: number[]; // 6 plots; 0 = not purchased, ≥1 = level
 }
 
 export interface Units {
-  skeletons: number;
-  zombies: number;
-  wraiths: number;
+	skeletons: number;
+	zombies: number;
+	wraiths: number;
 }
 
 export interface UnitDerivedStats {
-  hpFlat: number;
-  hpBonus: number;
-  dmgFlat: number;
-  dmgBonus: number;
-  speedFlat: number;
-  speedBonus: number;
+	hpFlat: number;
+	hpBonus: number;
+	dmgFlat: number;
+	dmgBonus: number;
+	speedFlat: number;
+	speedBonus: number;
 }
 
 export interface GameState {
-  resources: Resources;
-  units: Units;
-  squads: Squad[];
-  dungeons: DungeonState[];
-  relics: {
-    inventory: Relic[];
-    equipped: Partial<Record<SlotId, string | null>>;
-  };
-  upgrades: {
-    purchased: string[];
-    availablePoints: number;
-  };
-  surge: SurgeState;
-  gacha: {
-    pityCounters: Record<PoolId, number>;
-    pullHistory: PullRecord[];
-    sessionTotals: Record<Rarity, number>;
-    lastPulledRelics: Relic[] | null;
-  };
-  workshop: WorkshopState;
-  meta: {
-    tickCount: number;
-    dayCount: number;
-    version: number;
-    lastTickAt: number;
-  };
-  derived: {
-    bonesPerTick: number;
-    coinsPerTick: number;
-    soulsPerTick: number;
-    boneYieldBonus: number;
-    coinYieldBonus: number;
-    soulsYieldBonus: number;
-    maxSquadSize: number;
-    maxActiveSquads: number;
-    zombiesUnlocked: boolean;
-    wraithsUnlocked: boolean;
-    autoDeploy: boolean;
-    boneSurgeActive: boolean;
-    soulHarvestBonus: number;
-    rarityBoostActive: boolean;
-    surgeYieldMultiplier: number;
-    surgeSpeedMultiplier: number;
-    surgeDamageMultiplier: number;
+	resources: Resources;
+	units: Units;
+	squads: Squad[];
+	dungeons: DungeonState[];
+	relics: {
+		inventory: Relic[];
+		equipped: Partial<Record<SlotId, string | null>>;
+	};
+	upgrades: {
+		purchased: string[];
+		availablePoints: number;
+	};
+	gacha: {
+		pityCounters: Record<PoolId, number>;
+		pullHistory: PullRecord[];
+		sessionTotals: Record<Rarity, number>;
+		lastPulledRelics: Relic[] | null;
+	};
+	workshop: WorkshopState;
+	meta: {
+		tickCount: number;
+		dayCount: number;
+		version: number;
+		lastTickAt: number;
+	};
+	derived: {
+		bonesPerTick: number;
+		coinsPerTick: number;
+		soulsPerTick: number;
+		boneYieldBonus: number;
+		coinYieldBonus: number;
+		soulsYieldBonus: number;
+		/**
+		 * Accumulated from the `corpseYield` affix and the `n3a` upgrade, but not
+		 * yet applied to loot anywhere — corpse drops currently ignore it.
+		 */
+		corpseYieldBonus: number;
+		maxSquadSize: number;
+		maxActiveSquads: number;
+		zombiesUnlocked: boolean;
+		wraithsUnlocked: boolean;
+		autoDeploy: boolean;
+		boneSurgeActive: boolean;
+		soulHarvestBonus: number;
+		rarityBoostActive: boolean;
 
-    skeleton: UnitDerivedStats;
-    zombie: UnitDerivedStats;
-    wraith: UnitDerivedStats;
+		skeleton: UnitDerivedStats;
+		zombie: UnitDerivedStats;
+		wraith: UnitDerivedStats;
 
-    squadTravelSpeedBonus: number;
-    summonCostBonus: number;
-    combatSpeedMultiplier: number;
-  };
+		squadTravelSpeedBonus: number;
+		summonCostBonus: number;
+		combatSpeedMultiplier: number;
+	};
 }
