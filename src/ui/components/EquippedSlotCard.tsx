@@ -23,11 +23,10 @@ export function EquippedSlotCard({
 	if (!relic) {
 		return (
 			<div className="w-[130px] aspect-[320/460] bg-bg-inset border border-dashed border-rule flex flex-col items-center justify-center relative">
-				<div className="mono text-lg text-faint">+</div>
-				<div className="mono absolute top-2 left-[10px] text-[8px] text-dim tracking-[0.1em]">
+				<div className="mono absolute top-2 left-[10px] text-xs text-dim tracking-[0.1em]">
 					{slotLabel}
 				</div>
-				<div className="mono text-[9px] text-dim tracking-[0.14em] mt-[10px]">
+				<div className="mono text-xs text-dim tracking-[0.14em] mt-[10px]">
 					EMPTY
 				</div>
 			</div>

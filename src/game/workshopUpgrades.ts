@@ -58,7 +58,7 @@ export const GARDEN_PLOT_NAMES = [
 	"Catacomb Plot",
 ];
 
-export const GARDEN_BASE_YIELD = 0.1; // bones/sec per level
+export const GARDEN_BASE_YIELD = 1; // bones/sec per level
 
 export type UnitKey = "skeleton" | "zombie" | "wraith";
 export type StatKey = "hp" | "dmg" | "speed";
@@ -87,5 +87,5 @@ export function cryptCost(key: CryptKey, level: number): Partial<Resources> {
 
 export function gardenCost(level: number): Partial<Resources> {
 	if (level === 0) return { coins: 100 };
-	return { bones: Math.floor(30 * 1.35 ** level) };
+	return { bones: Math.floor(600 * 1.35 ** level) };
 }

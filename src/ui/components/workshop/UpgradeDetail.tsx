@@ -64,13 +64,13 @@ export function UpgradeDetail({
 				<>
 					<div>
 						<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
-							Current → Next
+							Current ➞ Next
 						</div>
 						<div className="flex items-baseline gap-3.5 py-2.5">
 							<span className="font-display text-2xl text-bone">
 								{valueNumerical ? valueNumerical : row.valueFn(row.level)}
 							</span>
-							<span className="font-mono text-base text-dim">→</span>
+							<span className="font-mono text-base text-dim">➞</span>
 							<span className="font-display text-2xl text-ember">
 								{valueNextNumerical
 									? valueNextNumerical
@@ -88,7 +88,7 @@ export function UpgradeDetail({
 							canBuy
 								? skill
 									? "Inscribe"
-									: `Upgrade → LV ${row.level + 1}`
+									: `Upgrade ➞ LV ${row.level + 1}`
 								: "Insufficient"
 						}
 						disabled={!canBuy}

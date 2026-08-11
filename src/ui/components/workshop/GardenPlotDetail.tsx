@@ -43,7 +43,7 @@ export function GardenPlotDetail({
 				</div>
 				<div className="flex items-baseline gap-3.5 py-2.5">
 					<span className="font-display text-2xl text-bone">{yieldNow}/s</span>
-					<span className="font-mono text-base text-dim">→</span>
+					<span className="font-mono text-base text-dim">➞</span>
 					<span className="font-display text-2xl text-ember">
 						{yieldNext}/s
 					</span>

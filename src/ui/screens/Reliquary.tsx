@@ -27,24 +27,24 @@ const SLOT_GROUPS: {
 		title: "Skeleton Summoning Circle",
 		unitType: "skeleton",
 		slots: [
-			{ id: "I1", label: "I-α" },
-			{ id: "I2", label: "I-β" },
+			{ id: "I1", label: "S-I" },
+			{ id: "I2", label: "S-II" },
 		],
 	},
 	{
 		title: "Zombie Summoning Circle",
 		unitType: "zombie",
 		slots: [
-			{ id: "II1", label: "II-α" },
-			{ id: "II2", label: "II-β" },
+			{ id: "II1", label: "Z-I" },
+			{ id: "II2", label: "Z-II" },
 		],
 	},
 	{
 		title: "Wraith Summoning Circle",
 		unitType: "wraith",
 		slots: [
-			{ id: "III1", label: "III-α" },
-			{ id: "III2", label: "III-β" },
+			{ id: "III1", label: "W-I" },
+			{ id: "III2", label: "W-II" },
 		],
 	},
 ];

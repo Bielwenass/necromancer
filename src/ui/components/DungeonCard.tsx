@@ -128,7 +128,7 @@ export function DungeonCard({
 							</div>
 							<div className="mono text-[13px] text-muted">
 								{activeSquad.state === "traveling" && eta
-									? `→ TRAVELING · ${eta}`
+									? `⇢ TRAVELING · ${eta}`
 									: activeSquad.state === "fighting"
 										? "⚔ FIGHTING"
 										: eta

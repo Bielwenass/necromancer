@@ -118,8 +118,8 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						title="Dig a bone"
 						className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center"
 					>
-						<IconBone size={10} />
 						DIG
+						<IconBone size={14} />
 					</button>
 					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconBone size={20} />

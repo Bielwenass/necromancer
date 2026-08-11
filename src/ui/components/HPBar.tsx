@@ -1,3 +1,4 @@
+// Unused
 interface HPBarProps {
 	pct: number;
 	w?: number;

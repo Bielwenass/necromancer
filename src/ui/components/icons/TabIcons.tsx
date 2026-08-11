@@ -1,22 +1,5 @@
 import type { IconProps } from "./IconProps";
 
-export const IconTower = ({ size = 14, color = "currentColor" }: IconProps) => (
-	<svg
-		aria-hidden="true"
-		width={size}
-		height={size}
-		viewBox="0 0 24 24"
-		fill="none"
-	>
-		<path
-			d="M9 20V8h6v12M11 8V5l1-2 1 2v3M7 20l2-2h6l2 2M10 12h4M10 16h4"
-			stroke={color}
-			strokeWidth="1.3"
-			strokeLinejoin="round"
-		/>
-	</svg>
-);
-
 export const IconCrypt = ({
 	size = 14,
 	color = "var(--c-crypt)",
@@ -86,5 +69,21 @@ export const IconRitual = ({
 			fill={color}
 		/>
 		<circle cx="12" cy="10.8" r="1.5" fill={color} />
+	</svg>
+);
+
+export const IconUpgrades = ({
+	size = 14,
+	color = "var(--c-upgrades)",
+}: IconProps) => (
+	<svg
+		aria-hidden="true"
+		width={size}
+		height={size}
+		viewBox="0 0 24 24"
+		fill="none"
+	>
+		<path d="M12 2.6l8.4 8.6h-4.7L12 7.4l-3.7 3.8H3.6z" fill={color} />
+		<path d="M12 12.2l8.4 8.6h-4.7L12 17l-3.7 3.8H3.6z" fill={color} />
 	</svg>
 );

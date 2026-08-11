@@ -6,6 +6,7 @@ import { formatTime } from "../theme";
 import { CombatWindow } from "./CombatWindow";
 import { DispatchModal } from "./DispatchModal";
 import { DungeonCard, squadColor } from "./DungeonCard";
+import { IconSkeleton, IconWraith, IconZombie } from "./icons";
 import type { TabId } from "./TabBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
@@ -86,6 +87,7 @@ export function CryptList({ onTabChange }: CryptListProps) {
 							<UnitReserve
 								type="skeleton"
 								count={units.skeletons}
+								icon={IconSkeleton}
 								color="var(--sq-skeleton)"
 								canSummon={(v) =>
 									resources.bones >=
@@ -98,6 +100,7 @@ export function CryptList({ onTabChange }: CryptListProps) {
 								<UnitReserve
 									type="zombie"
 									count={units.zombies}
+									icon={IconZombie}
 									color="var(--sq-zombie)"
 									canSummon={(v) =>
 										resources.bones >= 5 * v && resources.corpses >= 1 * v
@@ -110,6 +113,7 @@ export function CryptList({ onTabChange }: CryptListProps) {
 								<UnitReserve
 									type="wraith"
 									count={units.wraiths}
+									icon={IconWraith}
 									color="var(--sq-wraith)"
 									canSummon={(v) =>
 										resources.bones >= 20 * v && resources.souls >= 1 * v
@@ -249,7 +253,7 @@ export function CryptList({ onTabChange }: CryptListProps) {
 														? `⇠ ${def?.name ?? "?"}`
 														: squad.state === "fighting"
 															? `⚔ ${def?.name ?? "?"}`
-															: `→ ${def?.name ?? "?"}`}
+															: `⇢ ${def?.name ?? "?"}`}
 											</div>
 
 											{squad.state !== "idle" && (

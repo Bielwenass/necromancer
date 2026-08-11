@@ -304,7 +304,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 				if (e.key === "Escape") onClose();
 			}}
 		>
-			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] overflow-y-auto">
+			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh]">
 				{/* Header */}
 				<div className="mb-5">
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">
@@ -382,7 +382,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 												cursor: atCapacity ? "not-allowed" : "pointer",
 											}}
 										>
-											SEND →
+											SEND ⇢
 										</button>
 									</div>
 								);

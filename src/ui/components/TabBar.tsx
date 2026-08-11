@@ -1,5 +1,5 @@
 import type React from "react";
-import { IconCrypt, IconReliquary, IconRitual, IconTower } from "./icons";
+import { IconCrypt, IconReliquary, IconRitual, IconUpgrades } from "./icons";
 
 export type TabId = "crypt" | "reliquary" | "ritual" | "upgrades";
 
@@ -17,7 +17,7 @@ const TABS: {
 	{ id: "crypt", label: "Crypt", k: "1", Icon: IconCrypt },
 	{ id: "reliquary", label: "Reliquary", k: "2", Icon: IconReliquary },
 	{ id: "ritual", label: "Ritual", k: "3", Icon: IconRitual },
-	{ id: "upgrades", label: "Upgrades", k: "4", Icon: IconTower },
+	{ id: "upgrades", label: "Upgrades", k: "4", Icon: IconUpgrades },
 ];
 
 export function TabBar({ active, onTabChange }: TabBarProps) {
