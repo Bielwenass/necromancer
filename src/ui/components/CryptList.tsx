@@ -212,8 +212,8 @@ export function CryptList({ onTabChange }: CryptListProps) {
 
 										{/* Info */}
 										<div className="flex-1 min-w-0">
-											<div className="flex items-baseline justify-between mb-[3px]">
-												<div className="display text-sm text-bone !tracking-[0.16em]">
+											<div className="flex items-baseline justify-between mb-1.5">
+												<div className="display text-sm text-bone !tracking-widest">
 													{squad.name}
 												</div>
 												{squad.state === "idle" && (
@@ -237,32 +237,32 @@ export function CryptList({ onTabChange }: CryptListProps) {
 													)}
 											</div>
 
-											<div
-												className={`mono text-xs mb-[5px] whitespace-nowrap overflow-hidden text-ellipsis
-                        ${
-													squad.state === "idle"
-														? "text-dim"
+											<div className="flex items-baseline justify-between">
+												<div
+													className={`mono text-xs whitespace-nowrap overflow-hidden text-ellipsis
+													${
+														squad.state === "idle"
+															? "text-dim"
+															: squad.state === "returning"
+																? "text-coin"
+																: "text-muted"
+													}`}
+												>
+													{squad.state === "idle"
+														? "○ Idle"
 														: squad.state === "returning"
-															? "text-coin"
-															: "text-muted"
-												}`}
-											>
-												{squad.state === "idle"
-													? "○ Idle"
-													: squad.state === "returning"
-														? `⇠ ${def?.name ?? "?"}`
-														: squad.state === "fighting"
-															? `⚔ ${def?.name ?? "?"}`
-															: `⇢ ${def?.name ?? "?"}`}
-											</div>
-
-											{squad.state !== "idle" && (
-												<div className="flex items-center gap-2">
-													<span className="mono text-[11px] text-dim ml-auto">
-														{eta}
-													</span>
+															? `⇠ ${def?.name ?? "?"}`
+															: squad.state === "fighting"
+																? `⚔ ${def?.name ?? "?"}`
+																: `⇢ ${def?.name ?? "?"}`}
 												</div>
-											)}
+
+												{squad.state !== "idle" && (
+													<div className="mono text-[11px] text-dim ml-auto">
+														{eta}
+													</div>
+												)}
+											</div>
 										</div>
 									</div>
 								);

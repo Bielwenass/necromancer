@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useGameStore } from "../../game/store";
-import { canPurchaseUpgrade } from "../../game/upgrades";
 import { DetailPanel } from "../components/workshop/DetailPanel";
 import { SectionPane } from "../components/workshop/SectionPane";
 import { affordableDots, buildSections } from "../components/workshop/sections";
@@ -10,14 +9,12 @@ import { WorkshopSideNav } from "../components/workshop/WorkshopSideNav";
 
 export function Workshop() {
 	const purchased = useGameStore((s) => s.upgrades.purchased);
-	const pts = useGameStore((s) => s.upgrades.availablePoints);
 	const ws = useGameStore((s) => s.workshop);
 	const res = useGameStore((s) => s.resources);
 	const zombiesUnlocked = useGameStore((s) => s.derived.zombiesUnlocked);
 	const wraithsUnlocked = useGameStore((s) => s.derived.wraithsUnlocked);
 	const purchaseUpgrade = useGameStore((s) => s.purchaseUpgrade);
 	const levelUpWorkshop = useGameStore((s) => s.levelUpWorkshop);
-	const gameState = useGameStore((s) => s);
 
 	const [activeId, setActiveId] = useState("summoning");
 	const [pinnedId, setPinnedId] = useState<string | null>(null);
@@ -54,27 +51,18 @@ export function Workshop() {
 					setActiveId(id);
 					setPinnedId(null);
 				}}
-				anyDot={affordableDots(sections, res, pts)}
+				anyDot={affordableDots(sections, res)}
 			/>
 
 			<SectionPane
 				section={active}
 				res={res}
-				pts={pts}
 				pinnedId={pinned?.id ?? null}
 				onPin={setPinnedId}
 				onBuy={buyRow}
 			/>
 
-			<DetailPanel
-				row={pinned}
-				res={res}
-				pts={pts}
-				onBuy={buyRow}
-				canPurchaseSkill={(upgradeId) =>
-					canPurchaseUpgrade(gameState, upgradeId)
-				}
-			/>
+			<DetailPanel row={pinned} res={res} onBuy={buyRow} />
 		</div>
 	);
 }

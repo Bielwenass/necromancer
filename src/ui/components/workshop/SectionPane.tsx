@@ -11,14 +11,12 @@ import { UpgradeRow } from "./UpgradeRow";
 export function SectionPane({
 	section,
 	res,
-	pts,
 	pinnedId,
 	onPin,
 	onBuy,
 }: {
 	section: WSection;
 	res: Resources;
-	pts: number;
 	pinnedId: string | null;
 	onPin: (id: string) => void;
 	onBuy: (row: WRow) => void;
@@ -39,7 +37,6 @@ export function SectionPane({
 							<UpgradeRow
 								row={r}
 								res={res}
-								pts={pts}
 								pinned={r.id === pinnedId}
 								onPin={onPin}
 								onBuy={onBuy}

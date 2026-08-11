@@ -144,9 +144,17 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 				zombie: survivorsByType.zombie ?? 0,
 				wraith: survivorsByType.wraith ?? 0,
 			};
-			const pendingLoot = generateLoot(dungeonId, dungeonState.clearCount);
+			const pendingLoot = generateLoot(
+				dungeonId,
+				dungeonState.clearCount,
+				prev.derived.soulHarvestBonus,
+			);
 
 			return withDerived(prev, {
+				resources: {
+					...prev.resources,
+					banners: prev.resources.banners + def.tier,
+				},
 				squads: prev.squads.map((s) =>
 					s.id === squadId
 						? {
@@ -161,10 +169,6 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 				dungeons: prev.dungeons.map((ds) =>
 					ds.id === dungeonId ? { ...ds, clearCount: ds.clearCount + 1 } : ds,
 				),
-				upgrades: {
-					...prev.upgrades,
-					availablePoints: prev.upgrades.availablePoints + def.tier,
-				},
 			});
 		});
 	},

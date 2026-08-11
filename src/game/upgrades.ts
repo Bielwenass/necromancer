@@ -1,6 +1,16 @@
 import { UPGRADE_NODES } from "./data/upgrades";
-import type { GameState } from "./types";
+import { canAffordCost } from "./resources";
+import type { GameState, Resources, UpgradeNode } from "./types";
 import { gardenTotalYield, UNIT_STAT_CONFIG } from "./workshopUpgrades";
+
+/**
+ * An upgrade node's price, in the same `Partial<Resources>` shape every other
+ * purchase in the game uses. Nodes are banner-only today; keeping the cost a
+ * resource map means a node could charge souls or bones without a new code path.
+ */
+export function upgradeCost(node: UpgradeNode): Partial<Resources> {
+	return { banners: node.cost };
+}
 
 export function recomputeDerived(state: GameState): GameState["derived"] {
 	const purchased = state.upgrades.purchased;
@@ -84,8 +94,8 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 			case "s5b":
 				break; // Reanimation — handled in tick
 			case "s6":
-				maxActiveSquads += 2;
-				maxSquadSize += 3;
+				maxActiveSquads += 1;
+				maxSquadSize += 10;
 				break;
 			case "s7":
 				skeletonDamageBonus += 0.25;
@@ -164,8 +174,8 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 				corpseYieldBonus += 0.2;
 				break;
 			case "n3b":
-				soulHarvestBonus += 0.5;
-				break; // approximated
+				soulHarvestBonus += 0.3;
+				break; // approximates "+1% soul chance per tier" as a flat multiplier
 			case "n4a":
 				break; // phylactery — free pulls
 			case "n4b":
@@ -182,7 +192,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 				bonesPassiveMult *= 1.05;
 				break;
 			case "n7":
-				bonesPassiveMult *= 3;
+				bonesPassiveMult *= 2;
 				break;
 		}
 	}
@@ -271,7 +281,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 					wraithSpeedBonus += boosted;
 					break;
 				case "boneYieldFromKills":
-					break; // REWORK: should grant bones per kill, not passive income
+					break; // TODO REWORK: should grant bones per kill, not passive income
 
 				case "soulOnKill":
 					soulHarvestBonus += boosted * 2;
@@ -339,7 +349,7 @@ export function canPurchaseUpgrade(state: GameState, nodeId: string): boolean {
 	const node = UPGRADE_NODES.find((n) => n.id === nodeId);
 	if (!node) return false;
 	if (state.upgrades.purchased.includes(nodeId)) return false;
-	if (state.upgrades.availablePoints < node.cost) return false;
+	if (!canAffordCost(upgradeCost(node), state.resources)) return false;
 	for (const prereq of node.prerequisites) {
 		if (!state.upgrades.purchased.includes(prereq)) return false;
 	}

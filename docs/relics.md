@@ -40,7 +40,7 @@ Minors are drawn without replacement from the base's pool. If a drawn minor matc
 boosted = value × (1 + upgradeLevel × 0.1) / 100
 ```
 
-Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true | false`; an unimplemented affix still rolls and still displays, but has no effect. Currently unimplemented: `rarityWeight` (wants gacha wiring), `dispatchBonus`, `firstStrikeBonus`, `overwhelm`, `berserk`, `lastStand`, `undyingFlesh`, `spectralStrike` (all want combat wiring), and `boneYieldFromKills` (needs reworking to per-kill). `corpseYield` is marked implemented and reaches `derived.corpseYieldBonus`, but nothing reads that field yet.
+Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true | false`; an unimplemented affix still rolls and still displays, but has no effect. Currently unimplemented: `rarityWeight` (wants gacha wiring), `dispatchBonus`, `firstStrikeBonus`, `overwhelm`, `berserk`, `lastStand`, `undyingFlesh`, `spectralStrike` (all want combat wiring), and `boneYieldFromKills` (needs reworking to per-kill). `corpseYield` and `soulOnKill` are fully wired now: `corpseYieldBonus` multiplies corpses on loot deposit, and `soulOnKill` feeds `soulHarvestBonus`, which multiplies a dungeon's soul chance. `soulOnKill` is still a misnomer — it scales the drop roll, not per-kill souls.
 
 ## Sacrifice
 

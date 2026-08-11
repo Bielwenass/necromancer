@@ -14,7 +14,8 @@ export function canAffordCost(
 		(cost.coins ?? 0) <= res.coins &&
 		(cost.souls ?? 0) <= res.souls &&
 		(cost.dust ?? 0) <= res.dust &&
-		(cost.corpses ?? 0) <= res.corpses
+		(cost.corpses ?? 0) <= res.corpses &&
+		(cost.banners ?? 0) <= res.banners
 	);
 }
 
@@ -26,5 +27,6 @@ export function applyCost(cost: Partial<Resources>, res: Resources): Resources {
 		souls: res.souls - (cost.souls ?? 0),
 		dust: res.dust - (cost.dust ?? 0),
 		corpses: res.corpses - (cost.corpses ?? 0),
+		banners: res.banners - (cost.banners ?? 0),
 	};
 }

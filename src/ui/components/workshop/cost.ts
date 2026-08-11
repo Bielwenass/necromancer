@@ -1,6 +1,13 @@
 import type { ComponentType } from "react";
 import type { Resources } from "../../../game/types";
-import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "../icons";
+import {
+	IconBanner,
+	IconBone,
+	IconCoin,
+	IconCorpse,
+	IconDust,
+	IconSoul,
+} from "../icons";
 
 export type ResIcon = ComponentType<{ size?: number; color?: string }>;
 
@@ -16,6 +23,7 @@ const RES: Record<string, ResMeta> = {
 	souls: { icon: IconSoul, color: "var(--c-soul)", label: "Souls" },
 	dust: { icon: IconDust, color: "var(--ink-parchm)", label: "Dust" },
 	corpses: { icon: IconCorpse, color: "var(--sq-zombie)", label: "Corpses" },
+	banners: { icon: IconBanner, color: "var(--c-ember)", label: "Banners" },
 };
 
 /** Icon/color/label for a resource key, falling back to bones for unknowns. */

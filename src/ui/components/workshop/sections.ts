@@ -1,6 +1,7 @@
 import { UPGRADE_NODES } from "../../../game/data/upgrades";
 import { canAffordCost } from "../../../game/resources";
 import type { Resources, WorkshopState } from "../../../game/types";
+import { upgradeCost } from "../../../game/upgrades";
 import {
 	CRYPT_CONFIG,
 	cryptCost,
@@ -42,10 +43,10 @@ function skillRows(purchased: string[], branch: string): WRow[] {
 		maxLevel: 1,
 		kindLabel: "One-time Upgrade",
 		buyLabel: () => "Inscribe",
-		costFn: () => null,
+		costFn: (lv) => (lv >= 1 ? null : upgradeCost(n)),
 		valueFn: (lv) => (lv >= 1 ? "Inscribed" : "—"),
 		nextFn: (lv) => (lv >= 1 ? "— maxed —" : n.description),
-		skill: { upgradeId: n.id, cost: n.cost },
+		skill: { upgradeId: n.id },
 	}));
 }
 
@@ -225,7 +226,6 @@ export function buildSections(
 export function affordableDots(
 	sections: WSection[],
 	res: Resources,
-	pts: number,
 ): Record<string, boolean> {
 	const dots: Record<string, boolean> = {};
 	for (const s of sections) {
@@ -233,7 +233,6 @@ export function affordableDots(
 			s.unlocked &&
 			s.rows.some((r) => {
 				if (isRowMaxed(r)) return false;
-				if (r.skill) return pts >= r.skill.cost;
 				const cost = r.costFn(r.level);
 				return cost !== null && canAffordCost(cost, res);
 			});

@@ -13,8 +13,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: [],
 		unlocks: ["s1a", "s1b"],
 		icon: "army",
-		x: 0,
-		y: 60,
 	},
 	{
 		id: "s1a",
@@ -27,8 +25,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s0"],
 		unlocks: ["s2"],
 		icon: "fast",
-		x: -110,
-		y: 180,
 	},
 	{
 		id: "s1b",
@@ -41,8 +37,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s0"],
 		unlocks: ["s2"],
 		icon: "bone",
-		x: 110,
-		y: 180,
 	},
 	{
 		id: "s2",
@@ -56,8 +50,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s1a", "s1b"],
 		unlocks: ["s3a", "s3b"],
 		icon: "zombie",
-		x: 0,
-		y: 300,
 	},
 	{
 		id: "s3a",
@@ -70,8 +62,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s2"],
 		unlocks: ["s4a", "s4b"],
 		icon: "circle",
-		x: -110,
-		y: 420,
 	},
 	{
 		id: "s3b",
@@ -85,8 +75,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s2"],
 		unlocks: ["s4b"],
 		icon: "knight",
-		x: 110,
-		y: 420,
 	},
 	{
 		id: "s4a",
@@ -99,8 +87,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s3a"],
 		unlocks: ["s5a"],
 		icon: "mass",
-		x: -110,
-		y: 540,
 	},
 	{
 		id: "s4b",
@@ -114,8 +100,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s3a", "s3b"],
 		unlocks: ["s5a", "s5b"],
 		icon: "wraith",
-		x: 110,
-		y: 540,
 	},
 	{
 		id: "s5a",
@@ -128,8 +112,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s4a", "s4b"],
 		unlocks: ["s6"],
 		icon: "triple",
-		x: -110,
-		y: 660,
 	},
 	{
 		id: "s5b",
@@ -142,8 +124,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s4b"],
 		unlocks: ["s6"],
 		icon: "reanim",
-		x: 110,
-		y: 660,
 	},
 	{
 		id: "s6",
@@ -151,13 +131,11 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Endless March",
 		tier: 5,
 		cost: 62,
-		description: "+2 maximum active squads. +3 squad size.",
+		description: "+1 maximum active squads. +10 squad size.",
 		flavor: "No halt, no camp, and no time wasted on burial.",
 		prerequisites: ["s5a", "s5b"],
 		unlocks: ["s7"],
 		icon: "mass",
-		x: 0,
-		y: 780,
 	},
 	{
 		id: "s7",
@@ -170,8 +148,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["s6"],
 		unlocks: [],
 		icon: "knight",
-		x: 0,
-		y: 880,
+
 		capstone: true,
 	},
 
@@ -188,8 +165,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: [],
 		unlocks: ["c1a", "c1b"],
 		icon: "auto",
-		x: 0,
-		y: 60,
 	},
 	{
 		id: "c1a",
@@ -202,8 +177,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c0"],
 		unlocks: ["c2"],
 		icon: "target",
-		x: -110,
-		y: 180,
 	},
 	{
 		id: "c1b",
@@ -216,8 +189,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c0"],
 		unlocks: ["c2"],
 		icon: "aggro",
-		x: 110,
-		y: 180,
 	},
 	{
 		id: "c2",
@@ -230,8 +201,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c1a", "c1b"],
 		unlocks: ["c3a", "c3b"],
 		icon: "caution",
-		x: 0,
-		y: 300,
 	},
 	{
 		id: "c3a",
@@ -244,8 +213,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c2"],
 		unlocks: ["c4a"],
 		icon: "heal",
-		x: -110,
-		y: 420,
 	},
 	{
 		id: "c3b",
@@ -258,8 +225,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c2"],
 		unlocks: ["c4b", "c4a"],
 		icon: "tactics",
-		x: 110,
-		y: 420,
 	},
 	{
 		id: "c4a",
@@ -272,8 +237,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c3a", "c3b"],
 		unlocks: ["c5a"],
 		icon: "retreat",
-		x: -110,
-		y: 540,
 	},
 	{
 		id: "c4b",
@@ -286,8 +249,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c3b"],
 		unlocks: ["c5b"],
 		icon: "vamp",
-		x: 110,
-		y: 540,
 	},
 	{
 		id: "c5a",
@@ -295,14 +256,11 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Squad Synergy",
 		tier: 4,
 		cost: 40,
-		description:
-			"+1 maximum active squads. Squads share 5% of their damage bonus.",
+		description: "+1 maximum active squads.",
 		flavor: "What one warband learns, the rest are taught by morning.",
 		prerequisites: ["c4a"],
 		unlocks: ["c6"],
 		icon: "synergy",
-		x: -110,
-		y: 660,
 	},
 	{
 		id: "c5b",
@@ -315,8 +273,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c4b"],
 		unlocks: ["c6"],
 		icon: "drum",
-		x: 110,
-		y: 660,
 	},
 	{
 		id: "c6",
@@ -329,8 +285,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c5a", "c5b"],
 		unlocks: ["c7"],
 		icon: "cry",
-		x: 0,
-		y: 780,
 	},
 	{
 		id: "c7",
@@ -343,8 +297,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["c6"],
 		unlocks: [],
 		icon: "target",
-		x: 0,
-		y: 880,
+
 		capstone: true,
 	},
 
@@ -360,8 +313,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: [],
 		unlocks: ["n1a", "n1b"],
 		icon: "soul",
-		x: 0,
-		y: 60,
 	},
 	{
 		id: "n1a",
@@ -374,8 +325,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n0"],
 		unlocks: ["n2"],
 		icon: "surge",
-		x: -110,
-		y: 180,
 	},
 	{
 		id: "n1b",
@@ -389,8 +338,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n0"],
 		unlocks: ["n2"],
 		icon: "plague",
-		x: 110,
-		y: 180,
 	},
 	{
 		id: "n2",
@@ -403,8 +350,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n1a", "n1b"],
 		unlocks: ["n3a", "n3b"],
 		icon: "aura",
-		x: 0,
-		y: 300,
 	},
 	{
 		id: "n3a",
@@ -417,8 +362,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n2"],
 		unlocks: ["n4a", "n4b"],
 		icon: "rez",
-		x: -110,
-		y: 420,
 	},
 	{
 		id: "n3b",
@@ -426,13 +369,11 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Soul Drain",
 		tier: 3,
 		cost: 28,
-		description: "+1% soul chance per tier for all dungeons.",
+		description: "+30% soul chance for all dungeons.",
 		flavor: "The deeper the tomb, the looser the souls sit in it.",
 		prerequisites: ["n2"],
 		unlocks: ["n4b"],
 		icon: "drain",
-		x: 110,
-		y: 420,
 	},
 	{
 		id: "n4a",
@@ -445,8 +386,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n3a"],
 		unlocks: ["n5a"],
 		icon: "phyl",
-		x: -110,
-		y: 540,
 	},
 	{
 		id: "n4b",
@@ -459,8 +398,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n3a", "n3b"],
 		unlocks: ["n5b"],
 		icon: "lich",
-		x: 110,
-		y: 540,
 	},
 	{
 		id: "n5a",
@@ -473,8 +410,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n4a"],
 		unlocks: ["n6"],
 		icon: "domain",
-		x: -110,
-		y: 660,
 	},
 	{
 		id: "n5b",
@@ -487,8 +422,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n4b"],
 		unlocks: ["n6"],
 		icon: "pact",
-		x: 110,
-		y: 660,
 	},
 	{
 		id: "n6",
@@ -502,8 +435,6 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n5a", "n5b"],
 		unlocks: ["n7"],
 		icon: "forbid",
-		x: 0,
-		y: 780,
 	},
 	{
 		id: "n7",
@@ -511,13 +442,12 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Apotheosis",
 		tier: 6,
 		cost: 120,
-		description: "Passive bone generation ×3. All relic affix values +50%.",
+		description: "Passive bone generation ×2.",
 		flavor: "You are no longer the one performing the rite.",
 		prerequisites: ["n6"],
 		unlocks: [],
 		icon: "apoth",
-		x: 0,
-		y: 880,
+
 		capstone: true,
 	},
 ];

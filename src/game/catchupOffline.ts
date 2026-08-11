@@ -7,6 +7,7 @@ import { CombatEngine } from "../combat/engine";
 import { mulberry32 } from "../combat/prng";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
+import { effectiveSoulChance } from "./tick";
 import { effectiveTravelTicks } from "./travel";
 import type { GameState, Resources, Squad } from "./types";
 
@@ -160,6 +161,7 @@ function totalUnits(c: Record<string, number>): number {
 function generateLootSeeded(
 	dungeonId: string,
 	clearCount: number,
+	soulHarvestBonus: number,
 	rand: () => number,
 ): Partial<Resources> {
 	const def = DUNGEON_DEFS[dungeonId];
@@ -175,7 +177,8 @@ function generateLootSeeded(
 	const corpses = Math.round(
 		(lt.corpseMin + rand() * (lt.corpseMax - lt.corpseMin)) * clearBonus,
 	);
-	const souls = rand() < lt.soulChance ? 1 : 0;
+	const souls =
+		rand() < effectiveSoulChance(lt.soulChance, soulHarvestBonus) ? 1 : 0;
 	return { bones, coins, corpses, souls };
 }
 
@@ -318,30 +321,32 @@ function processEvent(
 
 			const outcome = resolveFight(state, squad, dungeon, cache);
 
-			if (outcome.winner === "a") {
-				for (const k of Object.keys(squad.composition) as Array<
-					keyof typeof squad.composition
-				>) {
-					squad.composition[k] = outcome.survivors[k] ?? 0;
-				}
-				const lootRand = mulberry32(
-					deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount) ^
-						0xdeadbeef,
-				);
-				squad.pendingLoot = generateLootSeeded(
-					dungeon.id,
-					dungeon.clearCount,
-					lootRand,
-				);
-				dungeon.clearCount++;
-			} else {
-				for (const k of Object.keys(squad.composition) as Array<
-					keyof typeof squad.composition
-				>) {
-					squad.composition[k] = 0;
-				}
-				squad.pendingLoot = null;
+			// A wipe destroys the squad outright, mirroring `resolveFight` — it must
+			// not walk an empty squad home, which would leave debris in the Crypt.
+			// No further event references it: `processEvent` looks the squad up by
+			// id and bails when it is gone.
+			if (outcome.winner !== "a") {
+				state.squads = state.squads.filter((s) => s.id !== squad.id);
+				return null;
 			}
+
+			for (const k of Object.keys(squad.composition) as Array<
+				keyof typeof squad.composition
+			>) {
+				squad.composition[k] = outcome.survivors[k] ?? 0;
+			}
+			const lootRand = mulberry32(
+				deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount) ^ 0xdeadbeef,
+			);
+			squad.pendingLoot = generateLootSeeded(
+				dungeon.id,
+				dungeon.clearCount,
+				state.derived.soulHarvestBonus,
+				lootRand,
+			);
+			dungeon.clearCount++;
+			// Clearing pays banners, exactly as `resolveFight` does online.
+			state.resources.banners += DUNGEON_DEFS[dungeon.id].tier;
 
 			squad._phaseStart = cursor;
 			squad._phaseEnd = cursor + outcome.durationTicks;
@@ -373,7 +378,7 @@ function processEvent(
 				r.bones += (l.bones ?? 0) * (1 + state.derived.boneYieldBonus);
 				r.coins += (l.coins ?? 0) * (1 + state.derived.coinYieldBonus);
 				r.souls += (l.souls ?? 0) * (1 + state.derived.soulsYieldBonus);
-				r.corpses += l.corpses ?? 0;
+				r.corpses += (l.corpses ?? 0) * (1 + state.derived.corpseYieldBonus);
 			}
 			squad.pendingLoot = null;
 

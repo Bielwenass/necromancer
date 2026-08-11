@@ -5,9 +5,22 @@ import type { GameState, Resources } from "./types";
 
 const TICKS_PER_DAY = 1200; // 2 minutes per in-game day
 
+/**
+ * `soulHarvestBonus` multiplies the dungeon's soul chance, which is what `n0`
+ * ("+50% soul drop chance"), `n3b` and the `soulOnKill` affix all describe. The
+ * chance is clamped at 1 so a heavily-stacked build can't roll past certainty.
+ */
+export function effectiveSoulChance(
+	base: number,
+	soulHarvestBonus: number,
+): number {
+	return Math.min(1, base * (1 + soulHarvestBonus));
+}
+
 export function generateLoot(
 	dungeonId: string,
 	clearCount: number,
+	soulHarvestBonus: number,
 ): Partial<Resources> {
 	const def = DUNGEON_DEFS[dungeonId];
 	if (!def) return {};
@@ -24,7 +37,10 @@ export function generateLoot(
 	const corpses = Math.round(
 		(lt.corpseMin + Math.random() * (lt.corpseMax - lt.corpseMin)) * clearBonus,
 	);
-	const souls = Math.random() < lt.soulChance ? 1 : 0;
+	const souls =
+		Math.random() < effectiveSoulChance(lt.soulChance, soulHarvestBonus)
+			? 1
+			: 0;
 
 	return { bones, coins, corpses, souls };
 }
@@ -84,7 +100,8 @@ export function gameTick(state: GameState): Partial<GameState> {
 						(loot.coins ?? 0) * (1 + derived.coinYieldBonus);
 					newResources.souls +=
 						(loot.souls ?? 0) * (1 + derived.soulsYieldBonus);
-					newResources.corpses += loot.corpses ?? 0;
+					newResources.corpses +=
+						(loot.corpses ?? 0) * (1 + derived.corpseYieldBonus);
 				}
 				updated.pendingLoot = null;
 
@@ -116,8 +133,8 @@ export function gameTick(state: GameState): Partial<GameState> {
 		return updated;
 	});
 
-	// Upgrade points are awarded by `resolveFight`, not here — a fight is decided
-	// by the combat engine, which the tick deliberately never touches.
+	// Banners are awarded by `resolveFight`, not here — a fight is decided by the
+	// combat engine, which the tick deliberately never touches.
 
 	// ── 5. Unlock check ──────────────────────────────────────────
 	if (!result.dungeons) result.dungeons = [...state.dungeons];

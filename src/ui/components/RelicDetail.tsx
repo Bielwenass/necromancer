@@ -22,7 +22,7 @@ export function RelicDetail({
 	const dustValue = DUST_VALUES[relic.rarity];
 
 	return (
-		<div className="px-4 py-[14px] flex flex-col h-full">
+		<div className="px-4 py-5 flex flex-col h-full">
 			{/* Card preview */}
 			<div className="flex justify-center">
 				<div className="w-[300px]">
@@ -35,14 +35,14 @@ export function RelicDetail({
 			</div>
 
 			{/* Quality */}
-			<div className="mt-[14px]">
+			<div className="mt-8">
 				<div className="flex justify-between">
-					<span className="mono text-[9px] text-muted tracking-[0.14em]">
+					<span className="mono text-xs text-dim tracking-[0.14em]">
 						QUALITY
 					</span>
 					<span className="mono text-xs" style={{ color: c }}>
 						{relic.quality}
-						<span className="text-dim">/100</span>
+						<span className="text-muted">/100</span>
 					</span>
 				</div>
 				<div className="bg-bg-inset border border-rule relative overflow-hidden mt-1 h-[5px]">
@@ -56,11 +56,11 @@ export function RelicDetail({
 			{/* Fusion progress */}
 			<div className="mt-3">
 				<div className="flex justify-between mb-[6px]">
-					<span className="mono text-[9px] text-dim tracking-[0.14em]">
+					<span className="mono text-xs text-dim tracking-[0.14em]">
 						FUSION PROGRESS
 					</span>
-					<span className="mono text-[9px] text-muted">
-						{relic.duplicateCount}/5 DUPES
+					<span className="mono text-xs text-muted">
+						{relic.duplicateCount}/5
 					</span>
 				</div>
 				<div className="flex gap-1">
@@ -113,17 +113,17 @@ export function RelicDetail({
 
 			{/* Equip slots */}
 			{base && (
-				<div className="mt-2">
-					<div className="mono text-[9px] text-dim tracking-[0.14em] mb-1">
+				<div className="mt-6">
+					<div className="mono text-xs text-dim tracking-wider mb-2">
 						EQUIP TO SLOT
 					</div>
-					<div className="flex gap-1 flex-wrap">
+					<div className="flex gap-1.5 flex-wrap">
 						{base.slotIds.map((slotId) => (
 							<button
 								type="button"
 								key={slotId}
 								onClick={() => onEquip(slotId)}
-								className="px-[10px] py-1 border border-rule-strong mono text-[10px] tracking-[0.1em] text-muted"
+								className="px-[10px] py-1 border border-rule-strong mono text-sm tracking-wide text-muted"
 							>
 								{slotId}
 							</button>

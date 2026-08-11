@@ -69,6 +69,23 @@ export const IconDust = ({
 	</svg>
 );
 
+export const IconBanner = ({
+	size = 14,
+	color = "var(--c-ember)",
+}: IconProps) => (
+	<svg
+		aria-hidden="true"
+		width={size}
+		height={size}
+		viewBox="0 0 24 24"
+		fill="none"
+	>
+		<rect x="3.4" y="2.2" width="1.8" height="19.6" rx="0.9" fill={color} />
+		<path d="M6.4 3.2h13.4l-3.1 4.9 3.1 4.9H6.4z" fill={color} />
+		<circle cx="4.3" cy="1.6" r="1.4" fill={color} />
+	</svg>
+);
+
 export const IconCorpse = ({
 	size = 14,
 	color = "var(--sq-zombie)",

@@ -39,12 +39,12 @@ Some `derived` fields are computed but not yet consumed (`corpseYieldBonus`, `bo
 ## State shape
 
 ```
-resources   bones, coins, souls, dust, corpses
+resources   bones, coins, souls, dust, corpses, banners
 units       reserve counts per type
 squads      Squad[] — composition, state, position, pendingLoot
 dungeons    DungeonState[] — clearCount, unlocked
 relics      { inventory, equipped }
-upgrades    { purchased, availablePoints }
+upgrades    { purchased }
 gacha       { pityCounters, lastPulledRelics }
 workshop    per-unit stat levels, crypt levels, garden plots
 meta        tickCount, dayCount, version, lastTickAt

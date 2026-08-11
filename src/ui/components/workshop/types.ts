@@ -17,7 +17,7 @@ export interface WRow {
 	level: number;
 	/** Absent means the row levels forever. */
 	maxLevel?: number;
-	/** `null` when the row can't be bought with resources (maxed, or skill-point priced). */
+	/** `null` when there is nothing left to buy — every live row has a price. */
 	costFn: (level: number) => Partial<Resources> | null;
 	valueFn: (level: number) => string;
 	nextFn: (level: number) => string;
@@ -25,8 +25,12 @@ export interface WRow {
 	kindLabel?: string;
 	/** Detail-panel buy label. Defaults to `Upgrade ➞ LV n`. */
 	buyLabel?: (level: number) => string;
-	/** Present only on upgrade-tree rows, which cost skill points instead of resources. */
-	skill?: { upgradeId: string; cost: number };
+	/**
+	 * Present only on upgrade-tree rows. They price in banners like any other row
+	 * — this just says which store action buys them, since the tree tracks
+	 * purchases as ids while the rest of the Workshop tracks levels.
+	 */
+	skill?: { upgradeId: string };
 }
 
 /** One entry in the side nav, and the pane it renders. */

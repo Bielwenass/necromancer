@@ -2,33 +2,24 @@ import { canAffordCost } from "../../../game/resources";
 import type { Resources } from "../../../game/types";
 import { BuyButton } from "./BuyButton";
 import { CostBlock } from "./CostBlock";
-import { PointsCostBlock } from "./PointsCostBlock";
 import { isRowMaxed } from "./sections";
 import type { WRow } from "./types";
 
 export function UpgradeDetail({
 	row,
 	res,
-	pts,
 	onBuy,
-	canPurchaseSkill,
 }: {
 	row: WRow;
 	res: Resources;
-	pts: number;
 	onBuy: (row: WRow) => void;
-	canPurchaseSkill: (upgradeId: string) => boolean;
 }) {
-	const skill = row.skill;
 	const maxed = isRowMaxed(row);
-	const cost = maxed || skill ? null : row.costFn(row.level);
-	const canBuy = maxed
-		? false
-		: skill
-			? canPurchaseSkill(skill.upgradeId)
-			: cost
-				? canAffordCost(cost, res)
-				: false;
+	const cost = maxed ? null : row.costFn(row.level);
+	// Prerequisites don't need checking here: `skillRows` omits nodes whose
+	// prerequisites are unmet, so a visible unmaxed row is always eligible, and
+	// `purchaseUpgrade` re-checks anyway.
+	const canBuy = cost ? canAffordCost(cost, res) : false;
 	const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100;
 	const valueNextNumerical =
 		Math.round(Number(row.nextFn(row.level)) * 100) / 100;
@@ -74,11 +65,7 @@ export function UpgradeDetail({
 							</span>
 						</div>
 					</div>
-					{skill ? (
-						<PointsCostBlock skillCost={skill.cost} pts={pts} />
-					) : (
-						cost && <CostBlock cost={cost} res={res} />
-					)}
+					{cost && <CostBlock cost={cost} res={res} />}
 					<BuyButton
 						label={
 							canBuy

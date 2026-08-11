@@ -11,6 +11,7 @@ Numbers live in `src/game/data/` and `src/game/workshopUpgrades.ts`. This file d
 | Souls | Dungeon loot (chance-based) | Forbidden Ritual pulls, wraith summons, soul plot |
 | Corpses | Dungeon loot | Zombie summons, corpse plot |
 | Dust | Sacrificing relics | Dust plot |
+| Banners | Clearing a dungeon (`tier` per clear, online and offline) | Upgrade-tree nodes |
 
 Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / 10 × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it (`n1a`, `n5a`, `n6`, `n7`, `s7`). `coinsPerTick` and `soulsPerTick` are structurally present but always 0.
 
@@ -41,11 +42,13 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 
 Unlocks are a hand-written dependency chain in `checkUnlockConditions` (`game/dungeons.ts`) — mostly "clear the previous dungeon 3 times" or "clear both branches". `unlockCondition` on the def is display text only; the switch is the real gate, and the two must be kept in sync by hand.
 
-Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clearing awards `tier` upgrade points.
+Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clearing awards `tier` banners.
+
+Loot is deposited on arrival home with the yield bonuses applied — `boneYieldBonus`, `coinYieldBonus`, `soulsYieldBonus`, `corpseYieldBonus` — and `soulHarvestBonus` multiplies the dungeon's `soulChance` at generation time (`effectiveSoulChance`, clamped to 1).
 
 ## Workshop
 
-Every workshop section is a list of the same `WRow`, rendered by the same `UpgradeRow`/`UpgradeDetail` pair — skill branches, per-unit stats, crypt, and garden alike. A row is either **one-time** (`maxLevel: 1`, priced in upgrade points earned from clears) or **leveled** (priced in resources, `base × growth^level`, no ceiling).
+Every workshop section is a list of the same `WRow`, rendered by the same `UpgradeRow`/`UpgradeDetail` pair — skill branches, per-unit stats, crypt, and garden alike. A row is either **one-time** (`maxLevel: 1`) or **leveled** (`base × growth^level`, no ceiling). Both price in resources through `costFn`, so affordability, the cost column, and the cost block are one code path; `WRow.skill` survives only to say which store action buys the row, because the tree records purchases as ids while everything else records levels.
 
 `sections.ts` decides what a section shows: skill nodes with unmet prerequisites are omitted entirely rather than drawn as locked, and inscribed ones are moved below everything still purchasable, under a divider. So the top of a section is always what the player can act on.
 
@@ -61,9 +64,12 @@ It deliberately duplicates the live rules, so **any change to travel time, fight
 
 | Live | Catchup |
 |---|---|
-| `generateLoot` (`tick.ts`) | `generateLootSeeded` |
+| `generateLoot` (`tick.ts`) | `generateLootSeeded` (both call `effectiveSoulChance`) |
 | travel speed in `gameTick` | `computeTravelTime` (both call `effectiveTravelTicks`) |
 | auto-deploy branch in `gameTick` | `returnArrive` case in `processEvent` |
+| yield bonuses on loot deposit in `gameTick` | `returnArrive` case in `processEvent` |
+| banner award in `resolveFight` | `outboundArrive` case, on a win |
+| squad deleted on a wipe in `resolveFight` | `outboundArrive` case, on a loss |
 | `checkUnlockConditions` | same, called on loot deposit |
 
 Two intentional deviations from house style live in that file: it mutates its own cloned working state for speed, and it uses seeded `mulberry32` rather than `Math.random`. Keep both.
@@ -76,4 +82,6 @@ Three branches (`s*` summoning, `c*` command, `n*` necromancy), 6 tiers each, en
 
 ## Save
 
-Auto-save every 50 ticks to `necromancer_save_v1`, plus on tab hide. `derived` is excluded and recomputed on load. A version mismatch makes `loadGame` return `null` and the game starts fresh. Export/import are available in the settings modal; both import and reset suspend persistence before writing, so the still-running tick loop can't overwrite them before the reload. See [architecture.md](architecture.md#persistence).
+Auto-save every 50 ticks to `necromancer_save_v1`, plus on tab hide. `derived` is excluded and recomputed on load. A version mismatch makes `loadGame` return `null` and the game starts fresh.
+
+A save is spread over the defaults in `buildHydratedState`, so a new **top-level** field gets its default for free — but a saved nested object (`resources`, `workshop`) replaces the default wholesale, so a new key inside one needs an explicit line there. `banners` is the worked example: it merges over the default resources and falls back to the legacy `upgrades.availablePoints` so saves predating the change keep their points. Export/import are available in the settings modal; both import and reset suspend persistence before writing, so the still-running tick loop can't overwrite them before the reload. See [architecture.md](architecture.md#persistence).

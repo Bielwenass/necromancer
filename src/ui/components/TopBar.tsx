@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { exportSave } from "../../game/save";
 import { useGameStore } from "../../game/store";
 import { formatNumber, formatRate } from "../theme";
-import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "./icons";
+import {
+	IconBanner,
+	IconBone,
+	IconCoin,
+	IconCorpse,
+	IconDust,
+	IconSoul,
+} from "./icons";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TopBarProps {
@@ -112,15 +119,17 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 				</div>
 
 				<div className="ml-auto flex gap-[22px] items-center">
-					<button
-						type="button"
-						onClick={digBone}
-						title="Dig a bone"
-						className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center"
-					>
-						DIG
-						<IconBone size={14} />
-					</button>
+					{resources.bones < 10_000 && (
+						<button
+							type="button"
+							onClick={digBone}
+							title="Dig a bone"
+							className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center"
+						>
+							DIG
+							<IconBone size={14} />
+						</button>
+					)}
 					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconBone size={20} />
 						<div>
@@ -163,7 +172,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					)}
 					{resources.dust > 0 && (
-						<div className="flex items-center gap-2 font-mono text-sm opacity-70">
+						<div className="flex items-center gap-2 font-mono text-sm">
 							<IconDust size={20} />
 							<div>
 								<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
@@ -173,7 +182,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							</div>
 						</div>
 					)}
-					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
+					<div className="flex items-center gap-2 font-mono text-sm">
 						<IconCorpse size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
@@ -182,6 +191,19 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							<div className="text-bone">{formatNumber(resources.corpses)}</div>
 						</div>
 					</div>
+					{resources.banners > 0 && (
+						<div className="flex items-center gap-2 font-mono text-sm">
+							<IconBanner size={20} />
+							<div>
+								<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+									Banners
+								</div>
+								<div className="text-bone">
+									{formatNumber(resources.banners)}
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 

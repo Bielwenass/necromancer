@@ -39,7 +39,7 @@ export const UNIT_STAT_CONFIG = {
 export const CRYPT_CONFIG = {
 	squadSize: {
 		baseBones: 150,
-		growth: 1.25,
+		growth: 1.15,
 		label: "+1 max squad size per level",
 	},
 	travelSpeed: {

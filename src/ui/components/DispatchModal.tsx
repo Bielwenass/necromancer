@@ -283,14 +283,6 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 		onClose();
 	};
 
-	const tierColor =
-		def.tier === 1
-			? "var(--r-uncommon)"
-			: def.tier === 2
-				? "var(--r-rare)"
-				: "var(--r-epic)";
-	const danger = def.tier === 1 ? "LOW" : def.tier === 2 ? "MODERATE" : "HIGH";
-
 	return (
 		<div
 			role="dialog"
@@ -305,7 +297,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 				if (e.key === "Escape") onClose();
 			}}
 		>
-			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] overflow-y-auto">
+			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh]">
 				{/* Header */}
 				<div className="mb-5">
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">
@@ -313,11 +305,6 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 					</div>
 					<div className="display text-2xl text-bone !tracking-[0.12em] mt-[6px]">
 						{def.name}
-					</div>
-					<div className="flex gap-4 mt-2">
-						<span className="mono text-[10px]" style={{ color: tierColor }}>
-							DANGER · {danger}
-						</span>
 					</div>
 				</div>
 

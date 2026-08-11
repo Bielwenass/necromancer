@@ -1,7 +1,7 @@
 import { applyCost, canAffordCost } from "../resources";
 import { isUnitUnlocked, summonCost } from "../summoning";
 import type { GardenPlotId, UnitType } from "../types";
-import { canPurchaseUpgrade, UPGRADE_NODES } from "../upgrades";
+import { canPurchaseUpgrade, UPGRADE_NODES, upgradeCost } from "../upgrades";
 import {
 	type CryptKey,
 	cryptCost,
@@ -30,10 +30,8 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 			if (!node) return prev;
 
 			return withDerived(prev, {
-				upgrades: {
-					purchased: [...prev.upgrades.purchased, nodeId],
-					availablePoints: prev.upgrades.availablePoints - node.cost,
-				},
+				resources: applyCost(upgradeCost(node), prev.resources),
+				upgrades: { purchased: [...prev.upgrades.purchased, nodeId] },
 			});
 		});
 	},

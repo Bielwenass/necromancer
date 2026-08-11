@@ -115,13 +115,14 @@ export interface UpgradeNode {
 	prerequisites: string[];
 	unlocks: string[];
 	icon: string;
-	x: number;
-	y: number;
 	capstone?: boolean;
 }
 
-/** A garden plot is identified by the resource that buys it. */
-export type GardenPlotId = keyof Resources;
+/**
+ * A garden plot is identified by the resource that buys it. Banners are
+ * excluded: they are earned by clearing dungeons, not farmed.
+ */
+export type GardenPlotId = Exclude<keyof Resources, "banners">;
 
 export interface Resources {
 	bones: number;
@@ -129,6 +130,12 @@ export interface Resources {
 	souls: number;
 	dust: number;
 	corpses: number;
+	/**
+	 * Awarded per dungeon clear (`def.tier` of them) and spent on upgrade-tree
+	 * nodes. A normal resource in every respect — stored in `resources`, charged
+	 * through `canAffordCost`/`applyCost`, priced in a `Partial<Resources>`.
+	 */
+	banners: number;
 }
 
 export interface WorkshopState {
@@ -166,7 +173,6 @@ export interface GameState {
 	};
 	upgrades: {
 		purchased: string[];
-		availablePoints: number;
 	};
 	gacha: {
 		pityCounters: Record<PoolId, number>;

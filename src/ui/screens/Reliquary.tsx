@@ -177,17 +177,17 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 									const ut = group.unitType;
 									if (!ut) return null;
 									return (
-										<div className="flex flex-col mono text-sm mb-4">
+										<div className="flex flex-col mono uppercase text-sm mb-4">
 											<div>
-												HP:{" "}
+												<span className="text-muted">HP:</span>{" "}
 												{`${Math.floor(derived[ut].hpFlat)} (+${Math.floor(derived[ut].hpFlat * derived[ut].hpBonus)})`}
 											</div>
 											<div>
-												Damage:{" "}
+												<span className="text-muted">Damage:</span>{" "}
 												{`${Math.floor(derived[ut].dmgFlat)} (+${Math.floor(derived[ut].dmgFlat * derived[ut].dmgBonus)})`}
 											</div>
 											<div>
-												Speed:{" "}
+												<span className="text-muted">Speed:</span>{" "}
 												{`${Math.floor(derived[ut].speedFlat * 100) / 100} (+${Math.floor(derived[ut].speedFlat * derived[ut].speedBonus * 100) / 100})`}
 											</div>
 										</div>

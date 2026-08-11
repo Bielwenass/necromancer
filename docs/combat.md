@@ -18,7 +18,7 @@ Combat is a boids-style particle simulation, and it **decides** dungeon outcomes
 1. A travelling squad reaches position 1 in `gameTick`; state becomes `fighting` and a `fightSeed` is drawn.
 2. `useGameLifecycle` sees the state change and builds a `CombatEngine`, side `a` from `buildAttackerConfig(squad.composition, derived)` and side `b` from `DUNGEON_DEFS[id].enemies`.
 3. The engine advances in 16 ms steps each 100 ms game tick, scaled by `derived.combatSpeedMultiplier`. It is stored in `store.combatEngines`, keyed by squad id.
-4. When `getWinner()` is non-null, `store.resolveFight` applies it: on a win, survivor counts become the squad's new composition, loot is generated, `clearCount` increments, the squad returns, and the dungeon's `tier` is awarded as upgrade points. On a loss or draw the squad is removed entirely.
+4. When `getWinner()` is non-null, `store.resolveFight` applies it: on a win, survivor counts become the squad's new composition, loot is generated, `clearCount` increments, the squad returns, and the dungeon's `tier` is awarded as banners. On a loss or draw the squad is removed entirely — the offline catchup does the same.
 
 There is no fight timer and no dungeon HP pool — the simulation runs in real time and its result *is* the outcome.
 

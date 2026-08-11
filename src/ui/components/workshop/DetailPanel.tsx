@@ -6,26 +6,16 @@ import { UpgradeDetail } from "./UpgradeDetail";
 export function DetailPanel({
 	row,
 	res,
-	pts,
 	onBuy,
-	canPurchaseSkill,
 }: {
 	row: WRow | null;
 	res: Resources;
-	pts: number;
 	onBuy: (row: WRow) => void;
-	canPurchaseSkill: (upgradeId: string) => boolean;
 }) {
 	return (
 		<div className="w-[360px] min-w-[360px] border-l border-[color:var(--rule)] bg-bg-panel px-5 py-6 overflow-y-auto flex flex-col gap-5">
 			{row ? (
-				<UpgradeDetail
-					row={row}
-					res={res}
-					pts={pts}
-					onBuy={onBuy}
-					canPurchaseSkill={canPurchaseSkill}
-				/>
+				<UpgradeDetail row={row} res={res} onBuy={onBuy} />
 			) : (
 				<div className="font-mono text-[10px] text-dim tracking-[0.14em] text-center mt-10">
 					SELECT A ROW TO SEE DETAILS

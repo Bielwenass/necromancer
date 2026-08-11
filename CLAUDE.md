@@ -77,7 +77,7 @@ Forgetting this produces stale stats that only correct themselves on the next un
 
 ### Combat is authoritative and lives outside game state
 
-`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim and it *decides* dungeon outcomes — it is not decoration. Engines are held in `store.combatEngines`, a `Map` that is runtime-only (never saved, cleared on catchup). `resolveFight` in the store converts survivor counts into squad composition, loot, and upgrade points.
+`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim and it *decides* dungeon outcomes — it is not decoration. Engines are held in `store.combatEngines`, a `Map` that is runtime-only (never saved, cleared on catchup). `resolveFight` in the store converts survivor counts into squad composition, loot, and banners.
 
 `CombatWindow.tsx` renders an engine and, once the fight is off the live map, replays it locally for looping visuals. It must never feed back into game state.
 
@@ -87,7 +87,7 @@ Forgetting this produces stale stats that only correct themselves on the next un
 
 `src/game/catchupOffline.ts` re-simulates up to 8 hours away from the game by jumping between squad events on a min-heap instead of stepping 100ms ticks, resolving fights headlessly with a cached, seeded engine. It deliberately duplicates the live rules.
 
-**Any change to travel time, fight resolution, loot, or auto-deploy in `tick.ts`/`store.ts` must be mirrored here**, or players get different results online vs. offline. The mirrored pairs today: `generateLoot` ↔ `generateLootSeeded`, travel speed ↔ `computeTravelTime` (both now delegate to `effectiveTravelTicks` in `src/game/travel.ts`, which the Crypt UI also uses so displayed timers match the simulation), the auto-deploy branch ↔ the `returnArrive` case, and `checkUnlockConditions` in both.
+**Any change to travel time, fight resolution, loot, or auto-deploy in `tick.ts`/`store.ts` must be mirrored here**, or players get different results online vs. offline. The mirrored pairs today: `generateLoot` ↔ `generateLootSeeded` (both delegate the soul roll to `effectiveSoulChance`), travel speed ↔ `computeTravelTime` (both now delegate to `effectiveTravelTicks` in `src/game/travel.ts`, which the Crypt UI also uses so displayed timers match the simulation), the auto-deploy branch ↔ the `returnArrive` case, the yield bonuses applied on loot deposit ↔ the same case, the banner award and the delete-on-wipe in `resolveFight` ↔ the `outboundArrive` case, and `checkUnlockConditions` in both.
 
 Two intentional deviations from house style live here: it mutates its own cloned working state (a deep-ish clone made by `cloneForCatchup`) for speed, and it uses seeded `mulberry32` instead of `Math.random` so a mid-window refresh reproduces identical results. Preserve both.
 
@@ -147,7 +147,7 @@ Screens are keyboard-routed from `App.tsx` (keys `1`–`4`) and each renders its
 Don't mistake these for intentional design:
 
 - Several upgrade and affix descriptions promise effects that aren't implemented (`implemented: false`, `case "x": break;`). Check the switch before assuming a described effect exists.
-- `derived.corpseYieldBonus` is computed from the `corpseYield` affix and the `n3a` upgrade but nothing reads it, so neither has any effect. Wiring it into loot is a balance change, hence left alone — see `docs/relics.md`.
+- `derived.boneSurgeActive` and `derived.rarityBoostActive` are set by `n1a` and `n5b` and read by nothing. `n1a` still works — its real effect is the `bonesPassiveMult` it also applies — but `n5b` does nothing at all, and its `case` comment claiming the gacha handles it is wrong: `executePull` never reads `derived`.
 - Saves made before slot validation existed may still hold a relic in a slot its base doesn't list. Nothing corrects those on load, and `recomputeDerived` applies affixes regardless of slot.
 - Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `InvCard`'s `×n` badge, `RelicDetail`'s `n/5 DUPES` pips) but never written — there is no fusion or dedupe path, so both are permanently 0 and that UI is inert.
 - `derived.maxActiveSquads` is enforced only in `DispatchModal` (the button disables at capacity), not in the `dispatchSquad` action. That's the one place the "preconditions live in the action, not the caller" rule is broken — `maxSquadSize` is checked in `createSquad` as it should be.

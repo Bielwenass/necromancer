@@ -8,27 +8,19 @@ import { UpgradeRowCost } from "./UpgradeRowCost";
 export function UpgradeRow({
 	row,
 	res,
-	pts,
 	pinned,
 	onPin,
 	onBuy,
 }: {
 	row: WRow;
 	res: Resources;
-	pts: number;
 	pinned: boolean;
 	onPin: (id: string) => void;
 	onBuy: (row: WRow) => void;
 }) {
 	const maxed = isRowMaxed(row);
-	const cost = maxed || row.skill ? null : row.costFn(row.level);
-	const affordable = maxed
-		? false
-		: row.skill
-			? pts >= row.skill.cost
-			: cost
-				? canAffordCost(cost, res)
-				: false;
+	const cost = maxed ? null : row.costFn(row.level);
+	const affordable = cost ? canAffordCost(cost, res) : false;
 	const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100;
 
 	return (
@@ -73,12 +65,7 @@ export function UpgradeRow({
 				</div>
 			</div>
 			<div className="text-right">
-				<UpgradeRowCost
-					row={row}
-					res={res}
-					maxed={maxed}
-					affordable={affordable}
-				/>
+				<UpgradeRowCost row={row} res={res} maxed={maxed} />
 			</div>
 		</button>
 	);
