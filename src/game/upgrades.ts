@@ -1,6 +1,6 @@
 import { UPGRADE_NODES } from "./data/upgrades";
 import type { GameState } from "./types";
-import { GARDEN_BASE_YIELD, UNIT_STAT_CONFIG } from "./workshopUpgrades";
+import { gardenTotalYield, UNIT_STAT_CONFIG } from "./workshopUpgrades";
 
 export function recomputeDerived(state: GameState): GameState["derived"] {
 	const purchased = state.upgrades.purchased;
@@ -210,10 +210,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		maxSquadSize += ws.crypt.squadSize;
 		squadTravelSpeedBonus += ws.crypt.travelSpeed * 0.08; // 8% travel speed per level
 
-		gardenBonesPerTick = ws
-			? ws.garden.reduce((sum, level) => sum + level * GARDEN_BASE_YIELD, 0) /
-				10
-			: 0;
+		gardenBonesPerTick = gardenTotalYield(ws.garden) / 10;
 	}
 
 	// Apply relic effects from equipped relics

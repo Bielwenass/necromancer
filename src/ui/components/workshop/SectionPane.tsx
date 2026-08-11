@@ -28,9 +28,9 @@ export function SectionPane({
 			{!section.unlocked && <SectionLocked section={section} />}
 
 			{section.unlocked &&
-				(section.type === "garden" ? (
+				(section.type === "garden" && section.gardenLevels ? (
 					<GardenGrid
-						levels={section.gardenLevels ?? []}
+						levels={section.gardenLevels}
 						res={res}
 						focusedId={focusedId}
 						onFocus={onFocus}

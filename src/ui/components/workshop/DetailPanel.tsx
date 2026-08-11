@@ -1,4 +1,5 @@
-import type { Resources } from "../../../game/types";
+import type { GardenPlotId, Resources } from "../../../game/types";
+import { GARDEN_PLOTS } from "../../../game/workshopUpgrades";
 import { GardenPlotDetail } from "./GardenPlotDetail";
 import type { WRow, WSection } from "./types";
 import { UpgradeDetail } from "./UpgradeDetail";
@@ -29,20 +30,19 @@ export function DetailPanel({
 	onSkillBuy: (id: string) => void;
 	canPurchaseSkill: (upgradeId: string) => boolean;
 }) {
-	const gardenIdx = rowId?.startsWith("garden.")
-		? Number.parseInt(rowId.split(".")[1], 10)
-		: -1;
-	const row = rowId && gardenIdx < 0 ? findRow(sections, rowId) : null;
+	const plot = rowId?.startsWith("garden.")
+		? GARDEN_PLOTS.find((p) => p.id === (rowId.split(".")[1] as GardenPlotId))
+		: undefined;
+	const row = rowId && !plot ? findRow(sections, rowId) : null;
 
 	return (
 		<div className="w-[360px] min-w-[360px] border-l border-[color:var(--rule)] bg-bg-panel px-5 py-6 overflow-y-auto flex flex-col gap-5">
-			{gardenIdx >= 0 ? (
+			{plot ? (
 				<GardenPlotDetail
-					idx={gardenIdx}
+					plot={plot}
 					level={
-						sections.find((s) => s.id === "garden")?.gardenLevels?.[
-							gardenIdx
-						] ?? 0
+						sections.find((s) => s.id === "garden")?.gardenLevels?.[plot.id] ??
+						0
 					}
 					res={res}
 					onBuy={onBuy}

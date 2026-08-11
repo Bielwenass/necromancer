@@ -11,48 +11,46 @@ const POOL_META: Record<
 	PoolId,
 	{
 		name: string;
-		kicker: string;
 		blurb: string;
 		glyph: string;
 		accent: string;
-		premium: boolean;
-		featured: boolean;
+		/**
+		 * The accent at low alpha, washed over the panel and the ×10 button.
+		 * Alpha is tuned per accent, not shared — `bone` is a far lighter
+		 * colour and reads brighter at the same value.
+		 */
+		tint: string;
 		pityMax: number;
 		pityGuaranteed: Rarity | null;
 	}
 > = {
 	bone: {
 		name: "Bone Ritual",
-		kicker: "I · ATTUNED",
 		blurb:
-			"A simple summons. The graveyards yield bones, the bones yield more.",
+			"Bone-meal scattered on the circle. Whatever the graveyard's tenants were buried holding surfaces with it.",
 		glyph: "hex",
 		accent: "var(--c-bone)",
-		premium: false,
-		featured: false,
+		tint: "rgba(232,220,192,0.06)",
 		pityMax: 0,
 		pityGuaranteed: null,
 	},
 	soul: {
-		name: "Soul Ritual",
-		kicker: "II · BOUND",
-		blurb: "Wisps of the recently-departed coalesce around the brazier.",
-		glyph: "star",
-		accent: "var(--c-soul)",
-		premium: false,
-		featured: true,
+		name: "Obol Ritual",
+		blurb:
+			"The ferryman's fare, paid many times over. The dead give up what they were buried wearing.",
+		glyph: "ring",
+		accent: "var(--c-coin)",
+		tint: "rgba(212,168,87,0.08)",
 		pityMax: 20,
 		pityGuaranteed: "rare",
 	},
 	forbidden: {
 		name: "Forbidden Ritual",
-		kicker: "III · BLASPHEMOUS",
 		blurb:
-			"Names that should not be spoken. The price is steep; the rewards, ruinous.",
+			"Names that should not be spoken, bought with souls. What they hand back is old, potent, and not grateful.",
 		glyph: "moon",
-		accent: "var(--c-coin)",
-		premium: true,
-		featured: false,
+		accent: "var(--c-soul)",
+		tint: "rgba(155,122,214,0.08)",
 		pityMax: 50,
 		pityGuaranteed: "legendary",
 	},
@@ -108,42 +106,11 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 
 	return (
 		<div
-			className={`flex-1 border-r border-[color:var(--rule)] py-8 px-7 flex flex-col relative ${
-				meta.featured
-					? "bg-[linear-gradient(180deg,#1a140d_0%,#0e0b07_70%)]"
-					: "bg-[linear-gradient(180deg,#15110b_0%,#0e0b07_80%)]"
-			}`}
+			className="flex-1 border-r border-[color:var(--rule)] py-8 px-7 flex flex-col relative bg-bg-deep"
+			style={{
+				backgroundImage: `linear-gradient(180deg, ${meta.tint}, transparent 70%)`,
+			}}
 		>
-			{meta.premium &&
-				[0, 1, 2, 3].map((i) => {
-					const posClass =
-						i === 0
-							? "top-3 left-3"
-							: i === 1
-								? "top-3 right-3"
-								: i === 2
-									? "bottom-3 left-3"
-									: "bottom-3 right-3";
-					return (
-						<div
-							key={i}
-							className={`absolute w-[18px] h-[18px] ${posClass}`}
-							style={{
-								borderTop: i < 2 ? `1px solid ${meta.accent}` : "none",
-								borderBottom: i >= 2 ? `1px solid ${meta.accent}` : "none",
-								borderLeft: i % 2 === 0 ? `1px solid ${meta.accent}` : "none",
-								borderRight: i % 2 === 1 ? `1px solid ${meta.accent}` : "none",
-							}}
-						/>
-					);
-				})}
-
-			<div
-				className="font-mono text-[10px] tracking-[0.32em] opacity-[0.85]"
-				style={{ color: meta.accent }}
-			>
-				{meta.kicker}
-			</div>
 			<div className="font-display text-3xl text-bone tracking-[0.18em] mt-3 uppercase">
 				{meta.name}
 			</div>
@@ -151,13 +118,16 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 				className="w-15 h-px mt-3.5 opacity-60"
 				style={{ background: meta.accent }}
 			/>
-			<div className="font-body text-sm text-parchm italic mt-4 leading-normal">
+			<div className="font-body text-md text-parchm italic mt-4 leading-normal">
 				{meta.blurb}
 			</div>
 
 			<div
-				className="cornered mt-7 h-[180px] flex items-center justify-center relative opacity-95 border bg-[radial-gradient(ellipse_at_50%_60%,rgba(212,168,87,0.04),transparent_70%)]"
-				style={{ borderColor: meta.accent }}
+				className="cornered mt-7 h-[180px] flex items-center justify-center relative opacity-95 border"
+				style={{
+					borderColor: meta.accent,
+					backgroundImage: `radial-gradient(ellipse at 50% 60%, ${meta.tint}, transparent 70%)`,
+				}}
 			>
 				<svg
 					aria-hidden="true"
@@ -186,17 +156,11 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					/>
 				</svg>
 				<RelicGlyph kind={meta.glyph} size={80} color={meta.accent} />
-				<div className="font-mono absolute top-2.5 left-3 text-[9px] text-dim tracking-[0.14em]">
-					{poolId.toUpperCase()} POOL
-				</div>
 			</div>
 
 			<div className="mt-5">
-				<div className="flex justify-between mb-2">
-					<span className="font-display text-[10px] text-parchm tracking-[0.22em] uppercase">
-						Drop Odds
-					</span>
-					<span className="font-mono text-[9px] text-dim">BASE</span>
+				<div className="flex justify-between mb-2 font-display text-xs text-parchm tracking-[0.22em] uppercase">
+					Drop Odds
 				</div>
 				<div className="flex h-1.5 mb-2">
 					{config.odds.map((o) => (
@@ -285,7 +249,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					<span className="font-display text-xs tracking-[0.28em]">PULL</span>
 					<span className="inline-flex items-center gap-1">
 						<ResourceIcon
-							size={14}
+							size={16}
 							color={canPull1 ? meta.accent : "var(--ink-dim)"}
 						/>
 						<span className="font-mono text-xs">{formatNumber(cost1)}</span>
@@ -297,14 +261,11 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					disabled={!canPull10}
 					className={`flex-[1.2] py-3.5 px-0 flex flex-col items-center gap-1 relative ${
 						canPull10 ? "cursor-pointer" : "cursor-not-allowed"
-					} ${
-						meta.featured
-							? "bg-[linear-gradient(180deg,rgba(155,122,214,0.08),transparent_80%)]"
-							: "bg-[linear-gradient(180deg,rgba(212,168,87,0.06),transparent_80%)]"
 					}`}
 					style={{
 						border: `1px solid ${canPull10 ? meta.accent : "var(--rule)"}`,
 						color: canPull10 ? "var(--ink-bone)" : "var(--ink-dim)",
+						backgroundImage: `linear-gradient(180deg, ${meta.tint}, transparent 80%)`,
 					}}
 				>
 					<span
@@ -315,7 +276,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					</span>
 					<span className="inline-flex items-center gap-1">
 						<ResourceIcon
-							size={14}
+							size={16}
 							color={canPull10 ? meta.accent : "var(--ink-dim)"}
 						/>
 						<span className="font-mono text-xs">{formatNumber(cost10)}</span>

@@ -34,8 +34,8 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: "rare",
 		pityInterval: 20,
 		x10Guarantee: "rare",
-		cost1: { resource: "souls", amount: 5 },
-		cost10: { resource: "souls", amount: 45 },
+		cost1: { resource: "coins", amount: 1500 },
+		cost10: { resource: "coins", amount: 13500 },
 	},
 	forbidden: {
 		odds: [
@@ -46,8 +46,8 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: "legendary",
 		pityInterval: 50,
 		x10Guarantee: "epic",
-		cost1: { resource: "coins", amount: 1500 },
-		cost10: { resource: "coins", amount: 13500 },
+		cost1: { resource: "souls", amount: 5 },
+		cost10: { resource: "souls", amount: 45 },
 	},
 };
 

@@ -1,6 +1,6 @@
 import { applyCost, canAffordCost } from "../resources";
 import { isUnitUnlocked, summonCost } from "../summoning";
-import type { UnitType } from "../types";
+import type { GardenPlotId, UnitType } from "../types";
 import { canPurchaseUpgrade, UPGRADE_NODES } from "../upgrades";
 import {
 	type CryptKey,
@@ -38,7 +38,7 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 		});
 	},
 
-	/** `key` is `"garden.<idx>"`, `"crypt.<stat>"`, or `"<unit>.<stat>"`. */
+	/** `key` is `"garden.<resource>"`, `"crypt.<stat>"`, or `"<unit>.<stat>"`. */
 	levelUpWorkshop: (key) => {
 		set((prev) => {
 			const ws = prev.workshop;
@@ -46,12 +46,11 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 			let workshop = ws;
 
 			if (key.startsWith("garden.")) {
-				const idx = parseInt(key.split(".")[1], 10);
-				const level = ws.garden[idx];
-				cost = gardenCost(level);
-				const garden = [...ws.garden];
-				garden[idx] = level + 1;
-				workshop = { ...ws, garden };
+				const plot = key.split(".")[1] as GardenPlotId;
+				if (!(plot in ws.garden)) return prev;
+				const level = ws.garden[plot];
+				cost = gardenCost(plot, level);
+				workshop = { ...ws, garden: { ...ws.garden, [plot]: level + 1 } };
 			} else if (key.startsWith("crypt.")) {
 				const stat = key.split(".")[1] as CryptKey;
 				const level = ws.crypt[stat];

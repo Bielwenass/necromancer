@@ -4,8 +4,7 @@ import type { Resources, WorkshopState } from "../../../game/types";
 import {
 	CRYPT_CONFIG,
 	cryptCost,
-	GARDEN_BASE_YIELD,
-	GARDEN_PLOT_NAMES,
+	GARDEN_PLOTS,
 	gardenCost,
 	UNIT_STAT_CONFIG,
 	type UnitKey,
@@ -162,7 +161,7 @@ export function buildSections(
 		{
 			id: "garden",
 			name: "Garden",
-			subtitle: "Purchase and upgrade bone plots.",
+			subtitle: "One plot per resource. Each is paid for in what it grows.",
 			icon: "aura",
 			unlocked: true,
 			type: "garden",
@@ -182,9 +181,10 @@ export function affordableDots(
 		if (!s.unlocked) {
 			dots[s.id] = false;
 		} else if (s.type === "garden") {
-			dots[s.id] = (s.gardenLevels ?? []).some(
-				(lv, i) =>
-					canAffordCost(gardenCost(lv), res) && i < GARDEN_PLOT_NAMES.length,
+			const levels = s.gardenLevels;
+			dots[s.id] = GARDEN_PLOTS.some(
+				(p) =>
+					levels != null && canAffordCost(gardenCost(p.id, levels[p.id]), res),
 			);
 		} else {
 			dots[s.id] = (s.rows ?? []).some((r) => {
@@ -196,8 +196,4 @@ export function affordableDots(
 		}
 	}
 	return dots;
-}
-
-export function gardenTotalYield(garden: number[]): string {
-	return (garden.reduce((s, l) => s + l, 0) * GARDEN_BASE_YIELD).toFixed(2);
 }

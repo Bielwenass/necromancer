@@ -1,15 +1,29 @@
 import type { ComponentType } from "react";
 import type { Resources } from "../../../game/types";
-import { IconBone, IconCoin, IconCorpse, IconSoul } from "../icons";
+import { IconBone, IconCoin, IconCorpse, IconDust, IconSoul } from "../icons";
 
 export type ResIcon = ComponentType<{ size?: number; color?: string }>;
 
-const RES: Record<string, { icon: ResIcon; color: string; label: string }> = {
+export interface ResMeta {
+	icon: ResIcon;
+	color: string;
+	label: string;
+}
+
+const RES: Record<string, ResMeta> = {
 	bones: { icon: IconBone, color: "var(--c-bone)", label: "Bones" },
 	coins: { icon: IconCoin, color: "var(--c-coin)", label: "Gold" },
 	souls: { icon: IconSoul, color: "var(--c-soul)", label: "Souls" },
+	dust: { icon: IconDust, color: "var(--ink-parchm)", label: "Dust" },
 	corpses: { icon: IconCorpse, color: "var(--sq-zombie)", label: "Corpses" },
 };
+
+/** Icon/color/label for a resource key, falling back to bones for unknowns. */
+export function resMeta(resource: string): ResMeta {
+	return (
+		RES[resource] ?? { icon: IconBone, color: "var(--c-bone)", label: resource }
+	);
+}
 
 export interface CostLine {
 	key: string;
@@ -28,11 +42,7 @@ export function costLines(
 	return Object.entries(cost)
 		.filter(([, v]) => (v ?? 0) > 0)
 		.map(([k, v]) => {
-			const d = RES[k] ?? {
-				icon: IconBone,
-				color: "var(--c-bone)",
-				label: k,
-			};
+			const d = resMeta(k);
 			const ok = (res[k as keyof Resources] ?? 0) >= (v as number);
 			return { key: k, amount: v as number, ok, ...d };
 		});

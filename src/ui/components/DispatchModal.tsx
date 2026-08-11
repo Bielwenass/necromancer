@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
 import { useGameStore } from "../../game/store";
 import type { UnitType } from "../../game/types";
+import { EnemyPreview } from "./EnemyPreview";
 import { UnitRow } from "./UnitRow";
 
 interface DispatchModalProps {
@@ -304,7 +305,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 				if (e.key === "Escape") onClose();
 			}}
 		>
-			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh]">
+			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] overflow-y-auto">
 				{/* Header */}
 				<div className="mb-5">
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">
@@ -319,6 +320,8 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 						</span>
 					</div>
 				</div>
+
+				<EnemyPreview enemies={def.enemies} />
 
 				{atCapacity && (
 					<div className="mono text-[10px] text-hp-crit mb-4 tracking-[0.1em]">

@@ -1,7 +1,6 @@
-import type { Resources } from "../../../game/types";
-import { GARDEN_PLOT_NAMES } from "../../../game/workshopUpgrades";
+import type { GardenPlotId, Resources } from "../../../game/types";
+import { GARDEN_PLOTS, gardenTotalYield } from "../../../game/workshopUpgrades";
 import { GardenPlotCard } from "./GardenPlotCard";
-import { gardenTotalYield } from "./sections";
 
 export function GardenGrid({
 	levels,
@@ -10,7 +9,7 @@ export function GardenGrid({
 	onFocus,
 	onBuy,
 }: {
-	levels: number[];
+	levels: Record<GardenPlotId, number>;
 	res: Resources;
 	focusedId: string | null;
 	onFocus: (id: string) => void;
@@ -23,18 +22,18 @@ export function GardenGrid({
 					Garden Yield
 				</div>
 				<div className="font-mono text-sm text-bone">
-					{gardenTotalYield(levels)}{" "}
+					{gardenTotalYield(levels).toFixed(2)}{" "}
 					<span className="text-[10px] text-dim">BONES/SEC</span>
 				</div>
 			</div>
 			<div className="grid grid-cols-3 gap-3.5 py-5 px-8">
-				{levels.map((lv, i) => (
+				{GARDEN_PLOTS.map((plot) => (
 					<GardenPlotCard
-						key={GARDEN_PLOT_NAMES[i]}
-						idx={i}
-						level={lv}
+						key={plot.id}
+						plot={plot}
+						level={levels[plot.id]}
 						res={res}
-						focused={focusedId === `garden.${i}`}
+						focused={focusedId === `garden.${plot.id}`}
 						onFocus={onFocus}
 						onBuy={onBuy}
 					/>

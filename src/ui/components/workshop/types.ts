@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { Resources } from "../../../game/types";
+import type { GardenPlotId, Resources } from "../../../game/types";
 
 /** A single purchasable line in a workshop section. */
 export interface WRow {
@@ -31,5 +31,5 @@ export interface WSection {
 	lockedBody?: string;
 	type?: "garden";
 	rows?: WRow[];
-	gardenLevels?: number[];
+	gardenLevels?: Record<GardenPlotId, number>;
 }

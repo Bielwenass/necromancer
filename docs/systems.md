@@ -6,13 +6,15 @@ Numbers live in `src/game/data/` and `src/game/workshopUpgrades.ts`. This file d
 
 | Resource | Sources | Sinks |
 |---|---|---|
-| Bones | Garden plots (passive), dungeon loot, the dig button | Summons, workshop levels, Bone Ritual pulls |
-| Coins | Dungeon loot | Forbidden Ritual pulls |
-| Souls | Dungeon loot (chance-based) | Soul Ritual pulls, wraith summons |
-| Corpses | Dungeon loot | Zombie summons |
-| Dust | Sacrificing relics | — (no sink yet) |
+| Bones | Garden plots (passive), dungeon loot, the dig button | Summons, workshop levels, Bone Ritual pulls, bone plot |
+| Coins | Dungeon loot | Obol Ritual pulls, coin plot |
+| Souls | Dungeon loot (chance-based) | Forbidden Ritual pulls, wraith summons, soul plot |
+| Corpses | Dungeon loot | Zombie summons, corpse plot |
+| Dust | Sacrificing relics | Dust plot |
 
-Passive income is **garden-only**: `bonesPerTick = (Σ plotLevel × GARDEN_BASE_YIELD) / 10 × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it (`n1a`, `n5a`, `n6`, `n7`, `s7`). `coinsPerTick` and `soulsPerTick` are structurally present but always 0 — coins and souls come only from loot.
+Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / 10 × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it (`n1a`, `n5a`, `n6`, `n7`, `s7`). `coinsPerTick` and `soulsPerTick` are structurally present but always 0.
+
+`GARDEN_PLOTS` holds five plots. All of them grow **bones**; they differ in the resource that buys them — a plot's id *is* that resource (`garden.souls`), it is unlocked and upgraded for `baseCost × growth^level` of it, and `workshop.garden` is keyed the same way. Scarcer currencies buy a higher `baseYield`, which is what gives coins, souls, dust, and corpses a bones-side sink.
 
 ## Units
 
@@ -46,7 +48,7 @@ Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clear
 Two upgrade surfaces share the Upgrades tab:
 
 - **Skill tree** — one-time nodes, paid in upgrade points earned from clears.
-- **Workshop** — repeatable levels paid in resources: per-unit HP/DMG/Speed, crypt squad size and travel speed, and 6 garden plots. Costs grow geometrically (`baseBones × growth^level`).
+- **Workshop** — repeatable levels paid in resources: per-unit HP/DMG/Speed, crypt squad size and travel speed, and the five garden plots. Costs grow geometrically (`base × growth^level`).
 
 ## Gacha
 

@@ -13,6 +13,7 @@ export function canAffordCost(
 		(cost.bones ?? 0) <= res.bones &&
 		(cost.coins ?? 0) <= res.coins &&
 		(cost.souls ?? 0) <= res.souls &&
+		(cost.dust ?? 0) <= res.dust &&
 		(cost.corpses ?? 0) <= res.corpses
 	);
 }
@@ -23,6 +24,7 @@ export function applyCost(cost: Partial<Resources>, res: Resources): Resources {
 		bones: res.bones - (cost.bones ?? 0),
 		coins: res.coins - (cost.coins ?? 0),
 		souls: res.souls - (cost.souls ?? 0),
+		dust: res.dust - (cost.dust ?? 0),
 		corpses: res.corpses - (cost.corpses ?? 0),
 	};
 }

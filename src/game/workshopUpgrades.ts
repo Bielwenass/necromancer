@@ -1,4 +1,4 @@
-import type { Resources } from "./types";
+import type { GardenPlotId, Resources } from "./types";
 
 export const UNIT_STAT_CONFIG = {
 	skeleton: {
@@ -49,16 +49,49 @@ export const CRYPT_CONFIG = {
 	},
 } as const;
 
-export const GARDEN_PLOT_NAMES = [
-	"Ossuary Row",
-	"Pauper Trench",
-	"Ash Bed",
-	"Bone Midden",
-	"Ruin Garden",
-	"Catacomb Plot",
+export interface GardenPlotDef {
+	id: GardenPlotId;
+	name: string;
+	/** Bones/sec granted per level. */
+	baseYield: number;
+	/** Cost of level 1 (the unlock); later levels are `baseCost × growth^level`. */
+	baseCost: number;
+	growth: number;
+}
+
+/**
+ * Every plot grows bones; they differ in the resource that buys them. Scarcer
+ * currencies buy a richer plot, so each resource has somewhere to go.
+ */
+export const GARDEN_PLOTS: GardenPlotDef[] = [
+	{
+		id: "bones",
+		name: "Ossuary Row",
+		baseYield: 1,
+		baseCost: 600,
+		growth: 1.35,
+	},
+	{
+		id: "coins",
+		name: "Pauper Trench",
+		baseYield: 1.5,
+		baseCost: 200,
+		growth: 1.35,
+	},
+	{ id: "souls", name: "Wisp Hollow", baseYield: 4, baseCost: 3, growth: 1.45 },
+	{ id: "dust", name: "Ash Bed", baseYield: 3, baseCost: 5, growth: 1.4 },
+	{
+		id: "corpses",
+		name: "Carrion Field",
+		baseYield: 2,
+		baseCost: 80,
+		growth: 1.35,
+	},
 ];
 
-export const GARDEN_BASE_YIELD = 1; // bones/sec per level
+const GARDEN_BY_ID: Record<GardenPlotId, GardenPlotDef> = Object.fromEntries(
+	GARDEN_PLOTS.map((p) => [p.id, p]),
+) as Record<GardenPlotId, GardenPlotDef>;
 
 export type UnitKey = "skeleton" | "zombie" | "wraith";
 export type StatKey = "hp" | "dmg" | "speed";
@@ -85,7 +118,23 @@ export function cryptCost(key: CryptKey, level: number): Partial<Resources> {
 	return { bones: Math.floor(cfg.baseBones * cfg.growth ** level) };
 }
 
-export function gardenCost(level: number): Partial<Resources> {
-	if (level === 0) return { coins: 100 };
-	return { bones: Math.floor(600 * 1.35 ** level) };
+/** A plot is bought and upgraded with the resource it is named for. */
+export function gardenCost(
+	id: GardenPlotId,
+	level: number,
+): Partial<Resources> {
+	const plot = GARDEN_BY_ID[id];
+	return {
+		[id]: Math.max(1, Math.floor(plot.baseCost * plot.growth ** level)),
+	};
+}
+
+/** Bones/sec a plot produces at `level`. */
+export function gardenYield(id: GardenPlotId, level: number): number {
+	return GARDEN_BY_ID[id].baseYield * level;
+}
+
+/** Total bones/sec across every plot, before `bonesPassiveMult`. */
+export function gardenTotalYield(garden: Record<GardenPlotId, number>): number {
+	return GARDEN_PLOTS.reduce((sum, p) => sum + p.baseYield * garden[p.id], 0);
 }

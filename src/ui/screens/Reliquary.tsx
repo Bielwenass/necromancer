@@ -66,6 +66,8 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	const [filterRarity, setFilterRarity] = useState<Rarity | null>(null);
 	const [confirmSacrifice, setConfirmSacrifice] = useState(false);
 
+	console.log(equipped);
+
 	const selectedRelic =
 		inventory.find((r) => r.id === selectedRelicId) ??
 		(selectedRelicId
@@ -74,9 +76,9 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 					.find((r) => r?.id === selectedRelicId)
 			: null);
 
-	const filteredInventory = filterRarity
-		? inventory.filter((r) => r.rarity === filterRarity)
-		: inventory;
+	const filteredInventory = inventory
+		.filter((r) => !Object.values(equipped).includes(r.id))
+		.filter((r) => !filterRarity || r.rarity === filterRarity);
 
 	// Slots only select the relic they hold — equipping is done from the
 	// EQUIP TO SLOT buttons in RelicDetail, which offer only valid slots.

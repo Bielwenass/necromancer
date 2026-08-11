@@ -1,32 +1,32 @@
 import { canAffordCost } from "../../../game/resources";
 import type { Resources } from "../../../game/types";
 import {
-	GARDEN_BASE_YIELD,
-	GARDEN_PLOT_NAMES,
+	type GardenPlotDef,
 	gardenCost,
+	gardenYield,
 } from "../../../game/workshopUpgrades";
 import { costLines } from "./cost";
 import { Icon } from "./Icon";
 
 export function GardenPlotCard({
-	idx,
+	plot,
 	level,
 	res,
 	focused,
 	onFocus,
 	onBuy,
 }: {
-	idx: number;
+	plot: GardenPlotDef;
 	level: number;
 	res: Resources;
 	focused: boolean;
 	onFocus: (id: string) => void;
 	onBuy: (id: string) => void;
 }) {
-	const id = `garden.${idx}`;
-	const cost = gardenCost(level);
+	const id = `garden.${plot.id}`;
+	const cost = gardenCost(plot.id, level);
 	const canBuy = canAffordCost(cost, res);
-	const yieldNow = (GARDEN_BASE_YIELD * level).toFixed(2);
+	const yieldNow = gardenYield(plot.id, level).toFixed(2);
 	const costEntry = costLines(cost, res);
 	return (
 		<button
@@ -48,14 +48,16 @@ export function GardenPlotCard({
 					className={`w-[7px] h-[7px] rounded-full shrink-0 ${canBuy ? "bg-ember" : "bg-dim"}`}
 				/>
 				<div className="font-display text-[11px] tracking-[0.16em] uppercase text-parchm">
-					{GARDEN_PLOT_NAMES[idx]}
+					{plot.name}
 				</div>
 			</div>
 			<div className="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 items-baseline">
 				<div className="font-mono text-[9px] tracking-[0.14em] text-dim uppercase">
 					YIELD
 				</div>
-				<div className="font-mono text-xs text-parchm">{yieldNow}/s</div>
+				<div className="font-mono text-xs text-parchm">
+					{yieldNow} <span className="text-dim">BONES/S</span>
+				</div>
 				<div className="font-mono text-[9px] tracking-[0.14em] text-dim uppercase">
 					LEVEL
 				</div>

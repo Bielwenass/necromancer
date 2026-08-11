@@ -130,7 +130,7 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							<div className="text-bone">
 								{formatNumber(resources.bones)}{" "}
 								<span className="text-[10px] text-muted">
-									{bonesPerSec > 0 ? formatRate(derived.bonesPerTick) : "+0/s"}
+									{bonesPerSec > 0 ? formatRate(derived.bonesPerTick) : null}
 								</span>
 							</div>
 						</div>
@@ -144,32 +144,35 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							<div className="text-bone">
 								{formatNumber(resources.coins)}{" "}
 								<span className="text-[10px] text-muted">
-									{coinsPerSec > 0 ? formatRate(derived.coinsPerTick) : "+0/s"}
+									{coinsPerSec > 0 ? formatRate(derived.coinsPerTick) : null}
 								</span>
 							</div>
 						</div>
 					</div>
-					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconSoul size={20} />
-						<div>
-							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
-								Souls
-							</div>
-							<div className="text-bone">
-								{formatNumber(resources.souls)}{" "}
-								<span className="text-[10px] text-muted">+0/s</span>
+					{resources.souls > 0 && (
+						<div className="flex items-center gap-2 font-mono text-sm">
+							<IconSoul size={20} />
+							<div>
+								<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+									Souls
+								</div>
+								<div className="text-bone">
+									{formatNumber(resources.souls)}{" "}
+								</div>
 							</div>
 						</div>
-					</div>
-					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
-						<IconDust size={20} />
-						<div>
-							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
-								Dust
+					)}
+					{resources.dust > 0 && (
+						<div className="flex items-center gap-2 font-mono text-sm opacity-70">
+							<IconDust size={20} />
+							<div>
+								<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+									Dust
+								</div>
+								<div className="text-bone">{formatNumber(resources.dust)}</div>
 							</div>
-							<div className="text-bone">{formatNumber(resources.dust)}</div>
 						</div>
-					</div>
+					)}
 					<div className="flex items-center gap-2 font-mono text-sm opacity-70">
 						<IconCorpse size={20} />
 						<div>

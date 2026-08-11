@@ -118,6 +118,9 @@ export interface UpgradeNode {
 	capstone?: boolean;
 }
 
+/** A garden plot is identified by the resource that buys it. */
+export type GardenPlotId = keyof Resources;
+
 export interface Resources {
 	bones: number;
 	coins: number;
@@ -131,7 +134,8 @@ export interface WorkshopState {
 	zombie: { hp: number; dmg: number; speed: number };
 	wraith: { hp: number; dmg: number; speed: number };
 	crypt: { squadSize: number; travelSpeed: number };
-	garden: number[]; // 6 plots; 0 = not purchased, ≥1 = level
+	/** Plot level keyed by the resource that buys it; 0 = not purchased. */
+	garden: Record<GardenPlotId, number>;
 }
 
 export interface Units {

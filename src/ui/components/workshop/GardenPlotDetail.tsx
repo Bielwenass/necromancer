@@ -1,28 +1,30 @@
 import { canAffordCost } from "../../../game/resources";
 import type { Resources } from "../../../game/types";
 import {
-	GARDEN_BASE_YIELD,
-	GARDEN_PLOT_NAMES,
+	type GardenPlotDef,
 	gardenCost,
+	gardenYield,
 } from "../../../game/workshopUpgrades";
 import { BuyButton } from "./BuyButton";
 import { CostBlock } from "./CostBlock";
+import { resMeta } from "./cost";
 
 export function GardenPlotDetail({
-	idx,
+	plot,
 	level,
 	res,
 	onBuy,
 }: {
-	idx: number;
+	plot: GardenPlotDef;
 	level: number;
 	res: Resources;
 	onBuy: (id: string) => void;
 }) {
-	const cost = gardenCost(level);
+	const meta = resMeta(plot.id);
+	const cost = gardenCost(plot.id, level);
 	const canBuy = canAffordCost(cost, res);
-	const yieldNow = (GARDEN_BASE_YIELD * level).toFixed(2);
-	const yieldNext = (GARDEN_BASE_YIELD * (level + 1)).toFixed(2);
+	const yieldNow = gardenYield(plot.id, level).toFixed(2);
+	const yieldNext = gardenYield(plot.id, level + 1).toFixed(2);
 
 	return (
 		<div className="flex flex-col gap-[18px]">
@@ -31,15 +33,15 @@ export function GardenPlotDetail({
 					Bone Garden Plot
 				</div>
 				<div className="font-display text-2xl tracking-wider text-bone mt-2">
-					{GARDEN_PLOT_NAMES[idx]}
+					{plot.name}
 				</div>
 				<div className="font-mono text-[10px] text-ember tracking-[0.2em] mt-2">
-					LV {level}
+					LV {level} · TENDED WITH {meta.label.toUpperCase()}
 				</div>
 			</div>
 			<div>
 				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
-					Yield
+					Bone Yield
 				</div>
 				<div className="flex items-baseline gap-3.5 py-2.5">
 					<span className="font-display text-2xl text-bone">{yieldNow}/s</span>
@@ -59,7 +61,7 @@ export function GardenPlotDetail({
 							: "Insufficient"
 				}
 				disabled={!canBuy}
-				onClick={() => onBuy(`garden.${idx}`)}
+				onClick={() => onBuy(`garden.${plot.id}`)}
 			/>
 		</div>
 	);

@@ -17,6 +17,7 @@ export default {
 				"bg-panel": "#15110b",
 				"bg-panel-2": "#1d1810",
 				"bg-inset": "#0a0805",
+				"bg-deep": "#0e0b07",
 				"bg-hover": "#221c14",
 
 				coin: "#d4a857",
