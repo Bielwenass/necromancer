@@ -11,7 +11,7 @@ export type SlotId =
 	| "II2"
 	| "III1"
 	| "III2";
-export type PoolId = "bone" | "soul" | "forbidden";
+export type PoolId = "banner" | "carrion" | "forbidden";
 /** Which family of slots a relic base belongs to — the crypt or one unit type. */
 export type RelicSlotType = "crypt" | UnitType;
 

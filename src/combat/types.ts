@@ -11,8 +11,8 @@ export type SideConfig = {
 
 export type EngineOptions = { width: number; height: number; seed?: number };
 
-// Tier A - individual unit
-export type UnitA = {
+// A single unit inside the combat simulation
+export type SimUnit = {
 	id: number;
 	type: string;
 	x: number;

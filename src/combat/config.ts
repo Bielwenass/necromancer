@@ -1,7 +1,7 @@
 /**
  * Combat tuning config.
  *
- * NOTE ON THE MODEL CHANGE: tierA now uses a cell-aggregate flocking model.
+ * NOTE ON THE MODEL CHANGE: the simulation now uses a cell-aggregate flocking model.
  * Cohesion and alignment are averaged over a 3x3 block of grid cells (O(1) per
  * unit) rather than iterated per-neighbor. Separation and combat targeting use
  * a small fine-hash query at radius max(separationRadius, attackRadius). As a
@@ -14,7 +14,7 @@
  * simultaneous changes are hard to reason about.
  */
 export const COMBAT_CONFIG = {
-	tierA: {
+	simulation: {
 		// ── Separation: short-range "don't crowd me" push ──────────
 		// The soft half of collision avoidance (the hard half is the phase-3
 		// positional pass, which guarantees no overlap regardless of this).
@@ -53,13 +53,13 @@ export const COMBAT_CONFIG = {
 		// and stops spreading to fight. 0.05 is gentle; 0.15 is noticeably tighter.
 		cohesionWeight: 0.05,
 
-		// Drives the aggregate grid cell size (aggCell = cohesionRadius in tierA).
+		// Drives the aggregate grid cell size (aggCell = cohesionRadius in simulation.ts).
 		// A unit reads a 3x3 block, so the cohesion neighborhood spans ~3x this.
 		// Range: 25–80.  Smaller = tighter, more local cohesion AND more grid
 		// cells (still cheap). Larger = broader blobs, coarser movement (units may
 		// visibly "snap" between cells if this is much larger than the arena/6).
 		// If you'd rather decouple cohesion feel from grid resolution, add a
-		// separate `aggregateCellSize` field and point tierA's `aggCell` at it.
+		// separate `aggregateCellSize` field and point simulation.ts's `aggCell` at it.
 		cohesionRadius: 50,
 
 		// ── Seek: drive toward the enemy ───────────────────────────

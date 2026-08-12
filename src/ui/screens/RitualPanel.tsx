@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { POOL_CONFIGS } from "../../game/gacha";
 import { useGameStore } from "../../game/store";
 import type { PoolId, Rarity, Relic } from "../../game/types";
+import bannerArt from "../assets/rituals/banner.png";
+import carrionArt from "../assets/rituals/carrion.png";
+import forbiddenArt from "../assets/rituals/forbidden.png";
 import { IconBanner, IconCorpse, IconSoul } from "../components/icons";
-import { RelicGlyph } from "../components/RelicGlyph";
+import { RitualArt } from "../components/RitualArt";
 import { formatNumber, rarityColor, rarityName } from "../theme";
 import { RevealOverlay } from "./RevealOverlay";
 
@@ -12,7 +15,8 @@ const POOL_META: Record<
 	{
 		name: string;
 		blurb: string;
-		glyph: string;
+		/** White-on-transparent line art, tinted to `accent` by `RitualArt`. */
+		art: string;
 		accent: string;
 		/**
 		 * The accent at low alpha, washed over the panel and the ×10 button.
@@ -24,31 +28,31 @@ const POOL_META: Record<
 		pityGuaranteed: Rarity | null;
 	}
 > = {
-	bone: {
+	banner: {
 		name: "Banner Ritual",
 		blurb:
 			"Standards taken off cleared ground, burned at the circle. What the fallen carried comes back up with the smoke.",
-		glyph: "spike",
+		art: bannerArt,
 		accent: "var(--c-ember)",
 		tint: "rgba(214,122,48,0.07)",
 		pityMax: 0,
 		pityGuaranteed: null,
 	},
-	soul: {
+	carrion: {
 		name: "Carrion Ritual",
 		blurb:
 			"Bodies laid out in a ring and left to it. The circle takes the flesh and hands back what was buried in it.",
-		glyph: "cross",
+		art: carrionArt,
 		accent: "var(--sq-zombie)",
 		tint: "rgba(149,184,122,0.08)",
-		pityMax: 20,
-		pityGuaranteed: "rare",
+		pityMax: 40,
+		pityGuaranteed: "epic",
 	},
 	forbidden: {
 		name: "Forbidden Ritual",
 		blurb:
 			"Names that should not be spoken, bought with souls. What they hand back is old, potent, and not grateful.",
-		glyph: "moon",
+		art: forbiddenArt,
 		accent: "var(--c-soul)",
 		tint: "rgba(155,122,214,0.08)",
 		pityMax: 50,
@@ -118,39 +122,15 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 			</div>
 
 			<div
-				className="cornered mt-7 h-[180px] flex items-center justify-center relative opacity-95 border"
+				className="cornered mt-7 h-[180px] relative overflow-hidden opacity-95"
 				style={{
 					borderColor: meta.accent,
 					backgroundImage: `radial-gradient(ellipse at 50% 60%, ${meta.tint}, transparent 70%)`,
 				}}
 			>
-				<svg
-					aria-hidden="true"
-					width="100%"
-					height="100%"
-					className="absolute inset-0"
-				>
-					<circle
-						cx="50%"
-						cy="50%"
-						r="60"
-						fill="none"
-						stroke={meta.accent}
-						strokeWidth="1"
-						opacity="0.18"
-					/>
-					<circle
-						cx="50%"
-						cy="50%"
-						r="80"
-						fill="none"
-						stroke={meta.accent}
-						strokeWidth="1"
-						opacity="0.10"
-						strokeDasharray="3 5"
-					/>
-				</svg>
-				<RelicGlyph kind={meta.glyph} size={80} color={meta.accent} />
+				<div className="relative w-full h-full">
+					<RitualArt src={meta.art} color={meta.accent} />
+				</div>
 			</div>
 
 			<div className="mt-5">

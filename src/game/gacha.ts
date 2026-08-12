@@ -11,13 +11,8 @@ interface PoolConfig {
 	cost10: { resource: keyof Resources; amount: number };
 }
 
-/**
- * Pool ids are historical — `bone` and `soul` no longer name the currency they
- * charge (banners and corpses respectively). They stay as they are because
- * `gacha.pityCounters` is keyed by them and is persisted.
- */
 export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
-	bone: {
+	banner: {
 		odds: [
 			{ rarity: "common", weight: 70 },
 			{ rarity: "uncommon", weight: 25 },
@@ -26,21 +21,21 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: null,
 		pityInterval: 0,
 		x10Guarantee: "uncommon",
-		cost1: { resource: "banners", amount: 2 },
-		cost10: { resource: "banners", amount: 18 },
+		cost1: { resource: "banners", amount: 10 },
+		cost10: { resource: "banners", amount: 90 },
 	},
-	soul: {
+	carrion: {
 		odds: [
 			{ rarity: "common", weight: 30 },
 			{ rarity: "uncommon", weight: 40 },
 			{ rarity: "rare", weight: 25 },
 			{ rarity: "epic", weight: 5 },
 		],
-		pityRarity: "rare",
-		pityInterval: 20,
+		pityRarity: "epic",
+		pityInterval: 40,
 		x10Guarantee: "rare",
-		cost1: { resource: "corpses", amount: 40 },
-		cost10: { resource: "corpses", amount: 360 },
+		cost1: { resource: "corpses", amount: 1000 },
+		cost10: { resource: "corpses", amount: 9000 },
 	},
 	forbidden: {
 		odds: [

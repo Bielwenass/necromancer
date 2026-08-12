@@ -67,7 +67,7 @@ Per-unit stat levels are priced by unit, not by a single shared formula (`unitSt
 
 ## Gacha
 
-Three pools in `POOL_CONFIGS` (`game/gacha.ts`) — Banner (banners), Carrion (corpses), Forbidden (souls) — each with rarity weights, a x1/x10 cost, an optional pity rarity + interval, and an x10 floor guarantee. Pity counters live in `gacha.pityCounters` and persist, which is why the pool *ids* are still `bone`/`soul`/`forbidden` and no longer name the currency they charge. See [relics.md](relics.md) for what a pull produces.
+Three pools in `POOL_CONFIGS` (`game/gacha.ts`) — Banner (banners), Carrion (corpses), Forbidden (souls) — each with rarity weights, a x1/x10 cost, an optional pity rarity + interval, and an x10 floor guarantee. Pity counters live in `gacha.pityCounters`, keyed by pool id, and persist. Renaming a pool id therefore orphans the saved counters for it — `buildHydratedState` merges `pityCounters` over the defaults so the new ids start at zero rather than `undefined`, which is what the `bone`/`soul` → `banner`/`carrion` rename relied on. See [relics.md](relics.md) for what a pull produces.
 
 ## Offline catchup
 

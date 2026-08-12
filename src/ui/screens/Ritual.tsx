@@ -13,8 +13,8 @@ export function Ritual({ onTabChange }: RitualProps) {
 			<TopBar />
 			<div className="stage">
 				<div className="flex-1 flex">
-					<RitualPanel poolId="bone" />
-					<RitualPanel poolId="soul" />
+					<RitualPanel poolId="banner" />
+					<RitualPanel poolId="carrion" />
 					<RitualPanel poolId="forbidden" />
 				</div>
 			</div>

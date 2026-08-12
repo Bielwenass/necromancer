@@ -5,7 +5,7 @@ Combat is a boids-style particle simulation, and it **decides** dungeon outcomes
 | File | Role |
 |---|---|
 | `combat/engine.ts` | `CombatEngine` — spawn, tick, win detection, render, perf stats |
-| `combat/tierA.ts` | Hot loop: flocking, separation, targeting, damage, integration |
+| `combat/simulation.ts` | Hot loop: flocking, separation, targeting, damage, integration |
 | `combat/spatialHash.ts` | Uniform-grid neighbour queries |
 | `combat/config.ts` | All tuning constants, heavily annotated with usable ranges |
 | `combat/renderer.ts` | Canvas draw (trails, dots, death flashes) |
@@ -34,7 +34,7 @@ The engine takes an optional `seed`; with one it uses `mulberry32`, otherwise `M
 
 ## Performance
 
-`tierA.ts` uses a cell-aggregate flocking model: cohesion and alignment are averaged over a 3×3 block of grid cells (O(1) per unit) instead of iterated per neighbour. Only separation and target selection do a fine-hash query, at `max(separationRadius, attackRadius)` — which makes those two radii the dominant per-tick cost.
+`simulation.ts` uses a cell-aggregate flocking model: cohesion and alignment are averaged over a 3×3 block of grid cells (O(1) per unit) instead of iterated per neighbour. Only separation and target selection do a fine-hash query, at `max(separationRadius, attackRadius)` — which makes those two radii the dominant per-tick cost.
 
 Some `config.ts` fields are marked UNUSED, left over from that rewrite. Tune one value at a time: watch a 20v20 where individual behaviour is legible, then sanity-check 500v500 for emergent blob behaviour. Measure with the benchmark before restructuring; `engine.stats` breaks time down by sub-phase.
 

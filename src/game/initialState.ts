@@ -30,7 +30,7 @@ function buildDefaults(): Omit<GameState, "derived"> {
 		relics: { inventory: [], equipped: {} },
 		upgrades: { purchased: [] },
 		gacha: {
-			pityCounters: { bone: 0, soul: 0, forbidden: 0 },
+			pityCounters: { banner: 0, carrion: 0, forbidden: 0 },
 			lastPulledRelics: null,
 		},
 		meta: { tickCount: 0, dayCount: 0, version: 1, lastTickAt: Date.now() },
@@ -75,6 +75,18 @@ export function buildHydratedState(): GameState {
 			banners: saved.resources?.banners ?? legacyPoints ?? 0,
 		},
 		upgrades: { purchased: saved.upgrades?.purchased ?? [] },
+		// The pools were renamed (`bone` → `banner`, `soul` → `carrion`), so a
+		// save written before that carries counters under keys nothing reads.
+		// They aren't worth migrating — the defaults fill the new pools in at
+		// zero, and the stale keys ride along harmlessly.
+		gacha: {
+			...defaults.gacha,
+			...saved.gacha,
+			pityCounters: {
+				...defaults.gacha.pityCounters,
+				...saved.gacha?.pityCounters,
+			},
+		},
 		// Saves predating offline catchup have no `lastTickAt`; without one the
 		// elapsed-time check reads NaN and catchup never runs.
 		meta: { ...saved.meta, lastTickAt: saved.meta?.lastTickAt ?? Date.now() },

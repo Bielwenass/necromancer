@@ -1,11 +1,11 @@
 import { COMBAT_CONFIG } from "./config";
-import type { DeathFlash, Side, SideConfig, UnitA } from "./types";
+import type { DeathFlash, Side, SideConfig, SimUnit } from "./types";
 
 export function renderFrame(
 	ctx: CanvasRenderingContext2D,
 	width: number,
 	height: number,
-	units: UnitA[],
+	units: SimUnit[],
 	configs: Partial<Record<Side, SideConfig>>,
 	deathFlashes: DeathFlash[],
 	t: number,

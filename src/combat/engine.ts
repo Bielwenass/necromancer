@@ -3,14 +3,14 @@ import { EventQueue } from "./events";
 import { mulberry32 } from "./prng";
 import { renderFrame } from "./renderer";
 import {
-	createTierAState,
-	getCountsA,
-	getTotalCountA,
+	createSimState,
+	getTotalUnitCount,
+	getUnitCounts,
 	type PerfStats,
-	spawnUnitsA,
-	type TierAState,
-	tickTierA,
-} from "./tierA";
+	type SimState,
+	spawnUnits,
+	tickSimulation,
+} from "./simulation";
 import type {
 	CombatEvent,
 	DeathFlash,
@@ -49,7 +49,7 @@ export class CombatEngine {
 	private width: number;
 	private height: number;
 	private configs: Partial<Record<Side, SideConfig>> = {};
-	private tierAState: TierAState;
+	private simState: SimState;
 	private events: EventQueue;
 	private deathFlashes: DeathFlash[] = [];
 	private t: number = 0;
@@ -65,7 +65,7 @@ export class CombatEngine {
 		this.height = options.height;
 		this.rand =
 			options.seed !== undefined ? mulberry32(options.seed) : Math.random;
-		this.tierAState = createTierAState();
+		this.simState = createSimState();
 		this.events = new EventQueue();
 	}
 
@@ -74,7 +74,7 @@ export class CombatEngine {
 	}
 
 	start(): void {
-		this.tierAState = createTierAState();
+		this.simState = createSimState();
 		this.events = new EventQueue();
 		this.deathFlashes = [];
 		this.t = 0;
@@ -85,8 +85,8 @@ export class CombatEngine {
 		for (const side of ["a", "b"] as Side[]) {
 			const config = this.configs[side];
 			if (!config) continue;
-			const result = spawnUnitsA(config, side, this.nextId, this.rand);
-			this.tierAState.units.push(...result.units);
+			const result = spawnUnits(config, side, this.nextId, this.rand);
+			this.simState.units.push(...result.units);
 			this.nextId = result.nextId;
 		}
 
@@ -103,8 +103,8 @@ export class CombatEngine {
 		const dt = deltaMs / 1000;
 		this.t += deltaMs;
 
-		tickTierA(
-			this.tierAState,
+		tickSimulation(
+			this.simState,
 			dt,
 			this.events,
 			this.t,
@@ -122,8 +122,8 @@ export class CombatEngine {
 		const flashMs = COMBAT_CONFIG.rendering.deathFlashMs;
 		this.deathFlashes = this.deathFlashes.filter((f) => this.t - f.t < flashMs);
 
-		const countA = getTotalCountA(this.tierAState, "a");
-		const countB = getTotalCountA(this.tierAState, "b");
+		const countA = getTotalUnitCount(this.simState, "a");
+		const countB = getTotalUnitCount(this.simState, "b");
 		if (countA <= 0 && countB <= 0) {
 			this.winner = "draw";
 			this.events.emit({ type: "battle_end", winner: "draw", t: this.t });
@@ -145,7 +145,7 @@ export class CombatEngine {
 			ctx,
 			this.width,
 			this.height,
-			this.tierAState.units,
+			this.simState.units,
 			this.configs,
 			this.deathFlashes,
 			this.t,
@@ -155,8 +155,8 @@ export class CombatEngine {
 
 	getCounts(): Record<Side, Record<string, number>> {
 		return {
-			a: getCountsA(this.tierAState, "a"),
-			b: getCountsA(this.tierAState, "b"),
+			a: getUnitCounts(this.simState, "a"),
+			b: getUnitCounts(this.simState, "b"),
 		};
 	}
 
@@ -169,7 +169,7 @@ export class CombatEngine {
 	}
 
 	getTotalCount(side: Side): number {
-		return getTotalCountA(this.tierAState, side);
+		return getTotalUnitCount(this.simState, side);
 	}
 
 	getT(): number {

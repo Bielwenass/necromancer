@@ -81,7 +81,7 @@ Forgetting this produces stale stats that only correct themselves on the next un
 
 `CombatWindow.tsx` renders an engine and, once the fight is off the live map, replays it locally for looping visuals. It must never feed back into game state.
 
-`src/combat/tierA.ts` is the hot loop (spatial hash, cell-aggregate flocking) and is performance-tuned; measure with the benchmark before restructuring it. `src/combat/config.ts` is exhaustively commented with sane ranges per field and marks fields left UNUSED by the aggregate-model rewrite — tune one value at a time.
+`src/combat/simulation.ts` is the hot loop (spatial hash, cell-aggregate flocking) and is performance-tuned; measure with the benchmark before restructuring it. `src/combat/config.ts` is exhaustively commented with sane ranges per field and marks fields left UNUSED by the aggregate-model rewrite — tune one value at a time.
 
 ### Offline catchup is a parallel implementation — keep it in sync
 
@@ -137,6 +137,8 @@ Known token divergence: Tailwind's `rule` (`#1a1a1a`) and `rule-strong` (`#8a795
 5. Prefer Tailwind named colors over raw hex or `var(--…)` in markup.
 
 Migrating a legacy class is expected cleanup when you're already editing that markup — convert it, delete the now-dead rule from `index.css`, and check no other component still uses it.
+
+**Raster art lives in `src/ui/assets/<feature>/` and is imported**, not dropped in a `public/` folder — Vite then hashes and verifies it, with `src/vite-env.d.ts` supplying the module types. Art is authored as white line work on transparency and tinted at render time by masking a solid fill with the PNG's alpha (`RitualArt` is the example), so a single plate serves any accent; don't commit pre-colored variants. Store the plate as grayscale+alpha — the mask reads nothing but alpha.
 
 **Converting a `<div>` to a `<button>` needs `w-full`.** Form controls resolve `width: auto` as shrink-to-fit, not fill-available, even at `display: block` or `grid`. A converted container therefore collapses around its content — and if a child uses `width: 100%`, the percentage becomes circular and the element shrinks to a few pixels. Add `w-full` (and `text-left` where content was left-aligned) unless the element is a flex/grid *item*, which stretches on its own.
 

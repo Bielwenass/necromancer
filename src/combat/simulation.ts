@@ -1,9 +1,9 @@
 import { COMBAT_CONFIG } from "./config";
 import type { EventQueue } from "./events";
 import { SpatialHash } from "./spatialHash";
-import type { Side, SideConfig, UnitA } from "./types";
+import type { Side, SideConfig, SimUnit } from "./types";
 
-export type TierAState = { units: UnitA[] };
+export type SimState = { units: SimUnit[] };
 
 export interface PerfStats {
 	hashBuildMs: number;
@@ -23,17 +23,17 @@ export interface PerfStats {
 	unitsProcessed: number;
 }
 
-export function createTierAState(): TierAState {
+export function createSimState(): SimState {
 	return { units: [] };
 }
 
-export function spawnUnitsA(
+export function spawnUnits(
 	config: SideConfig,
 	side: Side,
 	idStart: number,
 	rand: () => number = Math.random,
-): { units: UnitA[]; nextId: number } {
-	const units: UnitA[] = [];
+): { units: SimUnit[]; nextId: number } {
+	const units: SimUnit[] = [];
 	let id = idStart;
 	const { x, y, w, h } = config.spawnArea;
 	for (const unit of config.units) {
@@ -56,8 +56,8 @@ export function spawnUnitsA(
 	return { units, nextId: id };
 }
 
-export function getCountsA(
-	state: TierAState,
+export function getUnitCounts(
+	state: SimState,
 	side: Side,
 ): Record<string, number> {
 	const counts: Record<string, number> = {};
@@ -68,7 +68,7 @@ export function getCountsA(
 	return counts;
 }
 
-export function getTotalCountA(state: TierAState, side: Side): number {
+export function getTotalUnitCount(state: SimState, side: Side): number {
 	let count = 0;
 	for (const u of state.units) {
 		if (u.side === side) count++;
@@ -76,8 +76,8 @@ export function getTotalCountA(state: TierAState, side: Side): number {
 	return count;
 }
 
-export function tickTierA(
-	state: TierAState,
+export function tickSimulation(
+	state: SimState,
 	dt: number,
 	events: EventQueue,
 	t: number,
@@ -85,7 +85,7 @@ export function tickTierA(
 	height: number,
 	stats?: PerfStats,
 ): void {
-	const cfg = COMBAT_CONFIG.tierA;
+	const cfg = COMBAT_CONFIG.simulation;
 	const units = state.units;
 	const N = units.length;
 	if (N === 0) return;
@@ -135,7 +135,7 @@ export function tickTierA(
 	const bSumVy = new Float32Array(nCells);
 	const bCount = new Float32Array(nCells);
 
-	const fineHash = new SpatialHash<UnitA>(fineRadius);
+	const fineHash = new SpatialHash<SimUnit>(fineRadius);
 
 	let cAx = 0,
 		cAy = 0,
@@ -414,7 +414,7 @@ export function tickTierA(
 
 	const collRadius = COMBAT_CONFIG.rendering.dotRadius * 2 + 0.5;
 	const collRadius2 = collRadius * collRadius;
-	const collHash = new SpatialHash<UnitA>(collRadius * 3);
+	const collHash = new SpatialHash<SimUnit>(collRadius * 3);
 	for (const u of units) collHash.insert(u);
 
 	for (const u of units) {
@@ -440,7 +440,7 @@ export function tickTierA(
 	// ── Phase 4: damage + dead removal ──────────────────────────
 	const p4Start = stats ? performance.now() : 0;
 
-	const dead: UnitA[] = [];
+	const dead: SimUnit[] = [];
 	for (let i = 0; i < units.length; i++) {
 		const u = units[i];
 		const dmg = damageBuffer.get(u.id);
