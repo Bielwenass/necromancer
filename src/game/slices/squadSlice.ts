@@ -87,6 +87,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 		const state = get();
 		const size = totalUnits(composition);
 		if (size === 0 || size > state.derived.maxSquadSize) return null;
+		if (state.squads.length >= state.derived.maxSquads) return null;
 		if (!hasUnitsAvailable(state.units, composition)) return null;
 
 		const squadId = nextSquadId();

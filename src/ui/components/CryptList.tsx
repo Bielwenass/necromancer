@@ -151,15 +151,14 @@ export function CryptList({ onTabChange }: CryptListProps) {
 						);
 					})()}
 
-					{/* Active legions */}
+					{/* Legions */}
 					<div className="flex-1 flex flex-col min-h-0">
 						<div className="flex items-center justify-between py-2.5 px-3.5 border-b border-[color:var(--rule)]">
 							<div className="font-display text-[11px] tracking-[0.28em] uppercase text-parchm">
-								Active Legions
+								Legions
 							</div>
 							<span className="mono text-xs text-dim">
-								{squads.filter((s) => s.state !== "idle").length}/
-								{derived.maxActiveSquads}
+								{squads.length}/{derived.maxSquads}
 							</span>
 						</div>
 

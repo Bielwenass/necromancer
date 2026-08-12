@@ -9,7 +9,7 @@ export function EnemyPreview({ enemies }: { enemies: EnemyDef[] }) {
 	return (
 		<div className="mb-5">
 			<div className="flex justify-between mb-[6px]">
-				<span className="mono text-[9px] text-dim tracking-[0.16em]">
+				<span className="mono text-[10px] text-dim tracking-widest">
 					GARRISON
 				</span>
 				<span className="mono text-[10px] text-muted">×{total} HOSTILES</span>

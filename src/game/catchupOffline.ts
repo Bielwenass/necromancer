@@ -7,7 +7,7 @@ import { CombatEngine } from "../combat/engine";
 import { mulberry32 } from "../combat/prng";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
-import { effectiveSoulChance } from "./tick";
+import { dungeonEnemyCount, effectiveSoulChance, rollCorpses } from "./tick";
 import { effectiveTravelTicks } from "./travel";
 import type { GameState, Resources, Squad } from "./types";
 
@@ -174,9 +174,7 @@ function generateLootSeeded(
 	const coins = Math.round(
 		(lt.coinsMin + rand() * (lt.coinsMax - lt.coinsMin)) * clearBonus,
 	);
-	const corpses = Math.round(
-		(lt.corpseMin + rand() * (lt.corpseMax - lt.corpseMin)) * clearBonus,
-	);
+	const corpses = rollCorpses(dungeonEnemyCount(def), rand);
 	const souls =
 		rand() < effectiveSoulChance(lt.soulChance, soulHarvestBonus) ? 1 : 0;
 	return { bones, coins, corpses, souls };

@@ -27,7 +27,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 	let corpseYieldBonus = 0;
 
 	let maxSquadSize = 5;
-	let maxActiveSquads = 1;
+	let maxSquads = 1;
 	let zombiesUnlocked = false;
 	let wraithsUnlocked = false;
 	let autoDeploy = false;
@@ -77,7 +77,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 				zombiesUnlocked = true;
 				break;
 			case "s3a":
-				maxActiveSquads += 1;
+				maxSquads += 1;
 				break;
 			case "s3b":
 				skeletonDamageBonus += 0.2;
@@ -89,12 +89,12 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 				wraithsUnlocked = true;
 				break;
 			case "s5a":
-				maxActiveSquads += 1;
+				maxSquads += 1;
 				break;
 			case "s5b":
 				break; // Reanimation — handled in tick
 			case "s6":
-				maxActiveSquads += 1;
+				maxSquads += 1;
 				maxSquadSize += 10;
 				break;
 			case "s7":
@@ -140,12 +140,12 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 			case "c4b":
 				break; // vampiric — in combat
 			case "c5a":
-				maxActiveSquads += 1;
+				maxSquads += 1;
 				break;
 			case "c5b":
 				break; // battle drums — in combat
 			case "c6":
-				maxActiveSquads += 1;
+				maxSquads += 1;
 				skeletonDamageBonus += 0.1;
 				zombieDamageBonus += 0.1;
 				wraithDamageBonus += 0.1;
@@ -304,7 +304,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		soulsYieldBonus,
 		corpseYieldBonus,
 		maxSquadSize,
-		maxActiveSquads,
+		maxSquads,
 		zombiesUnlocked,
 		wraithsUnlocked,
 		autoDeploy,

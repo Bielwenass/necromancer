@@ -1,9 +1,33 @@
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
 import { effectiveTravelTicks } from "./travel";
-import type { GameState, Resources } from "./types";
+import type { DungeonDef, GameState, Resources } from "./types";
 
 const TICKS_PER_DAY = 1200; // 2 minutes per in-game day
+
+/**
+ * Chance that a felled enemy leaves a usable body behind. Corpses are not a
+ * per-dungeon loot range any more — they come off the kill count, so a dungeon
+ * pays corpses through the size of its roster rather than a hand-tuned table.
+ */
+export const CORPSE_DROP_CHANCE = 0.2;
+
+/**
+ * Enemies a dungeon fields. A squad only wins once side B is at zero, so on a
+ * clear this is exactly how many enemies fell.
+ */
+export function dungeonEnemyCount(def: DungeonDef): number {
+	return def.enemies.reduce((n, e) => n + e.amount, 0);
+}
+
+/** One independent `CORPSE_DROP_CHANCE` roll per felled enemy. */
+export function rollCorpses(enemiesFelled: number, rand: () => number): number {
+	let corpses = 0;
+	for (let i = 0; i < enemiesFelled; i++) {
+		if (rand() < CORPSE_DROP_CHANCE) corpses++;
+	}
+	return corpses;
+}
 
 /**
  * `soulHarvestBonus` multiplies the dungeon's soul chance, which is what `n0`
@@ -34,9 +58,8 @@ export function generateLoot(
 	const coins = Math.round(
 		(lt.coinsMin + Math.random() * (lt.coinsMax - lt.coinsMin)) * clearBonus,
 	);
-	const corpses = Math.round(
-		(lt.corpseMin + Math.random() * (lt.corpseMax - lt.corpseMin)) * clearBonus,
-	);
+	// Corpses come off the kill count, so `clearBonus` deliberately misses them.
+	const corpses = rollCorpses(dungeonEnemyCount(def), Math.random);
 	const souls =
 		Math.random() < effectiveSoulChance(lt.soulChance, soulHarvestBonus)
 			? 1

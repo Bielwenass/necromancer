@@ -97,20 +97,44 @@ export type UnitKey = "skeleton" | "zombie" | "wraith";
 export type StatKey = "hp" | "dmg" | "speed";
 export type CryptKey = "squadSize" | "travelSpeed";
 
+/**
+ * Each unit is bought with the currency its nature implies. Skeletons are plain
+ * bone-work; zombies need bodies to stitch and, deep in, souls to drive them;
+ * wraiths never touch bones at all — they are bound out of flesh, souls, and
+ * ground relic dust.
+ *
+ * The bones curve (`baseBones × growth^level`) still sets the shape of every
+ * track. Wraith corpses take a tenth of it, matching the zombie corpse line,
+ * while its souls and dust stay linear in `level` because both are scarce by
+ * design (a soul is a per-clear chance roll; dust only comes from sacrificing
+ * relics), and putting them on the exponential would price wraiths out.
+ */
 export function unitStatCost(
 	unit: UnitKey,
 	stat: StatKey,
 	level: number,
 ): Partial<Resources> {
 	const cfg = UNIT_STAT_CONFIG[unit][stat];
-	const bones = Math.floor(cfg.baseBones * cfg.growth ** level);
-	const cost: Partial<Resources> = { bones };
-	if (level >= 5) cost.corpses = Math.max(1, Math.floor(bones * 0.1));
-	if (level >= 15) cost.souls = Math.floor(level / 5);
-	if (unit === "wraith" && level >= 3) {
-		cost.souls = Math.max(cost.souls ?? 0, Math.floor(level / 3));
+	const curve = cfg.baseBones * cfg.growth ** level;
+
+	switch (unit) {
+		case "skeleton":
+			return { bones: Math.floor(curve) };
+
+		case "zombie": {
+			const cost: Partial<Resources> = { bones: Math.floor(curve) };
+			if (level >= 5) cost.corpses = Math.max(1, Math.floor(curve * 0.1));
+			if (level >= 15) cost.souls = Math.floor(level / 5);
+			return cost;
+		}
+
+		case "wraith":
+			return {
+				corpses: Math.max(1, Math.floor(curve * 0.1)),
+				souls: Math.floor(level / 3) + 1,
+				dust: Math.floor(level / 2) + 1,
+			};
 	}
-	return cost;
 }
 
 export function cryptCost(key: CryptKey, level: number): Partial<Resources> {

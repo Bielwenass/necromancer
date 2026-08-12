@@ -9,8 +9,8 @@ Numbers live in `src/game/data/` and `src/game/workshopUpgrades.ts`. This file d
 | Bones | Garden plots (passive), dungeon loot, the dig button | Summons, workshop levels, Bone Ritual pulls, bone plot |
 | Coins | Dungeon loot | Obol Ritual pulls, coin plot |
 | Souls | Dungeon loot (chance-based) | Forbidden Ritual pulls, wraith summons, soul plot |
-| Corpses | Dungeon loot | Zombie summons, corpse plot |
-| Dust | Sacrificing relics | Dust plot |
+| Corpses | Per-kill drop chance in dungeons | Zombie summons, wraith workshop levels, corpse plot |
+| Dust | Sacrificing relics | Wraith workshop levels, dust plot |
 | Banners | Clearing a dungeon (`tier` per clear, online and offline) | Upgrade-tree nodes |
 
 Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / 10 × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it (`n1a`, `n5a`, `n6`, `n7`, `s7`). `coinsPerTick` and `soulsPerTick` are structurally present but always 0.
@@ -33,7 +33,7 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 - Travel: `position += 1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus)` per tick, and the mirror of that on the way back. `game/travel.ts` owns that formula (`travelTimeTicks / (1 + bonus)`) and is the single source the live tick, the offline catchup, and the Crypt timers all read — so ETAs and the "Ns travel" label show the upgraded duration, not the base one.
 - On return, `pendingLoot` is deposited with yield bonuses applied, then unlock conditions are re-checked.
 - With `c0` (Auto-Deploy), a returning squad re-dispatches to the same dungeon unless the player recalled it manually (`manualRecall`).
-- Caps: `derived.maxSquadSize` (base 5) and `derived.maxActiveSquads` (base 1), both raised by upgrades and the Workshop.
+- Caps: `derived.maxSquadSize` (base 5), raised by upgrades and the Workshop, and `derived.maxSquads` (base 1), raised by upgrades. `maxSquads` caps how many squads exist at all, regardless of state — it is checked in `createSquad` and never gates dispatching an existing one.
 - Only an `idle` squad can be disbanded. A squad in the field still holds its units, so refunding them mid-run would duplicate them.
 
 ## Dungeons
@@ -44,11 +44,15 @@ Unlocks are a hand-written dependency chain in `checkUnlockConditions` (`game/du
 
 Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clearing awards `tier` banners.
 
+**Corpses are not in the loot table.** They come off the kill count: every felled enemy rolls `CORPSE_DROP_CHANCE` (`tick.ts`) independently, so a dungeon's corpse yield is a function of its roster size, and `clearBonus` deliberately does not touch it. A win means side B is at zero, so the roll runs over the dungeon's whole roster (`dungeonEnemyCount`).
+
 Loot is deposited on arrival home with the yield bonuses applied — `boneYieldBonus`, `coinYieldBonus`, `soulsYieldBonus`, `corpseYieldBonus` — and `soulHarvestBonus` multiplies the dungeon's `soulChance` at generation time (`effectiveSoulChance`, clamped to 1).
 
 ## Workshop
 
 Every workshop section is a list of the same `WRow`, rendered by the same `UpgradeRow`/`UpgradeDetail` pair — skill branches, per-unit stats, crypt, and garden alike. A row is either **one-time** (`maxLevel: 1`) or **leveled** (`base × growth^level`, no ceiling). Both price in resources through `costFn`, so affordability, the cost column, and the cost block are one code path; `WRow.skill` survives only to say which store action buys the row, because the tree records purchases as ids while everything else records levels.
+
+Per-unit stat levels are priced by unit, not by a single shared formula (`unitStatCost`): skeleton levels cost **bones only**, zombie levels cost bones plus corpses from level 5 and souls from level 15, and wraith levels cost **corpses, souls, and dust — never bones**. All three take their shape from the same `baseBones × growth^level` curve; the wraith's soul and dust lines stay linear in `level` because both resources are scarce by design.
 
 `sections.ts` decides what a section shows: skill nodes with unmet prerequisites are omitted entirely rather than drawn as locked, and inscribed ones are moved below everything still purchasable, under a divider. So the top of a section is always what the player can act on.
 
@@ -64,7 +68,7 @@ It deliberately duplicates the live rules, so **any change to travel time, fight
 
 | Live | Catchup |
 |---|---|
-| `generateLoot` (`tick.ts`) | `generateLootSeeded` (both call `effectiveSoulChance`) |
+| `generateLoot` (`tick.ts`) | `generateLootSeeded` (both call `effectiveSoulChance` and `rollCorpses`) |
 | travel speed in `gameTick` | `computeTravelTime` (both call `effectiveTravelTicks`) |
 | auto-deploy branch in `gameTick` | `returnArrive` case in `processEvent` |
 | yield bonuses on loot deposit in `gameTick` | `returnArrive` case in `processEvent` |

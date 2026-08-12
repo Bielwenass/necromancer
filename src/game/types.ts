@@ -90,8 +90,6 @@ export interface DungeonDef {
 		coinsMin: number;
 		coinsMax: number;
 		soulChance: number;
-		corpseMin: number;
-		corpseMax: number;
 	};
 	travelTimeTicks: number;
 	unlockCondition: string | null;
@@ -193,12 +191,13 @@ export interface GameState {
 		coinYieldBonus: number;
 		soulsYieldBonus: number;
 		/**
-		 * Accumulated from the `corpseYield` affix and the `n3a` upgrade, but not
-		 * yet applied to loot anywhere — corpse drops currently ignore it.
+		 * From the `corpseYield` affix and the `n3a` upgrade. Multiplies corpses
+		 * on loot deposit, like the other yield bonuses — the per-kill drop
+		 * chance itself is flat.
 		 */
 		corpseYieldBonus: number;
 		maxSquadSize: number;
-		maxActiveSquads: number;
+		maxSquads: number;
 		zombiesUnlocked: boolean;
 		wraithsUnlocked: boolean;
 		autoDeploy: boolean;

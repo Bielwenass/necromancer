@@ -229,8 +229,9 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	const dispatchSquad = useGameStore((s) => s.dispatchSquad);
 
 	const idleSquads = squads.filter((s) => s.state === "idle");
-	const activeCount = squads.filter((s) => s.state !== "idle").length;
-	const atCapacity = activeCount >= derived.maxActiveSquads;
+	// The cap is on how many squads exist at all, whatever they're doing —
+	// so it only ever blocks creating a new one, never dispatching an idle one.
+	const atCapacity = squads.length >= derived.maxSquads;
 
 	const [composition, setComposition] = useState<Record<UnitType, number>>({
 		skeleton: 0,
@@ -278,7 +279,6 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	};
 
 	const handleSendIdle = (squadId: string) => {
-		if (atCapacity) return;
 		dispatchSquad(squadId, dungeonId);
 		onClose();
 	};
@@ -310,16 +310,10 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 
 				<EnemyPreview enemies={def.enemies} />
 
-				{atCapacity && (
-					<div className="mono text-[10px] text-hp-crit mb-4 tracking-[0.1em]">
-						SQUAD LIMIT REACHED · {activeCount}/{derived.maxActiveSquads} ACTIVE
-					</div>
-				)}
-
 				{idleSquads.length > 0 && (
 					<>
 						<div className="h-px bg-rule mb-4" />
-						<div className="mono text-[9px] text-dim tracking-[0.16em] mb-[10px]">
+						<div className="mono text-[10px] text-dim tracking-widest mb-[10px]">
 							IDLE LEGIONS
 						</div>
 						<div className="flex flex-col gap-[6px] mb-5">
@@ -349,7 +343,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 										className="flex items-center gap-3 px-[14px] py-[10px] border border-rule bg-bg-inset"
 									>
 										<div className="flex-1">
-											<div className="display text-sm text-bone !tracking-[0.14em]">
+											<div className="display text-sm text-bone tracking-widest">
 												{squad.name}
 											</div>
 											<div className="mono text-[10px] text-muted mt-0.5">
@@ -359,18 +353,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 										<button
 											type="button"
 											onClick={() => handleSendIdle(squad.id)}
-											disabled={atCapacity}
-											className="px-4 py-[6px] border display text-[10px] tracking-[0.2em]"
-											style={{
-												borderColor: atCapacity
-													? "var(--rule)"
-													: "var(--c-coin)",
-												color: atCapacity ? "var(--ink-dim)" : "var(--c-coin)",
-												background: atCapacity
-													? "transparent"
-													: "rgba(212,168,87,0.05)",
-												cursor: atCapacity ? "not-allowed" : "pointer",
-											}}
+											className="px-4 py-[6px] border border-coin bg-coin/5 text-coin cursor-pointer display text-[10px] tracking-[0.2em]"
 										>
 											SEND ⇢
 										</button>
@@ -382,13 +365,18 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 				)}
 
 				<div className="h-px bg-rule mb-4" />
-				<div className="mono text-[9px] text-dim tracking-[0.16em] mb-[14px]">
+				<div className="mono text-[10px] text-dim tracking-widest mb-[14px]">
 					FORM NEW LEGION
+					{atCapacity && (
+						<span className="text-hp-crit mb-4">
+							&nbsp;· SQUAD LIMIT REACHED · {squads.length}/{derived.maxSquads}
+						</span>
+					)}
 				</div>
 
 				{/* Squad name */}
 				<div className="mb-4">
-					<div className="mono text-[9px] text-dim tracking-[0.14em] mb-[6px]">
+					<div className="mono text-[10px] text-dim tracking-widest mb-[6px]">
 						SQUAD NAME
 					</div>
 					<input
@@ -401,7 +389,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 				{/* Composition */}
 				<div className="mb-5">
 					<div className="flex justify-between mb-2">
-						<span className="mono text-[9px] text-dim tracking-[0.14em]">
+						<span className="mono text-[10px] text-dim tracking-widest">
 							COMPOSITION
 						</span>
 						<span

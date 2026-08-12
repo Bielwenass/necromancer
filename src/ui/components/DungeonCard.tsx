@@ -1,11 +1,15 @@
+import { CORPSE_DROP_CHANCE, dungeonEnemyCount } from "../../game/tick";
 import type { DungeonDef, DungeonState, Squad } from "../../game/types";
 import { formatSeconds, formatTime } from "../theme";
 
-export function tierColor(tier: 1 | 2 | 3 | 4): string {
-	if (tier === 4) return "var(--r-epic)";
-	if (tier === 3) return "var(--r-rare)";
-	if (tier === 2) return "var(--r-uncommon)";
-	return "var(--r-common)";
+export function tierDecoration(tier: 1 | 2 | 3 | 4): {
+	color: string;
+	label: string;
+} {
+	if (tier === 4) return { color: "var(--r-epic)", label: "IV" };
+	if (tier === 3) return { color: "var(--r-rare)", label: "III" };
+	if (tier === 2) return { color: "var(--r-uncommon)", label: "II" };
+	return { color: "var(--r-common)", label: "I" };
 }
 
 export function squadColor(squad: Squad): string {
@@ -55,7 +59,7 @@ export function DungeonCard({
 
 	const clearMult = 1 + Math.sqrt(ds.clearCount + 1) * 0.07;
 	const clearMultDisplay = clearMult.toFixed(2);
-	const tc = tierColor(def.tier);
+	const tierDec = tierDecoration(def.tier);
 
 	return (
 		<button
@@ -67,17 +71,17 @@ export function DungeonCard({
 			<div className="relative px-8 h-full flex items-center gap-7">
 				{/* Tier badge — border/text color are dynamic */}
 				<div
-					className="shrink-0 px-3 py-1.5 flex flex-col items-center gap-0.5"
-					style={{ border: `1px solid ${tc}` }}
+					className="shrink-0 size-[60px] px-3 py-1.5 flex flex-col items-center"
+					style={{ border: `1px solid ${tierDec.color}` }}
 				>
 					<span
-						className="mono !tracking-[0.2em] text-[11px]"
-						style={{ color: tc }}
+						className="mono tracking-[0.2em] text-[10px]"
+						style={{ color: tierDec.color }}
 					>
 						TIER
 					</span>
-					<span className="display text-xl" style={{ color: tc }}>
-						{def.tier}
+					<span className="display text-3xl" style={{ color: tierDec.color }}>
+						{tierDec.label}
 					</span>
 				</div>
 
@@ -104,6 +108,10 @@ export function DungeonCard({
 								{Math.floor(def.lootTable.coinsMax * clearMult)} coins
 							</span>
 							<span>{(def.lootTable.soulChance * 100).toFixed(0)}% soul</span>
+							<span>
+								~{Math.round(dungeonEnemyCount(def) * CORPSE_DROP_CHANCE)}{" "}
+								corpses
+							</span>
 							{ds.clearCount > 0 && (
 								<>
 									<span className="text-coin">{ds.clearCount}× cleared</span>

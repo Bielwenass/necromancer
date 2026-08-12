@@ -34,7 +34,7 @@ The React-free boundary is load-bearing: it's what lets the simulation run headl
 return withDerived(prev, { /* patch */ });
 ```
 
-Some `derived` fields are computed but not yet consumed (`corpseYieldBonus`, `boneSurgeActive`, `soulHarvestBonus`, `rarityBoostActive`). Check the consumer before assuming a value has an effect.
+Some `derived` fields are computed but not yet consumed (`boneSurgeActive`, `rarityBoostActive`). Check the consumer before assuming a value has an effect.
 
 ## State shape
 
