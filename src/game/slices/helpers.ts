@@ -16,7 +16,8 @@ export function withDerived(
 	return { ...patch, derived: recomputeDerived({ ...prev, ...patch }) };
 }
 
-const UNIT_POOL: Record<UnitType, keyof Units> = {
+/** Squad compositions are singular-keyed, the reserve pool is plural-keyed. */
+export const UNIT_POOL: Record<UnitType, keyof Units> = {
 	skeleton: "skeletons",
 	zombie: "zombies",
 	wraith: "wraiths",

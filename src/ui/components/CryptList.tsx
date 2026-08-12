@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
+import { canAffordCost } from "../../game/resources";
 import { useGameStore } from "../../game/store";
+import { summonCost } from "../../game/summoning";
 import { effectiveTravelTicks } from "../../game/travel";
 import type { DungeonDef } from "../../game/types";
-import { formatTime } from "../theme";
+import { formatCost, formatTime } from "../theme";
 import { CombatWindow } from "./CombatWindow";
 import { DispatchModal } from "./DispatchModal";
 import { DungeonCard, squadColor } from "./DungeonCard";
@@ -29,6 +31,10 @@ export function CryptList({ onTabChange }: CryptListProps) {
 
 	const [dispatchTarget, setDispatchTarget] = useState<string | null>(null);
 	const [watchedSquadId, setWatchedSquadId] = useState<string | null>(null);
+
+	// Summon prices climb with the size of the army, so every button below has
+	// to price itself against live state rather than a fixed table.
+	const summonState = { units, squads, derived };
 
 	useEffect(() => {
 		const fightingIds = squads
@@ -95,11 +101,15 @@ export function CryptList({ onTabChange }: CryptListProps) {
 								icon={IconSkeleton}
 								color="var(--sq-skeleton)"
 								canSummon={(v) =>
-									resources.bones >=
-									Math.round(10 * v * (1 - derived.summonCostBonus))
+									canAffordCost(
+										summonCost("skeleton", v, summonState),
+										resources,
+									)
 								}
 								onSummon={() => summonUnits("skeleton", 1)}
-								cost={`${Math.round(10 * (1 - derived.summonCostBonus))} bones`}
+								costFor={(v) =>
+									formatCost(summonCost("skeleton", v, summonState))
+								}
 							/>
 							{derived.zombiesUnlocked && (
 								<UnitReserve
@@ -108,10 +118,15 @@ export function CryptList({ onTabChange }: CryptListProps) {
 									icon={IconZombie}
 									color="var(--sq-zombie)"
 									canSummon={(v) =>
-										resources.bones >= 5 * v && resources.corpses >= 1 * v
+										canAffordCost(
+											summonCost("zombie", v, summonState),
+											resources,
+										)
 									}
 									onSummon={() => summonUnits("zombie", 1)}
-									cost="5 bones + 1 corpse"
+									costFor={(v) =>
+										formatCost(summonCost("zombie", v, summonState))
+									}
 								/>
 							)}
 							{derived.wraithsUnlocked && (
@@ -121,10 +136,15 @@ export function CryptList({ onTabChange }: CryptListProps) {
 									icon={IconWraith}
 									color="var(--sq-wraith)"
 									canSummon={(v) =>
-										resources.bones >= 20 * v && resources.souls >= 1 * v
+										canAffordCost(
+											summonCost("wraith", v, summonState),
+											resources,
+										)
 									}
 									onSummon={() => summonUnits("wraith", 1)}
-									cost="20 bones + 1 soul"
+									costFor={(v) =>
+										formatCost(summonCost("wraith", v, summonState))
+									}
 								/>
 							)}
 						</div>

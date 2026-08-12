@@ -8,7 +8,7 @@ export function UnitReserve({
 	color,
 	canSummon,
 	onSummon,
-	cost,
+	costFor,
 }: {
 	type: UnitType;
 	count: number;
@@ -16,7 +16,8 @@ export function UnitReserve({
 	color: string;
 	canSummon: (v: number) => boolean;
 	onSummon: () => void;
-	cost: string;
+	/** Total price of raising `v` more, which climbs with the army's size. */
+	costFor: (v: number) => string;
 }) {
 	const can1 = canSummon(1);
 	const can10 = canSummon(10);
@@ -41,7 +42,7 @@ export function UnitReserve({
 				type="button"
 				onClick={onSummon}
 				disabled={!can1}
-				title={`Summon 1 ${type} (${cost})`}
+				title={`Summon 1 ${type} (${costFor(1)})`}
 				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
 				style={{
 					borderColor: can1 ? color : "var(--rule)",
@@ -59,7 +60,7 @@ export function UnitReserve({
 					if (can10) for (let i = 0; i < 10; i++) onSummon();
 				}}
 				disabled={!can10}
-				title={`Summon 10 ${type}s (${cost} each)`}
+				title={`Summon 10 ${type}s (${costFor(10)})`}
 				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
 				style={{
 					borderColor: can10 ? color : "var(--rule)",

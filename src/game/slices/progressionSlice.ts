@@ -73,7 +73,7 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 	summonUnits: (type, count) => {
 		set((prev) => {
 			if (!isUnitUnlocked(type, prev.derived)) return prev;
-			const cost = summonCost(type, count, prev.derived);
+			const cost = summonCost(type, count, prev);
 			if (!canAffordCost(cost, prev.resources)) return prev;
 
 			return {

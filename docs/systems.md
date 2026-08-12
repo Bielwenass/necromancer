@@ -21,6 +21,8 @@ Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) 
 
 Three types — skeleton, zombie, wraith — with base HP/DMG/Speed in `UNIT_STAT_CONFIG`, raised per level in the Workshop. Zombies unlock via `s2`, wraiths via `s4b`; both cost bones plus a secondary resource. Summoning prices are in `game/summoning.ts`; `derived.summonCostBonus` discounts skeletons only.
 
+Prices scale with army size: the next unit of a type costs `base × e^(k·√owned)` (`summonScaling`, `k = 0.5`), where `owned` counts the reserve pool **plus** every unit already in a squad — otherwise forming a squad would walk the price back down. Scaling is per type, so raising skeletons doesn't make wraiths dearer. Wraith souls are exempt and stay at 1 apiece (`UNSCALED_COSTS`); every other resource in a summon cost scales. A batch of `count` is priced one unit at a time up the curve, so ten single raises and one `+10` cost the same. Nothing in the UI may hardcode a price — call `summonCost`, which is also what `summonUnits` charges.
+
 A squad carries no HP between phases — only unit counts. Survivors from a fight become the squad's new composition, and a wipe destroys the squad outright.
 
 ## Squads

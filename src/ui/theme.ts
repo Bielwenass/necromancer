@@ -28,6 +28,17 @@ export function formatNumber(n: number): string {
 	return Math.floor(n).toLocaleString();
 }
 
+/** A resource cost as prose: `"48 bones + 1 corpse"`. */
+export function formatCost(cost: Partial<Record<string, number>>): string {
+	return Object.entries(cost)
+		.filter(([, amount]) => amount !== undefined)
+		.map(
+			([key, amount]) =>
+				`${amount} ${amount === 1 ? key.replace(/s$/, "") : key}`,
+		)
+		.join(" + ");
+}
+
 export function formatRate(perTick: number): string {
 	const perSec = perTick * 10;
 	if (perSec === 0) return "+0/s";
