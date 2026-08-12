@@ -1,16 +1,16 @@
 import type { Resources } from "../../../game/types";
-import { formatNumber } from "../../theme";
+import { formatNumber } from "../../format";
 import { costLines } from "./cost";
-import { Icon } from "./Icon";
+import { WorkshopRowIcon } from "./WorkshopRowIcon";
 
 export function CostBlock({
 	cost,
-	res,
+	resources,
 }: {
 	cost: Partial<Resources>;
-	res: Resources;
+	resources: Resources;
 }) {
-	const lines = costLines(cost, res);
+	const lines = costLines(cost, resources);
 	return (
 		<div>
 			<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim mb-2">
@@ -22,7 +22,7 @@ export function CostBlock({
 						key={cl.key}
 						className={`flex items-center gap-2.5 py-2.5 border-b border-[color:var(--rule)] last:border-b-0 font-mono text-xs ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
 					>
-						<Icon
+						<WorkshopRowIcon
 							kind={cl.icon}
 							size={18}
 							color={cl.ok ? cl.color : "var(--hp-crit)"}
@@ -32,7 +32,7 @@ export function CostBlock({
 						</div>
 						<div className="text-dim">
 							{formatNumber(
-								Math.floor(res[cl.key as keyof Resources] as number),
+								Math.floor(resources[cl.key as keyof Resources] as number),
 							)}
 						</div>
 						<div className="text-right">/ {formatNumber(cl.amount)}</div>

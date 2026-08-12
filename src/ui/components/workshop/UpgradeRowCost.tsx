@@ -1,17 +1,17 @@
 import type { Resources } from "../../../game/types";
-import { formatNumber } from "../../theme";
+import { formatNumber } from "../../format";
 import { costLines } from "./cost";
-import { Icon } from "./Icon";
-import type { WRow } from "./types";
+import type { WorkshopRow } from "./types";
+import { WorkshopRowIcon } from "./WorkshopRowIcon";
 
 /** The right-hand price column of an `UpgradeRow`. */
 export function UpgradeRowCost({
 	row,
-	res,
+	resources,
 	maxed,
 }: {
-	row: WRow;
-	res: Resources;
+	row: WorkshopRow;
+	resources: Resources;
 	maxed: boolean;
 }) {
 	if (maxed)
@@ -26,12 +26,12 @@ export function UpgradeRowCost({
 
 	return (
 		<>
-			{costLines(cost, res).map((cl) => (
+			{costLines(cost, resources).map((cl) => (
 				<div
 					key={cl.key}
 					className={`flex items-center gap-1.5 justify-end font-mono text-xs ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
 				>
-					<Icon
+					<WorkshopRowIcon
 						kind={cl.icon}
 						size={14}
 						color={cl.ok ? cl.color : "var(--hp-crit)"}

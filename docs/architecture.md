@@ -12,7 +12,9 @@ src/combat/   battle engine. No React imports.
 src/ui/       screens and components. Reads state via useGameStore selectors.
 ```
 
-One component per file. A screen with a large component set gets a subfolder under `src/ui/components/` (`components/workshop/`), holding its components plus the pure builders and helpers only it uses.
+One component per file. `src/ui/components/` is split by feature — one folder per screen (`crypt/`, `reliquary/`, `ritual/`, `workshop/`), each holding its components plus the pure builders and helpers only it uses. Two folders are cross-cutting: `common/` for the shared primitives (`Screen`, `Modal`, `ConfirmAction`, `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`) and `chrome/` for the app frame (`TopBar`, `TabBar`, `ResourceReadout`, `CatchupOverlay`). Check `common/` before hand-rolling a panel, dialog, or confirm.
+
+`src/ui/theme.ts` holds colour lookups (rarity, unit) and `src/ui/format.ts` the number/time formatters.
 
 The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup and in `src/combat/benchmark.ts`.
 
@@ -75,13 +77,15 @@ Import and reset go through store actions, not `save.ts` directly. Both call `su
 
 ## Screens
 
+Exactly four, one per `TabId`, all in `src/ui/screens/`:
+
 | Key | Screen | Notes |
 |-----|--------|-------|
-| 1 | Crypt Map | Dungeon list, squad roster, live combat canvases |
+| 1 | Crypt | Dungeon list, squad roster, live combat canvases |
 | 2 | Reliquary | Equipped slots, relic detail, inventory with type/rarity filters + bulk sacrifice |
 | 3 | Ritual | Three gacha pools, reveal overlay |
-| 4 | Upgrades | Skill tree and Workshop sub-views |
+| 4 | Workshop | Skill tree and workshop sections |
 
-Each screen renders its own `TopBar`/`TabBar`. `TabId` is declared in both `App.tsx` and `TabBar.tsx` and the two must agree.
+Screens are thin: store selectors, local UI state, and layout composition, wrapped in `components/common/Screen` — which owns the `TopBar` / `.stage` / `TabBar` frame so no screen repeats it. `TabId` is declared once, in `TabBar.tsx`; `App.tsx` imports it.
 
 See also: [combat.md](combat.md), [systems.md](systems.md), [relics.md](relics.md).

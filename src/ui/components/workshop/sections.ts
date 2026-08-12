@@ -13,21 +13,21 @@ import {
 	unitStatCost,
 } from "../../../game/workshopUpgrades";
 import { IconSkeleton, IconWraith, IconZombie } from "../icons";
-import { resMeta } from "./cost";
-import type { WRow, WSection } from "./types";
+import { resourceMeta } from "./cost";
+import type { WorkshopRow, WorkshopSection } from "./types";
 
 /** A row is done when it has a ceiling and has reached it. */
-export function isRowMaxed(row: WRow): boolean {
+export function isRowMaxed(row: WorkshopRow): boolean {
 	return row.maxLevel !== undefined && row.level >= row.maxLevel;
 }
 
 /** Inscribed rows sink below everything still purchasable. */
-function arrange(rows: WRow[]): WRow[] {
+function arrange(rows: WorkshopRow[]): WorkshopRow[] {
 	return [...rows.filter((r) => !isRowMaxed(r)), ...rows.filter(isRowMaxed)];
 }
 
 /** Nodes whose prerequisites are unmet are omitted, not shown as locked. */
-function skillRows(purchased: string[], branch: string): WRow[] {
+function skillRows(purchased: string[], branch: string): WorkshopRow[] {
 	return UPGRADE_NODES.filter(
 		(n) =>
 			n.branch === branch &&
@@ -71,7 +71,7 @@ const UNIT_FLAVOR: Record<UnitKey, Record<"hp" | "dmg" | "speed", string>> = {
 function unitRows(
 	unit: UnitKey,
 	levels: { hp: number; dmg: number; speed: number },
-): WRow[] {
+): WorkshopRow[] {
 	const cfg = UNIT_STAT_CONFIG[unit];
 	return (["hp", "dmg", "speed"] as const).map((stat) => {
 		const c = cfg[stat];
@@ -90,7 +90,7 @@ function unitRows(
 	});
 }
 
-function cryptRows(crypt: WorkshopState["crypt"]): WRow[] {
+function cryptRows(crypt: WorkshopState["crypt"]): WorkshopRow[] {
 	return [
 		{
 			id: "crypt.squadSize",
@@ -124,9 +124,9 @@ const PLOT_FLAVOR: Record<string, string> = {
 	corpses: "Bury the flesh, harvest the frame beneath it.",
 };
 
-function gardenRows(garden: WorkshopState["garden"]): WRow[] {
+function gardenRows(garden: WorkshopState["garden"]): WorkshopRow[] {
 	return GARDEN_PLOTS.map((plot) => {
-		const meta = resMeta(plot.id);
+		const meta = resourceMeta(plot.id);
 		return {
 			id: `garden.${plot.id}`,
 			name: plot.name,
@@ -148,7 +148,7 @@ export function buildSections(
 	ws: WorkshopState,
 	zombiesUnlocked: boolean,
 	wraithsUnlocked: boolean,
-): WSection[] {
+): WorkshopSection[] {
 	return [
 		{
 			id: "summoning",
@@ -223,7 +223,7 @@ export function buildSections(
 
 /** Which side-nav entries have at least one affordable purchase right now. */
 export function affordableDots(
-	sections: WSection[],
+	sections: WorkshopSection[],
 	res: Resources,
 ): Record<string, boolean> {
 	const dots: Record<string, boolean> = {};

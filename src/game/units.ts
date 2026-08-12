@@ -3,6 +3,13 @@ import type { UnitType } from "./types";
 /** Canonical unit order. Squad compositions are keyed by exactly these. */
 export const UNIT_TYPES = ["skeleton", "zombie", "wraith"] as const;
 
+/** How many units a composition holds, across every type. */
+export function squadSize(composition: Record<UnitType, number>): number {
+	let total = 0;
+	for (const type of UNIT_TYPES) total += composition[type];
+	return total;
+}
+
 /**
  * Units that reform after a fight however it went. A wraith is bound spirit
  * rather than flesh: scattering it costs it nothing it cannot gather back, so

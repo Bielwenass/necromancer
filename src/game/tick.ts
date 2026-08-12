@@ -50,7 +50,7 @@ export function effectiveSoulChance(
  * kill count rather than the loot table.
  */
 export function clearMultiplier(clearCount: number): number {
-	return 1 + Math.sqrt(clearCount + 1) * 0.07;
+	return 1 + Math.sqrt(clearCount) * 0.07;
 }
 
 export function generateLoot(

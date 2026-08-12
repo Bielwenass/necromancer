@@ -49,7 +49,7 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 
 Unlocks are a hand-written dependency chain in `checkUnlockConditions` (`game/dungeons.ts`) — mostly "clear the previous dungeon 3 times" or "clear both branches". `unlockCondition` on the def is display text only; the switch is the real gate, and the two must be kept in sync by hand.
 
-Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`, from `clearMultiplier` (`tick.ts`), which the live roll, the catchup roll, and the UI all call. Clearing awards `tier` banners.
+Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount) × 0.07`, from `clearMultiplier` (`tick.ts`), which the live roll, the catchup roll, and the UI all call. Clearing awards `tier` banners.
 
 **Corpses are not in the loot table.** They come off the kill count: every felled enemy rolls `CORPSE_DROP_CHANCE` (`tick.ts`) independently, so a dungeon's corpse yield is a function of its roster size, and `clearBonus` deliberately does not touch it. A win means side B is at zero, so the roll runs over the dungeon's whole roster (`dungeonEnemyCount`).
 

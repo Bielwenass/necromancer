@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { WRow } from "./types";
+import type { WorkshopRow } from "./types";
 
 interface RowNav {
-	rows: WRow[];
+	rows: WorkshopRow[];
 	pinnedId: string | null;
 	onPin: (id: string) => void;
 	onBuyPinned: () => void;

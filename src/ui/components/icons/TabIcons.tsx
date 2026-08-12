@@ -72,7 +72,7 @@ export const IconRitual = ({
 	</svg>
 );
 
-export const IconUpgrades = ({
+export const IconWorkshop = ({
 	size = 14,
 	color = "var(--c-upgrades)",
 }: IconProps) => (

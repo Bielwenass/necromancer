@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { Resources } from "../../../game/types";
-import type { ResIcon } from "./cost";
+import type { ResourceIconComponent } from "./cost";
 
 /**
  * A single purchasable line. Every workshop section — skill branches, unit
@@ -8,12 +8,12 @@ import type { ResIcon } from "./cost";
  * render all of them. Rows the player can't act on yet are dropped while the
  * section is built, so nothing here describes a locked state.
  */
-export interface WRow {
+export interface WorkshopRow {
 	id: string;
 	name: string;
 	description: string;
 	flavor?: string;
-	icon: string | ResIcon;
+	icon: string | ResourceIconComponent;
 	level: number;
 	/** Absent means the row levels forever. */
 	maxLevel?: number;
@@ -34,7 +34,7 @@ export interface WRow {
 }
 
 /** One entry in the side nav, and the pane it renders. */
-export interface WSection {
+export interface WorkshopSection {
 	id: string;
 	name: string;
 	subtitle: string;
@@ -42,5 +42,5 @@ export interface WSection {
 	unlocked: boolean;
 	lockedTitle?: string;
 	lockedBody?: string;
-	rows: WRow[];
+	rows: WorkshopRow[];
 }

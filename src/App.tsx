@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { useGameLifecycle } from "./game/useGameLifecycle";
-import { CryptList } from "./ui/components/CryptList";
+import { CatchupOverlay } from "./ui/components/chrome/CatchupOverlay";
+import type { TabId } from "./ui/components/chrome/TabBar";
+import { Crypt } from "./ui/screens/Crypt";
 import { Reliquary } from "./ui/screens/Reliquary";
 import { Ritual } from "./ui/screens/Ritual";
-import { Upgrades } from "./ui/screens/Upgrades";
+import { Workshop } from "./ui/screens/Workshop";
 
-type TabId = "crypt" | "reliquary" | "ritual" | "upgrades";
+const TAB_KEYS: Record<string, TabId> = {
+	"1": "crypt",
+	"2": "reliquary",
+	"3": "ritual",
+	"4": "workshop",
+};
 
 export default function App() {
 	const { catchup, dismissCatchup } = useGameLifecycle();
@@ -20,20 +27,8 @@ export default function App() {
 				dismissCatchup();
 				return;
 			}
-			switch (e.key) {
-				case "1":
-					setActiveTab("crypt");
-					break;
-				case "2":
-					setActiveTab("reliquary");
-					break;
-				case "3":
-					setActiveTab("ritual");
-					break;
-				case "4":
-					setActiveTab("upgrades");
-					break;
-			}
+			const tab = TAB_KEYS[e.key];
+			if (tab) setActiveTab(tab);
 		};
 		window.addEventListener("keydown", handleKey);
 		return () => window.removeEventListener("keydown", handleKey);
@@ -41,57 +36,13 @@ export default function App() {
 
 	return (
 		<div className="w-full h-full bg-bg-canvas relative">
-			{activeTab === "crypt" && <CryptList onTabChange={setActiveTab} />}
+			{activeTab === "crypt" && <Crypt onTabChange={setActiveTab} />}
 			{activeTab === "reliquary" && <Reliquary onTabChange={setActiveTab} />}
 			{activeTab === "ritual" && <Ritual onTabChange={setActiveTab} />}
-			{activeTab === "upgrades" && <Upgrades onTabChange={setActiveTab} />}
+			{activeTab === "workshop" && <Workshop onTabChange={setActiveTab} />}
 
-			{/* Offline catchup overlay */}
 			{catchup !== null && (
-				<div className="fixed inset-0 bg-[rgba(0,0,0,0.88)] flex flex-col items-center justify-center z-[500]">
-					<div className="display text-sm text-bone !tracking-[0.22em] mb-[18px]">
-						{catchup.done ? "CAUGHT UP" : "CATCHING UP..."}
-					</div>
-
-					<div className="w-60 h-0.5 bg-rule mb-6">
-						<div
-							className="h-full bg-bone transition-[width] duration-100"
-							style={{ width: `${catchup.progress * 100}%` }}
-						/>
-					</div>
-
-					<div className="flex gap-6 mb-[14px]">
-						{[
-							{ label: "BONES", value: catchup.stats.bonesGained },
-							{ label: "SOULS", value: catchup.stats.soulsGained },
-						].map(({ label, value }) => (
-							<div key={label} className="text-center min-w-[52px]">
-								<div className="mono text-sm text-bone">
-									+{value.toLocaleString()}
-								</div>
-								<div className="mono text-[9px] text-dim tracking-[0.1em] mt-[3px]">
-									{label}
-								</div>
-							</div>
-						))}
-					</div>
-
-					<div
-						className={`mono text-[10px] text-dim tracking-[0.08em] ${catchup.done ? "mb-6" : ""}`}
-					>
-						{catchup.stats.eventsProcessed} events processed
-					</div>
-
-					{catchup.done && (
-						<button
-							type="button"
-							onClick={dismissCatchup}
-							className="px-7 py-2 border border-bone text-bone bg-transparent cursor-pointer display text-xs !tracking-[0.22em]"
-						>
-							CONTINUE
-						</button>
-					)}
-				</div>
+				<CatchupOverlay catchup={catchup} onDismiss={dismissCatchup} />
 			)}
 		</div>
 	);

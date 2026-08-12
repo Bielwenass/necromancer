@@ -1,7 +1,6 @@
-import type { TabId } from "../components/TabBar";
-import { TabBar } from "../components/TabBar";
-import { TopBar } from "../components/TopBar";
-import { RitualPanel } from "./RitualPanel";
+import type { TabId } from "../components/chrome/TabBar";
+import { Screen } from "../components/common/Screen";
+import { RitualPanel } from "../components/ritual/RitualPanel";
 
 interface RitualProps {
 	onTabChange: (tab: TabId) => void;
@@ -9,16 +8,12 @@ interface RitualProps {
 
 export function Ritual({ onTabChange }: RitualProps) {
 	return (
-		<div className="necro">
-			<TopBar />
-			<div className="stage">
-				<div className="flex-1 flex">
-					<RitualPanel poolId="banner" />
-					<RitualPanel poolId="carrion" />
-					<RitualPanel poolId="forbidden" />
-				</div>
+		<Screen tab="ritual" onTabChange={onTabChange}>
+			<div className="flex-1 flex">
+				<RitualPanel poolId="banner" />
+				<RitualPanel poolId="carrion" />
+				<RitualPanel poolId="forbidden" />
 			</div>
-			<TabBar active="ritual" onTabChange={onTabChange} />
-		</div>
+		</Screen>
 	);
 }

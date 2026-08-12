@@ -1,5 +1,5 @@
-import { Icon } from "./Icon";
-import type { WSection } from "./types";
+import type { WorkshopSection } from "./types";
+import { WorkshopRowIcon } from "./WorkshopRowIcon";
 
 export function WorkshopSideNav({
 	sections,
@@ -7,7 +7,7 @@ export function WorkshopSideNav({
 	onSelect,
 	anyDot,
 }: {
-	sections: WSection[];
+	sections: WorkshopSection[];
 	activeId: string;
 	onSelect: (id: string) => void;
 	anyDot: Record<string, boolean>;
@@ -33,7 +33,7 @@ export function WorkshopSideNav({
 					onClick={() => s.unlocked && onSelect(s.id)}
 				>
 					<div className="flex items-center">
-						<Icon
+						<WorkshopRowIcon
 							kind={s.unlocked ? s.icon : "forbid"}
 							size={18}
 							color={

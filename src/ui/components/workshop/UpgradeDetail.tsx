@@ -3,23 +3,23 @@ import type { Resources } from "../../../game/types";
 import { BuyButton } from "./BuyButton";
 import { CostBlock } from "./CostBlock";
 import { isRowMaxed } from "./sections";
-import type { WRow } from "./types";
+import type { WorkshopRow } from "./types";
 
 export function UpgradeDetail({
 	row,
-	res,
+	resources,
 	onBuy,
 }: {
-	row: WRow;
-	res: Resources;
-	onBuy: (row: WRow) => void;
+	row: WorkshopRow;
+	resources: Resources;
+	onBuy: (row: WorkshopRow) => void;
 }) {
 	const maxed = isRowMaxed(row);
 	const cost = maxed ? null : row.costFn(row.level);
 	// Prerequisites don't need checking here: `skillRows` omits nodes whose
 	// prerequisites are unmet, so a visible unmaxed row is always eligible, and
 	// `purchaseUpgrade` re-checks anyway.
-	const canBuy = cost ? canAffordCost(cost, res) : false;
+	const canBuy = cost ? canAffordCost(cost, resources) : false;
 	const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100;
 	const valueNextNumerical =
 		Math.round(Number(row.nextFn(row.level)) * 100) / 100;
@@ -65,7 +65,7 @@ export function UpgradeDetail({
 							</span>
 						</div>
 					</div>
-					{cost && <CostBlock cost={cost} res={res} />}
+					{cost && <CostBlock cost={cost} resources={resources} />}
 					<BuyButton
 						label={
 							canBuy

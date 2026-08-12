@@ -37,7 +37,7 @@ TypeScript runs with `strict`, `noUnusedLocals`, `noUnusedParameters`, and `noFa
 
 ## Architecture
 
-An idle/incremental game: three React tabs over a fixed-timestep simulation, persisted to localStorage.
+An idle/incremental game: four React tabs over a fixed-timestep simulation, persisted to localStorage.
 
 ### Layering (the one hard rule)
 
@@ -47,11 +47,20 @@ An idle/incremental game: three React tabs over a fixed-timestep simulation, per
 
 **One component per file, and the file is named after it.** This includes small presentational pieces that only one parent renders — `RowGroupDivider`, `SectionLocked`, and `UpgradeRowCost` each have their own file rather than sitting privately inside their parent. Exporting them is fine; the point is that a component is findable by name.
 
-**Split anything past ~200–300 lines.** A file over that is a signal that several components are sharing a file, or that one component is doing layout work that belongs in children. The exception is a component that is genuinely one indivisible slice of layout or logic — `RelicCard.tsx` is the standing example — where splitting would only scatter a single visual unit across files.
+**Split anything past ~200–300 lines.** A file over that is a signal that several components are sharing a file, or that one component is doing layout work that belongs in children. The exception is a component that is genuinely one indivisible slice of layout or logic — `RelicCard.tsx` (~445 lines) is the standing example, where the tilt/foil RAF logic and the front face are one order-sensitive 3D transform stack. Its separable parts have already been lifted out beside it: `RelicCardBack.tsx` is the back face, and `relicCardArt.tsx` holds the rarity/geometry tables plus the `CardFrame` both faces draw.
 
-When a screen grows a family of components, give it a subfolder under `src/ui/components/` — `components/workshop/` holds the Workshop's components plus the pure helpers only it uses (`sections.ts` builds the section/row data and owns row visibility/ordering, `cost.ts` maps costs to icons, `types.ts` holds `WRow`/`WSection`). Screens under `src/ui/screens/` should be thin: store selectors, local UI state, and layout composition. `screens/Workshop.tsx` is ~65 lines and is the shape to aim for.
+**`src/ui/components/` is organised by feature, one folder per screen.** `crypt/`, `reliquary/`, `ritual/`, and `workshop/` each hold that screen's components plus the pure helpers only it uses — `workshop/sections.ts` builds section/row data and owns row visibility/ordering, `workshop/cost.ts` maps costs to icons, `crypt/squadDisplay.ts` maps squad state to colours and glyphs, `ritual/pools.ts` holds per-pool art and accents.
 
-Default to presentational components that take data and callbacks as props, with the screen owning the store wiring — that's what makes the pieces splittable at all. Reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `CryptList`, `DispatchModal`, `CombatWindow` do this); it isn't a shortcut around passing a prop one level down.
+Two folders are cross-cutting:
+
+- **`common/`** — the shared primitives: `Screen` (the `TopBar`/`.stage`/`TabBar` frame), `Modal` (dialog role, backdrop dismiss, Escape), `ConfirmAction` (two-press destructive confirm; also exports `DANGER_BUTTON` for layouts that can't use the component), `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`. **Look here before hand-rolling a dialog, confirm, meter, or panel eyebrow** — these exist because each was previously copy-pasted three to five times and had drifted.
+- **`chrome/`** — the app frame: `TopBar`, `TabBar` (sole owner of `TabId`), `ResourceReadout`, `CatchupOverlay`.
+
+Shared UI helpers live at `src/ui/`: `theme.ts` for colour lookups (`rarityColor`, `UNIT_COLORS`), `format.ts` for number and time formatters.
+
+Screens under `src/ui/screens/` are thin — store selectors, local UI state, and layout composition — and there are exactly four, one per `TabId`. `screens/Workshop.tsx` (~75 lines) is the shape to aim for.
+
+Default to presentational components that take data and callbacks as props, with the screen owning the store wiring — that's what makes the pieces splittable at all. Reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `DispatchModal`, `RitualPanel`, `CombatWindow` do this); it isn't a shortcut around passing a prop one level down.
 
 ### The tick pipeline
 
@@ -119,10 +128,12 @@ Actions are reducers: `set(prev => …)` returning a partial, immutable spread c
 
 Two systems coexist today:
 
-- `src/index.css` — `:root` CSS custom properties (`--ink-bone`, `--c-coin`, `--rule`, …) plus ~70 hand-written component classes (`.necro`, `.bar-top`, `.bar-tabs`, `.stage`, `.display`, `.mono`) across ~110 rules.
+- `src/index.css` — `:root` CSS custom properties (`--ink-bone`, `--c-coin`, `--rule`, …) plus hand-written component classes (`.necro`, `.bar-top`, `.bar-tabs`, `.stage`, `.display`, `.mono`) across ~36 class rules.
 - Tailwind, with the palette mirrored as named colors in `tailwind.config.ts` (`bone`, `coin`, `soul`, `bg-panel`, `r-legendary`, …).
 
-Current debt: ~170 inline `style={{…}}` props and ~79 `!`-prefixed utilities, plus those 70 custom classes.
+Current debt: ~42 inline `style={…}` props and ~19 `!`-prefixed utilities, plus those custom classes. Most of what remains is genuinely runtime-computed (relic rarity colours, ritual pool accents, meter widths).
+
+`.necro`, `.stage`, `.bar-top`, and `.bar-tabs` are the app frame and are load-bearing — `.necro *` carries a typography cascade the whole UI inherits. Leave them alone unless that is the change you set out to make.
 
 Webfonts load from the `<link>` tags in `index.html`; `index.css` must not re-`@import` them. Those tags still request Cinzel, Courier Prime, and VT323, which no font stack references.
 
@@ -142,7 +153,7 @@ Migrating a legacy class is expected cleanup when you're already editing that ma
 
 **Converting a `<div>` to a `<button>` needs `w-full`.** Form controls resolve `width: auto` as shrink-to-fit, not fill-available, even at `display: block` or `grid`. A converted container therefore collapses around its content — and if a child uses `width: 100%`, the percentage becomes circular and the element shrinks to a few pixels. Add `w-full` (and `text-left` where content was left-aligned) unless the element is a flex/grid *item*, which stretches on its own.
 
-Screens are keyboard-routed from `App.tsx` (keys `1`–`4`) and each renders its own `TopBar`/`TabBar`. `TabId` is declared in both `App.tsx` and `TabBar.tsx` — they must agree.
+Screens are keyboard-routed from `App.tsx` (keys `1`–`4`, via the `TAB_KEYS` map). The `TopBar`/`.stage`/`TabBar` frame belongs to `components/common/Screen`, not to each screen. `TabId` is declared once, in `chrome/TabBar.tsx`.
 
 ## Known rough edges
 
@@ -150,4 +161,4 @@ Don't mistake these for intentional design:
 
 - Several upgrade and affix descriptions promise effects that aren't implemented (`implemented: false`, `case "x": break;`). Check the switch before assuming a described effect exists.
 - `derived.boneSurgeActive` and `derived.rarityBoostActive` are set by `n1a` and `n5b` and read by nothing. `n1a` still works — its real effect is the `bonesPassiveMult` it also applies — but `n5b` does nothing at all, and its `case` comment claiming the gacha handles it is wrong: `executePull` never reads `derived`.
-- Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `InvCard`'s `×n` badge, `RelicDetail`'s `n/5 DUPES` pips) but never written — there is no fusion or dedupe path, so both are permanently 0 and that UI is inert.
+- Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `RelicInventoryCard`'s `×n` badge, `RelicDetail`'s fusion pips) but never written — there is no fusion or dedupe path, so both are permanently 0 and that UI is inert.

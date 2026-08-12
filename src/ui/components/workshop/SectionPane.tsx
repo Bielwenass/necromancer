@@ -4,22 +4,22 @@ import { RowGroupDivider } from "./RowGroupDivider";
 import { SectionHeader } from "./SectionHeader";
 import { SectionLocked } from "./SectionLocked";
 import { isRowMaxed } from "./sections";
-import type { WRow, WSection } from "./types";
+import type { WorkshopRow, WorkshopSection } from "./types";
 import { UpgradeRow } from "./UpgradeRow";
 
 /** Center column: the section header plus its rows, finished ones last. */
 export function SectionPane({
 	section,
-	res,
+	resources,
 	pinnedId,
 	onPin,
 	onBuy,
 }: {
-	section: WSection;
-	res: Resources;
+	section: WorkshopSection;
+	resources: Resources;
 	pinnedId: string | null;
 	onPin: (id: string) => void;
-	onBuy: (row: WRow) => void;
+	onBuy: (row: WorkshopRow) => void;
 }) {
 	const firstDone = section.rows.findIndex(isRowMaxed);
 
@@ -36,7 +36,7 @@ export function SectionPane({
 							{i === firstDone && <RowGroupDivider label="Inscribed" />}
 							<UpgradeRow
 								row={r}
-								res={res}
+								resources={resources}
 								pinned={r.id === pinnedId}
 								onPin={onPin}
 								onBuy={onBuy}

@@ -1,26 +1,26 @@
 import { canAffordCost } from "../../../game/resources";
 import type { Resources } from "../../../game/types";
-import { Icon } from "./Icon";
 import { isRowMaxed } from "./sections";
-import type { WRow } from "./types";
+import type { WorkshopRow } from "./types";
 import { UpgradeRowCost } from "./UpgradeRowCost";
+import { WorkshopRowIcon } from "./WorkshopRowIcon";
 
 export function UpgradeRow({
 	row,
-	res,
+	resources,
 	pinned,
 	onPin,
 	onBuy,
 }: {
-	row: WRow;
-	res: Resources;
+	row: WorkshopRow;
+	resources: Resources;
 	pinned: boolean;
 	onPin: (id: string) => void;
-	onBuy: (row: WRow) => void;
+	onBuy: (row: WorkshopRow) => void;
 }) {
 	const maxed = isRowMaxed(row);
 	const cost = maxed ? null : row.costFn(row.level);
-	const affordable = cost ? canAffordCost(cost, res) : false;
+	const affordable = cost ? canAffordCost(cost, resources) : false;
 	const valueNumerical = Math.round(Number(row.valueFn(row.level)) * 100) / 100;
 
 	return (
@@ -40,7 +40,7 @@ export function UpgradeRow({
 			}}
 		>
 			<div className="flex items-center justify-center">
-				<Icon
+				<WorkshopRowIcon
 					kind={row.icon}
 					size={26}
 					color={maxed ? "var(--hp-good)" : "var(--c-bone)"}
@@ -65,7 +65,7 @@ export function UpgradeRow({
 				</div>
 			</div>
 			<div className="text-right">
-				<UpgradeRowCost row={row} res={res} maxed={maxed} />
+				<UpgradeRowCost row={row} resources={resources} maxed={maxed} />
 			</div>
 		</button>
 	);

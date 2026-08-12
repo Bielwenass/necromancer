@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { useGameStore } from "../../game/store";
-import { DetailPanel } from "../components/workshop/DetailPanel";
+import type { TabId } from "../components/chrome/TabBar";
+import { Screen } from "../components/common/Screen";
 import { SectionPane } from "../components/workshop/SectionPane";
 import { affordableDots, buildSections } from "../components/workshop/sections";
-import type { WRow } from "../components/workshop/types";
+import type { WorkshopRow } from "../components/workshop/types";
+import { UpgradeDetailPanel } from "../components/workshop/UpgradeDetailPanel";
 import { useRowNav } from "../components/workshop/useRowNav";
 import { WorkshopSideNav } from "../components/workshop/WorkshopSideNav";
 
-export function Workshop() {
+interface WorkshopProps {
+	onTabChange: (tab: TabId) => void;
+}
+
+export function Workshop({ onTabChange }: WorkshopProps) {
 	const purchased = useGameStore((s) => s.upgrades.purchased);
 	const ws = useGameStore((s) => s.workshop);
-	const res = useGameStore((s) => s.resources);
+	const resources = useGameStore((s) => s.resources);
 	const zombiesUnlocked = useGameStore((s) => s.derived.zombiesUnlocked);
 	const wraithsUnlocked = useGameStore((s) => s.derived.wraithsUnlocked);
 	const purchaseUpgrade = useGameStore((s) => s.purchaseUpgrade);
@@ -32,7 +38,7 @@ export function Workshop() {
 	const pinned =
 		active.rows.find((r) => r.id === pinnedId) ?? active.rows[0] ?? null;
 
-	const buyRow = (row: WRow) =>
+	const buyRow = (row: WorkshopRow) =>
 		row.skill ? purchaseUpgrade(row.skill.upgradeId) : levelUpWorkshop(row.id);
 
 	useRowNav({
@@ -43,26 +49,28 @@ export function Workshop() {
 	});
 
 	return (
-		<div className="flex size-full">
-			<WorkshopSideNav
-				sections={sections}
-				activeId={active.id}
-				onSelect={(id) => {
-					setActiveId(id);
-					setPinnedId(null);
-				}}
-				anyDot={affordableDots(sections, res)}
-			/>
+		<Screen tab="workshop" onTabChange={onTabChange}>
+			<div className="flex size-full">
+				<WorkshopSideNav
+					sections={sections}
+					activeId={active.id}
+					onSelect={(id) => {
+						setActiveId(id);
+						setPinnedId(null);
+					}}
+					anyDot={affordableDots(sections, resources)}
+				/>
 
-			<SectionPane
-				section={active}
-				res={res}
-				pinnedId={pinned?.id ?? null}
-				onPin={setPinnedId}
-				onBuy={buyRow}
-			/>
+				<SectionPane
+					section={active}
+					resources={resources}
+					pinnedId={pinned?.id ?? null}
+					onPin={setPinnedId}
+					onBuy={buyRow}
+				/>
 
-			<DetailPanel row={pinned} res={res} onBuy={buyRow} />
-		</div>
+				<UpgradeDetailPanel row={pinned} resources={resources} onBuy={buyRow} />
+			</div>
+		</Screen>
 	);
 }
