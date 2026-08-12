@@ -1,5 +1,5 @@
 import { NodeIcon } from "../icons";
-import type { ResourceIconComponent } from "./cost";
+import type { IconComponent } from "../icons/IconProps";
 
 /** Renders either a named `NodeIcon` kind or a resource icon component. */
 export function WorkshopRowIcon({
@@ -7,7 +7,7 @@ export function WorkshopRowIcon({
 	size = 16,
 	color = "currentColor",
 }: {
-	kind: string | ResourceIconComponent;
+	kind: string | IconComponent;
 	size?: number;
 	color?: string;
 }) {

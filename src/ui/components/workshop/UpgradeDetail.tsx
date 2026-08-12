@@ -1,4 +1,4 @@
-import { canAffordCost } from "../../../game/resources";
+import { canAffordCost } from "../../../game/rules/resources";
 import type { Resources } from "../../../game/types";
 import { BuyButton } from "./BuyButton";
 import { CostBlock } from "./CostBlock";

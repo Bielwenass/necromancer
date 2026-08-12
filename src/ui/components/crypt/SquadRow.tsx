@@ -1,5 +1,5 @@
+import { squadSize } from "../../../game/rules/units";
 import type { DungeonDef, Squad } from "../../../game/types";
-import { squadSize } from "../../../game/units";
 import { formatTime } from "../../format";
 import { SQUAD_STATE_GLYPH, squadColor } from "./squadDisplay";
 

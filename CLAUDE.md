@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in this repository.
 
 ## Commands
 
@@ -9,31 +9,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 bun run dev          # Vite dev server
 bun run build        # tsc (typecheck, noEmit) && vite build
-bun run preview      # serve the production build
 bun lint             # biome check --write — format + lint + organize imports
 bunx tsc --noEmit    # typecheck alone — fastest feedback loop
-bunx tsx src/combat/benchmark.ts   # headless combat perf breakdown by sub-phase
+bunx tsx src/combat/benchmark.ts   # headless combat perf breakdown
+bunx tsx src/game/parityCheck.ts   # online/offline simulation parity assertions
 ```
 
-There is no test runner. Biome (`biome.json`) and `tsc` are the only automated checks.
+There is no test runner. Biome and `tsc` are the automated gates; `parityCheck.ts` is the one behavioural check, and it must pass after any change to the tick, catchup, loot, or fight rules.
 
 ## Workflow
 
-**Run `bun lint` and `bunx tsc --noEmit` after every change, and fix everything they report.** `bun lint` must come back with zero diagnostics — that is the gate, not a guideline. The repo is currently at zero; keep it there rather than leaving a backlog for someone else.
+**Run `bun lint` and `bunx tsc --noEmit` after every change and fix everything they report.** Zero diagnostics is the gate, not a goal.
 
-Biome owns formatting — tabs, double quotes, sorted imports, expanded switch cases. Never hand-format against it, and don't reformat untouched code by hand; let `--write` do it.
+- Biome owns formatting (tabs, double quotes, sorted imports). Never hand-format against it; don't reformat untouched code.
+- `--write` is safe fixes only. `biome check --write --unsafe` rewrites semantics — read its diff before accepting.
+- When a rule doesn't fit, use a narrow `// biome-ignore lint/<rule>: <reason>` rather than weakening `biome.json`.
+- `strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` are on — hence `void x` and `_`-prefixed params where a binding is intentionally kept.
 
-`--write` applies only safe fixes. `biome check --write --unsafe` exists but rewrites semantics, so read its diff before accepting it rather than running it reflexively.
+### Comments and docs
 
-When a rule genuinely doesn't fit, prefer a narrow escape over weakening the config: an inline `// biome-ignore lint/<rule>: <reason>` with a real reason. `biome.json` disables exactly one rule, `noUnknownAtRules` for CSS, because Biome doesn't know `@tailwind`.
+**Comments describe what the code does now** — concise and informative. Never narrate history ("used to be…", "replaced the old…", "this fixed a bug where…"); if the current behaviour needs justifying, state the invariant, not the story. Same rule applies to this file and `docs/`.
 
-TypeScript runs with `strict`, `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`, so an unused binding fails the build — this is why you'll see `void mainAffixDef` and `_`-prefixed parameters where a binding is intentionally kept.
-
-### Keep the docs current
-
-- **This file.** When you settle on a convention, or when something described here drifts from the code, update CLAUDE.md in the same change. Don't wait to be asked, and don't leave a stale claim standing.
-- **`docs/`** (`architecture.md`, `combat.md`, `systems.md`, `relics.md`) must stay current, short, and informative. Update it whenever you add or remove a significant feature — and prune while you're there; brevity is the point, not coverage.
-- Docs describe rules, invariants, and file roles. Balance numbers (costs, loot tables, stat curves) belong in `src/game/data/` and are deliberately *not* duplicated into `docs/`, because that is what rotted the previous versions.
+- Update CLAUDE.md in the same change whenever a convention here drifts from the code.
+- **`docs/`** (`architecture.md`, `combat.md`, `systems.md`, `relics.md`) covers rules, invariants, and file roles. Keep it short — prune while you're there.
+- Balance numbers live in `src/game/data/`, never duplicated into docs or UI strings.
 
 ## Architecture
 
@@ -41,124 +40,142 @@ An idle/incremental game: four React tabs over a fixed-timestep simulation, pers
 
 ### Layering (the one hard rule)
 
-`src/game/**` and `src/combat/**` contain no React imports. All rendering lives in `src/ui/**` and `App.tsx`. Logic reads nothing from the UI; the UI reads state through `useGameStore` selectors and calls store actions. Keep this boundary — it's what makes the simulation runnable headlessly (the offline catchup and the benchmark both depend on it).
+`src/game/**` and `src/combat/**` contain **no React imports**. Rendering lives in `src/ui/**` and `App.tsx`. Logic reads nothing from the UI; the UI reads state through `useGameStore` selectors and calls store actions. This boundary is what makes the simulation runnable headlessly (offline catchup, benchmark, parity check all depend on it).
 
-### Component files
+Inside `src/game/`:
 
-**One component per file, and the file is named after it.** This includes small presentational pieces that only one parent renders — `RowGroupDivider`, `SectionLocked`, and `UpgradeRowCost` each have their own file rather than sitting privately inside their parent. Exporting them is fine; the point is that a component is findable by name.
+```
+data/      balance numbers only — imports nothing but ./types
+rules/     pure functions over that data — no store, no React
+slices/    store actions
+*.ts       state, tick, persistence, lifecycle
+```
 
-**Split anything past ~200–300 lines.** A file over that is a signal that several components are sharing a file, or that one component is doing layout work that belongs in children. The exception is a component that is genuinely one indivisible slice of layout or logic — `RelicCard.tsx` (~445 lines) is the standing example, where the tilt/foil RAF logic and the front face are one order-sensitive 3D transform stack. Its separable parts have already been lifted out beside it: `RelicCardBack.tsx` is the back face, and `relicCardArt.tsx` holds the rarity/geometry tables plus the `CardFrame` both faces draw.
+**`data/` is the only place to retune the game.** Any literal a designer would change — cost, rate, chance, cap, duration, curve coefficient, starting value — belongs there. The one exception is `src/combat/config.ts`, which holds combat *feel* (flocking weights, collision spacing, render sizes) next to the loop it tunes.
 
-**`src/ui/components/` is organised by feature, one folder per screen.** `crypt/`, `reliquary/`, `ritual/`, and `workshop/` each hold that screen's components plus the pure helpers only it uses — `workshop/sections.ts` builds section/row data and owns row visibility/ordering, `workshop/cost.ts` maps costs to icons, `crypt/squadDisplay.ts` maps squad state to colours and glyphs, `ritual/pools.ts` holds per-pool art and accents.
+`data/`: `pacing.ts` (every clock), `economy.ts`, `units.ts` (stat curves, summon prices, unit colours), `workshop.ts`, `dungeons.ts`, `upgrades.ts`, `relics.ts`, `gacha.ts`, `squadNames.ts`.
 
-Two folders are cross-cutting:
-
-- **`common/`** — the shared primitives: `Screen` (the `TopBar`/`.stage`/`TabBar` frame), `Modal` (dialog role, backdrop dismiss, Escape), `ConfirmAction` (two-press destructive confirm; also exports `DANGER_BUTTON` for layouts that can't use the component), `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`. **Look here before hand-rolling a dialog, confirm, meter, or panel eyebrow** — these exist because each was previously copy-pasted three to five times and had drifted.
-- **`chrome/`** — the app frame: `TopBar`, `TabBar` (sole owner of `TabId`), `ResourceReadout`, `CatchupOverlay`.
-
-Shared UI helpers live at `src/ui/`: `theme.ts` for colour lookups (`rarityColor`, `UNIT_COLORS`), `format.ts` for number and time formatters.
-
-Screens under `src/ui/screens/` are thin — store selectors, local UI state, and layout composition — and there are exactly four, one per `TabId`. `screens/Workshop.tsx` (~75 lines) is the shape to aim for.
-
-Default to presentational components that take data and callbacks as props, with the screen owning the store wiring — that's what makes the pieces splittable at all. Reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `DispatchModal`, `RitualPanel`, `CombatWindow` do this); it isn't a shortcut around passing a prop one level down.
+`rules/`: `derived.ts`, `loot.ts`, `fight.ts`, `travel.ts`, `units.ts`, `summoning.ts`, `workshop.ts`, `relics.ts`, `gacha.ts`, `unlocks.ts`, `resources.ts`, `describe.ts`.
 
 ### The tick pipeline
 
-`useGameLifecycle` (`src/game/useGameLifecycle.ts`) is the only driver. Each 100ms interval it:
+`useGameLifecycle` is the only driver. Each 100ms interval it:
 
-1. `store.tick(100)` — an accumulator drains exact 100ms steps, calling `gameTick(state)`.
+1. `store.tick(TICK_MS)` — an accumulator drains exact steps, calling `gameTick(state)`.
 2. Instantiates a `CombatEngine` for any squad that just entered `fighting`.
-3. Advances every live engine in 16ms fixed steps and calls `resolveFight` when one reports a winner.
+3. Advances every live engine in `ENGINE_DT` steps and calls `resolveFight` on a winner.
 
-`gameTick` (`src/game/tick.ts`) is pure: `GameState → Partial<GameState>`. It never mutates and never touches the engine. Keep it that way — it's the reason the tick is reasonable to follow at all. Autosave happens every 50 ticks (5s).
+`gameTick` (`src/game/tick.ts`) is pure: `GameState → Partial<GameState>`. It never mutates and never touches the engine.
+
+All clock constants live in `data/pacing.ts` and nowhere else: `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, `MAX_HEADLESS_TICKS`. Never write these as bare literals.
 
 ### `derived` is the central abstraction
 
-`GameState.derived` is a single computed projection of *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads (`maxSquadSize`, `bonesPerTick`, per-unit `hpFlat`/`dmgBonus`/…). It is recomputed by `recomputeDerived()` in `src/game/upgrades.ts` and is **never persisted**.
+`GameState.derived` projects *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads (`maxSquadSize`, `bonesPerTick`, per-unit `hpFlat`/`dmgBonus`/…). Computed by `recomputeDerived()` in `rules/derived.ts`; **never persisted**.
 
-Nothing recomputes it on a timer. Any action that changes upgrades, workshop, or equipped relics must recompute explicitly, via the `withDerived` helper in `src/game/slices/helpers.ts`:
+Nothing recomputes it on a timer. Any action touching upgrades, workshop, or equipped relics must go through `withDerived` (`slices/helpers.ts`):
 
 ```ts
 return withDerived(prev, { /* patch */ });
 ```
 
-Forgetting this produces stale stats that only correct themselves on the next unrelated action — a slow, confusing bug class. When adding a stat, add it in three places: the `derived` type in `types.ts`, its accumulator + return in `recomputeDerived`, and the consumer.
+Skipping it yields stale stats that silently correct on the next unrelated action. Adding a stat means four edits: the `derived` type in `types.ts`, the matching `GlobalStatKey`/`UnitStatKey`/`DerivedFlagKey` union, its seed + return in `recomputeDerived`, and the consumer. A `global` stat also needs a label in `GLOBAL_LABELS` (`rules/describe.ts`).
+
+`recomputeDerived` folds three sources **in order** — upgrade nodes, workshop levels, relics. The order is load-bearing: `pctOfSelf` takes a share of the running total, so relics must see a settled base.
 
 ### Combat is authoritative and lives outside game state
 
-`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim and it *decides* dungeon outcomes — it is not decoration. Engines are held in `store.combatEngines`, a `Map` that is runtime-only (never saved, cleared on catchup). `resolveFight` in the store converts survivor counts into squad composition, loot, and banners.
+`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim that *decides* dungeon outcomes. Engines live in `store.combatEngines`, a runtime-only `Map` (never saved, cleared on catchup). `resolveFight` converts survivor counts into squad composition, loot, and banners.
 
-`CombatWindow.tsx` renders an engine and, once the fight is off the live map, replays it locally for looping visuals. It must never feed back into game state.
+`CombatWindow.tsx` renders an engine and replays it locally for looping visuals once the fight is off the live map. It must never feed back into game state.
 
-`src/combat/simulation.ts` is the hot loop (spatial hash, cell-aggregate flocking) and is performance-tuned; measure with the benchmark before restructuring it. `src/combat/config.ts` is exhaustively commented with sane ranges per field and marks fields left UNUSED by the aggregate-model rewrite — tune one value at a time.
+`src/combat/simulation.ts` is the hot loop (spatial hash, cell-aggregate flocking) — measure with the benchmark before restructuring. `config.ts` documents sane ranges per field; tune one value at a time.
 
-### Offline catchup is a parallel implementation — keep it in sync
+### Offline catchup shares its rules, not its sequencing
 
-`src/game/catchupOffline.ts` re-simulates up to 8 hours away from the game by jumping between squad events on a min-heap instead of stepping 100ms ticks, resolving fights headlessly with a cached, seeded engine. It deliberately duplicates the live rules.
+`catchupOffline.ts` re-simulates up to `MAX_OFFLINE_MS` by jumping between squad events on a min-heap instead of stepping ticks, resolving fights headlessly with a cached, seeded engine.
 
-**Any change to travel time, fight resolution, loot, or auto-deploy in `tick.ts`/`store.ts` must be mirrored here**, or players get different results online vs. offline. The mirrored pairs today: `generateLoot` ↔ `generateLootSeeded` (both delegate the repeat-clear scaling to `clearMultiplier`, the soul roll to `effectiveSoulChance`, and the corpse roll to `rollCorpses`), travel speed ↔ `computeTravelTime` (both now delegate to `effectiveTravelTicks` in `src/game/travel.ts`, which the Crypt UI also uses so displayed timers match the simulation), the auto-deploy branch ↔ the `returnArrive` case, the yield bonuses applied on loot deposit ↔ the same case, the banner award and the wipe handling in `resolveFight` (undying remnant retreats, everything else deleted — both sides call `remnantAfterWipe`/`compositionAfterFight` from `src/game/units.ts`) ↔ the `outboundArrive` case, and `checkUnlockConditions` in both.
+Both paths call the same `rules/` functions: `generateLoot` (catchup passes a seeded `rand`), `depositLoot`, `accruePassive`, `effectiveTravelTicks`, `shouldAutoDeploy`, `resolveFightOutcome`, `checkUnlockConditions`.
 
-Two intentional deviations from house style live here: it mutates its own cloned working state (a deep-ish clone made by `cloneForCatchup`) for speed, and it uses seeded `mulberry32` instead of `Math.random` so a mid-window refresh reproduces identical results. Preserve both.
+**A new rule touching travel, loot, fight resolution, or auto-deploy goes in `rules/` and is called from both sides.** Only sequencing may differ; `parityCheck.ts` verifies the two agree.
 
-### Data tables and the id contract
+Two intentional deviations in `catchupOffline.ts`, both to preserve: it mutates its own clone (`cloneForCatchup`) for speed, and it uses seeded `mulberry32` so a mid-window refresh reproduces identical results.
 
-`src/game/data/{upgrades,relics,dungeons}.ts` are pure data. Their string ids are the contract with logic, and **adding a data row without wiring its id is a silent no-op** — a whole category of bug in this repo:
+### Data tables are declarative — effects included
 
-- Upgrade node ids (`s0`, `c7`, `n4b`, …) are `switch` cases in `recomputeDerived`. Nodes whose effect lives elsewhere (or isn't built yet) appear as `case "x": break;` with an explanatory comment — keep that convention instead of omitting the case, so the tree stays auditable against the switch.
-- Relic affix ids are `switch` cases in `applyAffix`. `AFFIX_DEFS` carries `implemented: false` for affixes that roll but do nothing; every id in a base's `minorAffixPool` and its `mainAffixId` must exist in `AFFIX_DEFS`, or the roll is silently dropped.
-- Prerequisite/unlock ids in the upgrade tree must round-trip; nothing validates them at build time.
+`data/*.ts` are pure data and their string ids are the contract with logic. Effects are declared in the table, not switched on by id:
+
+- **Upgrade nodes** carry `effects: UpgradeEffect[]`. Kinds: `global` (a scalar in `derived`, via `add`/`mult`/`pctOfSelf`), `unit` (one stat across listed unit types), `flag` (a boolean in `derived`), `elsewhere` (combat owns it, or it isn't built). A node with no effect is a type error.
+- **Relic affixes** carry `effect: AffixEffect` in `AFFIX_DEFS`, magnitude coming off the roll.
+- **Dungeon unlocks** carry `unlock: UnlockRule` (`always`/`clears`/`allOfTier`), evaluated by `checkUnlockConditions`.
+
+An `elsewhere` effect carries `where: "unimplemented"` unless it is genuinely read somewhere, plus a `note` describing the intent.
+
+**All player-facing effect text is generated** by `rules/describe.ts` (`describeUpgradeEffects`, `describeUnlock`, `describeCryptTrack`, `describeCryptLevel`). A node's `description` is optional qualitative colour — never restate a magnitude there.
+
+Prerequisite/unlock ids in the upgrade tree must round-trip; nothing validates them at build time.
 
 ### Persistence
 
-`src/game/save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1` and gates on `SAVE_VERSION`. `loadGame()` results are spread over defaults by `buildHydratedState()` in `src/game/initialState.ts`, so new state fields get their defaults for free on old saves. **Adding a persisted slice means adding it to `PERSISTED_KEYS` and nothing else** — that one list drives writing, import validation, and the required-field check.
+`save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1`, gated on `SAVE_VERSION`. `buildHydratedState()` spreads loaded data over defaults, so new fields get defaults for free on old saves. **Adding a persisted slice means adding it to `PERSISTED_KEYS` and nothing else** — that list drives writing, import validation, and the required-field check.
 
-Import and reset are store actions (`persistenceSlice`), not direct `save.ts` calls, and both call `suspendPersistence()` before touching `localStorage`. The tick loop keeps running during the ~1s before the page reloads, so without the guard an autosave or the tail of an in-flight offline catchup overwrites the save that was just installed. If you add another path that writes a save and then reloads, suspend first.
+Import and reset are `persistenceSlice` actions, not direct `save.ts` calls, and both call `suspendPersistence()` first: the tick loop keeps running during the ~1s before reload and would otherwise overwrite the save just installed. Any new path that writes a save then reloads must suspend too.
 
 ### Store conventions
 
-`src/game/store.ts` composes one Zustand store from five slice creators in `src/game/slices/` (`combat`, `squad`, `relic`, `progression`, `persistence`). The split is by domain only — every slice is a `StateCreator` over the whole `StoreState`, so a slice may read anything through `get()`. Put a new action in the slice that owns its state; only genuinely cross-cutting primitives belong in `slices/helpers.ts` (`withDerived`, `applyUnitDelta`, `hasUnitsAvailable`, `withoutRelic`).
+`store.ts` composes one Zustand store from five slice creators (`combat`, `squad`, `relic`, `progression`, `persistence`). Every slice is a `StateCreator` over the whole `StoreState` and may read anything via `get()`. Put a new action in the slice owning its state; only cross-cutting primitives go in `slices/helpers.ts` (`withDerived`, `applyUnitDelta`, `hasUnitsAvailable`, `withoutRelic`).
 
-Actions are reducers: `set(prev => …)` returning a partial, immutable spread copies, and an early `return prev` to reject an invalid operation rather than throwing or asserting. Preconditions are checked at the top of the action, not by the caller — callers may fire freely.
+Actions are reducers: `set(prev => …)` returning a partial, immutable spread copies, early `return prev` to reject an invalid operation rather than throwing. Preconditions are checked at the top of the action, not by the caller.
 
-`slices/types.ts` and the slice files import each other's types circularly. That's fine — every such import is `import type` and erases at compile time; don't "fix" it by moving interfaces away from their implementations.
+`slices/types.ts` and the slice files import each other's types circularly. That's fine — every such import is `import type`.
+
+## UI conventions
+
+**One component per file, named after it** — including small presentational pieces only one parent renders.
+
+**Split anything past ~200–300 lines**, unless it is genuinely one indivisible slice.
+
+**`src/ui/components/` is organised by feature, one folder per screen** — `crypt/`, `reliquary/`, `ritual/`, `workshop/` — each holding that screen's components plus the pure helpers only it uses (`workshop/sections.ts`, `workshop/cost.ts`, `crypt/squadDisplay.ts`, `ritual/pools.ts`).
+
+Two cross-cutting folders:
+
+- **`common/`** — shared primitives: `Screen` (the `TopBar`/`.stage`/`TabBar` frame), `Modal`, `ConfirmAction` (also exports `DANGER_BUTTON`), `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`. **Look here before hand-rolling a dialog, confirm, meter, or eyebrow.**
+- **`chrome/`** — app frame: `TopBar`, `TabBar` (sole owner of `TabId`, `TABS`, and `TAB_KEYS`), `ResourceReadout`, `CatchupOverlay`.
+
+Shared helpers at `src/ui/`: `theme.ts` (`rarityColor`, `UNIT_COLORS`), `format.ts` (number/time formatters).
+
+`src/ui/screens/` holds exactly four thin screens — store selectors, local UI state, layout composition. `Workshop.tsx` (~75 lines) is the shape to aim for. Default to presentational components taking data and callbacks as props; reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `DispatchModal`, `RitualPanel`, `CombatWindow`).
+
+**Unit colours come from `game/data/units.ts`**, re-exported as `UNIT_COLORS` — never a raw hex. The combat canvas can't read CSS variables, so the lookup is the only thing keeping canvas and DOM in agreement.
+
+**Raster art lives in `src/ui/assets/<feature>/` and is imported**, so Vite hashes and verifies it (`src/vite-env.d.ts` supplies module types). Author art as white line work on transparency, grayscale+alpha, tinted at render time by masking a solid fill with the PNG's alpha (`RitualArt` is the example) — don't commit pre-coloured variants.
 
 ## Styling
 
-**Tailwind is the target end state. Everything else is migration debt.**
+**Tailwind is the target end state; everything else is migration debt.** `src/index.css` holds `:root` custom properties plus hand-written component classes; `tailwind.config.ts` mirrors the palette as named colors (`bone`, `coin`, `soul`, `bg-panel`, `r-legendary`, …).
 
-Two systems coexist today:
-
-- `src/index.css` — `:root` CSS custom properties (`--ink-bone`, `--c-coin`, `--rule`, …) plus hand-written component classes (`.necro`, `.bar-top`, `.bar-tabs`, `.stage`, `.display`, `.mono`) across ~36 class rules.
-- Tailwind, with the palette mirrored as named colors in `tailwind.config.ts` (`bone`, `coin`, `soul`, `bg-panel`, `r-legendary`, …).
-
-Current debt: ~42 inline `style={…}` props and ~19 `!`-prefixed utilities, plus those custom classes. Most of what remains is genuinely runtime-computed (relic rarity colours, ritual pool accents, meter widths).
-
-`.necro`, `.stage`, `.bar-top`, and `.bar-tabs` are the app frame and are load-bearing — `.necro *` carries a typography cascade the whole UI inherits. Leave them alone unless that is the change you set out to make.
-
-Webfonts load from the `<link>` tags in `index.html`; `index.css` must not re-`@import` them. Those tags still request Cinzel, Courier Prime, and VT323, which no font stack references.
-
-Known token divergence: Tailwind's `rule` (`#1a1a1a`) and `rule-strong` (`#8a795b`) do **not** match `--rule` / `--rule-strong` (translucent warm hairlines), so `border-rule` and `border: 1px solid var(--rule)` render differently. Both spellings are in use. Aligning them is a one-time visual decision, not something to change in passing — use `border-[color:var(--rule-strong)]` when an edit must preserve exact appearance.
-
-### Rules for new and touched code
-
-1. **Use Tailwind utilities.** Don't add a custom class in `index.css` for anything Tailwind does trivially — that's most padding, color, border, flex/grid, and typography work.
-2. **Don't add inline `style={{…}}`.** Migrate the ones you encounter. The only legitimate use is a value genuinely computed at runtime (`width: ${pct * 100}%`, an interpolated HP color); even then, prefer an arbitrary-value utility (`w-[--w]`, `text-[color:var(--x)]`) where it reads cleanly. Static values in a `style` prop are always a bug to fix.
-3. **Avoid `!` unless there is no alternative.** The reason it spread: `index.css` component classes are declared *after* `@tailwind utilities`, so they win at equal specificity, and `!tracking-[0.24em]` exists only to beat `.display`'s own `letter-spacing`. The correct fix is to strip the property from the legacy class (or drop the class) rather than escalate with `!`. Biome flags `!important` in CSS via `noImportantStyles`.
-4. **Keep global CSS variables in Tailwind.** New design tokens go in `tailwind.config.ts`, not `:root`. Reserve `:root` for what the Tailwind theme genuinely can't express, and while both exist, any palette change must update **both** or they silently diverge.
+1. **Use Tailwind utilities.** Don't add a class to `index.css` for anything Tailwind does trivially.
+2. **Don't add inline `style={{…}}`.** The only legitimate use is a genuinely runtime-computed value (`width: ${pct * 100}%`); even then prefer an arbitrary-value utility. Static values in a `style` prop are a bug.
+3. **Avoid `!`.** `index.css` classes are declared after `@tailwind utilities` and win at equal specificity — strip the property from the legacy class instead of escalating.
+4. **New design tokens go in `tailwind.config.ts`**, not `:root`. While both exist, a palette change must update both.
 5. Prefer Tailwind named colors over raw hex or `var(--…)` in markup.
 
-Migrating a legacy class is expected cleanup when you're already editing that markup — convert it, delete the now-dead rule from `index.css`, and check no other component still uses it.
+Migrating a legacy class is expected cleanup when already editing that markup — convert it, delete the dead rule, check no other component uses it.
 
-**Raster art lives in `src/ui/assets/<feature>/` and is imported**, not dropped in a `public/` folder — Vite then hashes and verifies it, with `src/vite-env.d.ts` supplying the module types. Art is authored as white line work on transparency and tinted at render time by masking a solid fill with the PNG's alpha (`RitualArt` is the example), so a single plate serves any accent; don't commit pre-colored variants. Store the plate as grayscale+alpha — the mask reads nothing but alpha.
+`.necro`, `.stage`, `.bar-top`, `.bar-tabs` are the load-bearing app frame; `.necro *` carries a typography cascade the whole UI inherits. Leave them alone unless that is the change.
 
-**Converting a `<div>` to a `<button>` needs `w-full`.** Form controls resolve `width: auto` as shrink-to-fit, not fill-available, even at `display: block` or `grid`. A converted container therefore collapses around its content — and if a child uses `width: 100%`, the percentage becomes circular and the element shrinks to a few pixels. Add `w-full` (and `text-left` where content was left-aligned) unless the element is a flex/grid *item*, which stretches on its own.
+Webfonts load from `<link>` tags in `index.html`; `index.css` must not re-`@import` them.
 
-Screens are keyboard-routed from `App.tsx` (keys `1`–`4`, via the `TAB_KEYS` map). The `TopBar`/`.stage`/`TabBar` frame belongs to `components/common/Screen`, not to each screen. `TabId` is declared once, in `chrome/TabBar.tsx`.
+**Token divergence:** Tailwind's `rule` (`#1a1a1a`) and `rule-strong` (`#8a795b`) do **not** match `--rule`/`--rule-strong` (translucent warm hairlines), so `border-rule` and `border: 1px solid var(--rule)` render differently. Use `border-[color:var(--rule-strong)]` when an edit must preserve exact appearance; aligning them is a deliberate visual decision.
+
+**Converting a `<div>` to a `<button>` needs `w-full`.** Form controls resolve `width: auto` as shrink-to-fit even at `display: block`, so the container collapses around its content — and a child at `width: 100%` makes it circular. Add `w-full` (and `text-left`) unless the element is a flex/grid *item*.
+
+Screens are keyboard-routed from `App.tsx` (keys `1`–`4`), derived from each tab's `k` field in `TabBar`.
 
 ## Known rough edges
 
-Don't mistake these for intentional design:
+Not intentional design:
 
-- Several upgrade and affix descriptions promise effects that aren't implemented (`implemented: false`, `case "x": break;`). Check the switch before assuming a described effect exists.
-- `derived.boneSurgeActive` and `derived.rarityBoostActive` are set by `n1a` and `n5b` and read by nothing. `n1a` still works — its real effect is the `bonesPassiveMult` it also applies — but `n5b` does nothing at all, and its `case` comment claiming the gacha handles it is wrong: `executePull` never reads `derived`.
-- Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `RelicInventoryCard`'s `×n` badge, `RelicDetail`'s fusion pips) but never written — there is no fusion or dedupe path, so both are permanently 0 and that UI is inert.
+- Nine upgrade nodes and ten relic affixes are `elsewhere: "unimplemented"` — they roll and display, but nothing applies them. Grep `"unimplemented"` for the current list.
+- **Coins are retired but still plumbed.** Loot rolls `coinsMin`/`coinsMax`, deposits bank them, `coinYieldBonus` accumulates — nothing spends or displays them. Kept for save compatibility; removing them is a deliberate change.
+- Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `×n` badge, fusion pips) but never written — there is no fusion or dedupe path, so that UI is inert.

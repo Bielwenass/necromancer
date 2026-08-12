@@ -1,4 +1,51 @@
-import type { RelicBase } from "../types";
+import type { AffixEffect, Rarity, RelicBase } from "../types";
+
+/** Rarity from worst to best. Everything that ranks rarities derives from this. */
+export const RARITY_ORDER = [
+	"common",
+	"uncommon",
+	"rare",
+	"epic",
+	"legendary",
+] as const;
+
+/** How many minor affixes a relic of each rarity rolls. */
+export const MINOR_COUNT: Record<Rarity, number> = {
+	common: 0,
+	uncommon: 1,
+	rare: 2,
+	epic: 3,
+	legendary: 3,
+};
+
+/**
+ * Added to every affix's roll position, so a rarer relic rolls higher within
+ * the same range. A boost can push the position past 1, which is deliberate:
+ * a legendary may roll above its affix's nominal maximum.
+ */
+export const POS_BOOST_RARITY: Record<Rarity, number> = {
+	common: 0.0,
+	uncommon: 0.1,
+	rare: 0.2,
+	epic: 0.35,
+	legendary: 0.5,
+};
+
+/** Dust paid for sacrificing a relic of each rarity. */
+export const DUST_VALUES: Record<Rarity, number> = {
+	common: 1,
+	uncommon: 2,
+	rare: 5,
+	epic: 10,
+	legendary: 30,
+};
+
+/**
+ * Affix multiplier per relic upgrade level: `1 + level × step`. Read by both
+ * the display formatter and `recomputeDerived`, so a card can't promise a
+ * number combat doesn't use. Inert today; nothing writes `upgradeLevel`.
+ */
+export const RELIC_UPGRADE_STEP = 0.1;
 
 export const RELIC_BASES: RelicBase[] = [
 	// ═══════════════════════════════════════════════════════════════
@@ -379,7 +426,11 @@ export const AFFIX_DEFS: Record<
 		label: string;
 		unit: string;
 		range: [number, number];
-		implemented?: boolean;
+		/**
+		 * Where the rolled value lands. `elsewhere` marks an affix that rolls
+		 * onto relics but has no effect yet.
+		 */
+		effect: AffixEffect;
 		description?: string;
 	}
 > = {
@@ -388,35 +439,38 @@ export const AFFIX_DEFS: Record<
 		label: "Bone Yield",
 		unit: "%",
 		range: [5, 35],
-		implemented: true,
+		effect: { kind: "global", stat: "boneYieldBonus", op: "add" },
 		description: "Increases bone income from all sources.",
 	},
 	/**
-	 * Retired along with coins themselves. No base rolls it any more, but the
-	 * def stays so relics already in a save still render a label and a value —
-	 * `applyAffix` keeps honouring it, on a resource nothing spends.
+	 * Retired along with coins. No base rolls it, but the def stays so relics
+	 * already in a save render a label and a value — `applyAffix` still honours
+	 * it, on a resource nothing spends.
 	 */
 	coinYield: {
 		label: "Coin Yield",
 		unit: "%",
 		range: [5, 30],
-		implemented: false,
+		effect: { kind: "global", stat: "coinYieldBonus", op: "add" },
 		description: "Retired — coins are no longer spent on anything.",
 	},
 	corpseYield: {
 		label: "Corpse Yield",
 		unit: "%",
 		range: [5, 20],
-		implemented: true,
+		effect: { kind: "global", stat: "corpseYieldBonus", op: "add" },
 		description: "Increases corpse drops from all sources.",
 	},
 	rarityWeight: {
 		label: "Rarity Weight",
 		unit: "%",
 		range: [3, 15],
-		implemented: false,
-		description:
-			"Shifts gacha odds toward higher rarities. IMPLEMENT in gacha rolling.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Shifts Ritual odds toward higher rarities.",
+		},
+		description: "Shifts gacha odds toward higher rarities.",
 	},
 
 	// ── Squad / dispatch (Crypt slot) ──────────────────────────────
@@ -424,23 +478,26 @@ export const AFFIX_DEFS: Record<
 		label: "Squad Travel Speed",
 		unit: "%",
 		range: [5, 25],
-		implemented: true,
+		effect: { kind: "global", stat: "squadTravelSpeedBonus", op: "add" },
 		description: "Squads move faster to and from dungeons.",
 	},
 	squadSizeBonus: {
 		label: "Squad Size",
 		unit: "%",
 		range: [5, 25],
-		implemented: true,
+		effect: { kind: "global", stat: "maxSquadSize", op: "pctOfSelf" },
 		description: "Increases max squad size while equipped.",
 	},
 	dispatchBonus: {
 		label: "Dispatch Bonus",
 		unit: "%",
 		range: [10, 25],
-		implemented: false,
-		description:
-			"First 10s after squad arrival: bonus damage. IMPLEMENT in combat state.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Bonus on dispatch.",
+		},
+		description: "First 10s after squad arrival: bonus damage.",
 	},
 
 	// ── Skeleton (Skeleton slot) ───────────────────────────────────
@@ -448,28 +505,32 @@ export const AFFIX_DEFS: Record<
 		label: "Skeleton Damage",
 		unit: "%",
 		range: [5, 30],
-		implemented: true,
+		effect: { kind: "unit", units: ["skeleton"], stat: "dmgBonus" },
 		description: "Increases skeleton damage.",
 	},
 	skeletonSpeed: {
 		label: "Skeleton Speed",
 		unit: "%",
 		range: [5, 25],
-		implemented: true,
+		effect: { kind: "unit", units: ["skeleton"], stat: "speedBonus" },
 		description: "Skeletons move faster.",
 	},
 	skeletonHp: {
 		label: "Skeleton HP",
 		unit: "%",
 		range: [5, 30],
-		implemented: true,
+		effect: { kind: "unit", units: ["skeleton"], stat: "hpBonus" },
 		description: "Increases skeleton HP.",
 	},
 	boneYieldFromKills: {
 		label: "Bones from Kills",
 		unit: "%",
 		range: [3, 15],
-		implemented: false,
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Grants bones per enemy killed.",
+		},
 		description:
 			"Each enemy killed drops bonus bones. REWORK from current passive boost.",
 	},
@@ -477,17 +538,23 @@ export const AFFIX_DEFS: Record<
 		label: "Overwhelm",
 		unit: "%",
 		range: [5, 20],
-		implemented: false,
-		description:
-			"Damage scales when squad outnumbers enemies in radius. IMPLEMENT in combat.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Bonus damage while outnumbering the enemy.",
+		},
+		description: "Damage scales when squad outnumbers enemies in radius.",
 	},
 	firstStrikeBonus: {
 		label: "First Strike",
 		unit: "%",
 		range: [10, 30],
-		implemented: false,
-		description:
-			"Bonus damage in the first 5s of a battle. IMPLEMENT in combat init.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Bonus damage on the opening exchange.",
+		},
+		description: "Bonus damage in the first 5s of a battle.",
 	},
 
 	// ── Zombie (Zombie slot) ───────────────────────────────────────
@@ -495,39 +562,48 @@ export const AFFIX_DEFS: Record<
 		label: "Zombie Damage",
 		unit: "%",
 		range: [5, 25],
-		implemented: true,
+		effect: { kind: "unit", units: ["zombie"], stat: "dmgBonus" },
 		description: "Increases zombie damage.",
 	},
 	zombieHp: {
 		label: "Zombie HP",
 		unit: "%",
 		range: [5, 35],
-		implemented: true,
+		effect: { kind: "unit", units: ["zombie"], stat: "hpBonus" },
 		description: "Increases zombie HP.",
 	},
 	undyingFlesh: {
 		label: "Undying Flesh",
 		unit: "%",
 		range: [1, 4],
-		implemented: false,
-		description:
-			"Zombies regenerate HP per second in combat. IMPLEMENT in combat tick.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Zombies survive a killing blow.",
+		},
+		description: "Zombies regenerate HP per second in combat.",
 	},
 	berserk: {
 		label: "Berserk",
 		unit: "%",
 		range: [10, 30],
-		implemented: false,
-		description:
-			"Damage scales with HP missing. IMPLEMENT per-unit damage calc.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Damage rises as HP falls.",
+		},
+		description: "Damage scales with HP missing.",
 	},
 	lastStand: {
 		label: "Last Stand",
 		unit: "%",
 		range: [25, 60],
-		implemented: false,
-		description:
-			"Massive bonus when squad drops below 20% units. IMPLEMENT in combat.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Bonus stats for the final surviving unit.",
+		},
+		description: "Massive bonus when squad drops below 20% units.",
 	},
 
 	// ── Wraith (Wraith slot) ───────────────────────────────────────
@@ -535,36 +611,39 @@ export const AFFIX_DEFS: Record<
 		label: "Wraith Damage",
 		unit: "%",
 		range: [5, 35],
-		implemented: true,
+		effect: { kind: "unit", units: ["wraith"], stat: "dmgBonus" },
 		description: "Increases wraith damage.",
 	},
 	wraithSpeed: {
 		label: "Wraith Speed",
 		unit: "%",
 		range: [5, 30],
-		implemented: true,
+		effect: { kind: "unit", units: ["wraith"], stat: "speedBonus" },
 		description: "Wraiths move faster.",
 	},
 	wraithHp: {
 		label: "Wraith HP",
 		unit: "%",
 		range: [5, 25],
-		implemented: true,
+		effect: { kind: "unit", units: ["wraith"], stat: "hpBonus" },
 		description: "Increases wraith HP.",
 	},
 	soulOnKill: {
 		label: "Soul on Kill",
 		unit: "%",
 		range: [5, 40],
-		implemented: true,
+		effect: { kind: "global", stat: "soulHarvestBonus", op: "add", scale: 2 },
 		description: "Chance to gain a soul per enemy killed.",
 	},
 	spectralStrike: {
 		label: "Spectral Strike",
 		unit: "%",
 		range: [3, 10],
-		implemented: false,
-		description:
-			"Wraith damage scales with target HP%. IMPLEMENT per-unit damage calc.",
+		effect: {
+			kind: "elsewhere",
+			where: "unimplemented",
+			note: "Wraith damage scales with target HP.",
+		},
+		description: "Wraith damage scales with target HP%.",
 	},
 };

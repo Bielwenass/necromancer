@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
 import { useGameLifecycle } from "./game/useGameLifecycle";
 import { CatchupOverlay } from "./ui/components/chrome/CatchupOverlay";
-import type { TabId } from "./ui/components/chrome/TabBar";
+import { TAB_KEYS, type TabId } from "./ui/components/chrome/TabBar";
 import { Crypt } from "./ui/screens/Crypt";
 import { Reliquary } from "./ui/screens/Reliquary";
 import { Ritual } from "./ui/screens/Ritual";
 import { Workshop } from "./ui/screens/Workshop";
-
-const TAB_KEYS: Record<string, TabId> = {
-	"1": "crypt",
-	"2": "reliquary",
-	"3": "ritual",
-	"4": "workshop",
-};
 
 export default function App() {
 	const { catchup, dismissCatchup } = useGameLifecycle();

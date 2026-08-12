@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { Resources } from "../../../game/types";
-import type { ResourceIconComponent } from "./cost";
+import type { IconComponent } from "../icons/IconProps";
 
 /**
  * A single purchasable line. Every workshop section — skill branches, unit
@@ -13,7 +13,7 @@ export interface WorkshopRow {
 	name: string;
 	description: string;
 	flavor?: string;
-	icon: string | ResourceIconComponent;
+	icon: string | IconComponent;
 	level: number;
 	/** Absent means the row levels forever. */
 	maxLevel?: number;

@@ -1,12 +1,12 @@
-import type { ProjectedLoot } from "../../../game/tick";
+import { describeUnlock } from "../../../game/rules/describe";
 import {
 	CORPSE_DROP_CHANCE,
-	clearMultiplier,
 	dungeonEnemyCount,
-} from "../../../game/tick";
-import { squadRemainingTicks } from "../../../game/travel";
+	type ProjectedLoot,
+} from "../../../game/rules/loot";
+import { squadRemainingTicks } from "../../../game/rules/travel";
+import { squadSize } from "../../../game/rules/units";
 import type { DungeonDef, DungeonState, Squad } from "../../../game/types";
-import { squadSize } from "../../../game/units";
 import { formatSeconds, formatTime } from "../../format";
 import { IconBone, IconCorpse, IconSoul } from "../icons";
 import { DungeonLootStat } from "./DungeonLootStat";
@@ -30,11 +30,6 @@ function bonusNote(clearMult: number | null, bonusMult: number): string {
 	if (bonusMult > 1.005)
 		parts.push(`+${Math.round((bonusMult - 1) * 100)}% bonus`);
 	return parts.length > 0 ? ` · ${parts.join(" · ")}` : "";
-}
-
-/** How far a projection sits above its loot-table base; 1 when there's no base. */
-function ratio(projected: number, base: number): number {
-	return base > 0 ? projected / base : 1;
 }
 
 export function DungeonCard({
@@ -73,20 +68,14 @@ export function DungeonCard({
 		: null;
 	const eta = remaining === null ? null : formatTime(remaining);
 
-	const clearMult = clearMultiplier(ds.clearCount);
-	const clearMultDisplay = clearMult.toFixed(2);
 	const tierDec = tierDecoration(def.tier);
 
-	// Each projection is quoted back against the bare loot table so the card can
-	// name the breakdown on hover. The clear multiplier is divided out of the
-	// bone ratio: it applies to every dungeon from the first run, so only what's
-	// left — the player's own yield bonuses — counts as boosted. Coins are still
-	// rolled and banked, but the card no longer quotes them.
+	// `projectLoot` reports the clear multiplier and each yield ratio alongside
+	// the figures, so the tooltip names the breakdown without re-deriving the
+	// loot-table base. Coins are rolled and banked but deliberately not quoted.
+	const { clearMult, boneBonus, soulBonus, corpseBonus } = loot;
+	const clearMultDisplay = clearMult.toFixed(2);
 	const lt = def.lootTable;
-	const baseCorpses = dungeonEnemyCount(def) * CORPSE_DROP_CHANCE;
-	const boneBonus = ratio(loot.bonesMax, lt.bonesMax) / clearMult;
-	const soulBonus = ratio(loot.soulChance, lt.soulChance);
-	const corpseBonus = ratio(loot.corpses, baseCorpses);
 	const soulPct = `${(loot.soulChance * 100).toFixed(0)}%`;
 	const perDrop =
 		loot.soulsPerDrop > 1.005 ? formatAmount(loot.soulsPerDrop) : null;
@@ -124,7 +113,7 @@ export function DungeonCard({
 					</div>
 					{locked ? (
 						<div className="mono text-dim text-sm">
-							SEALED — {def.unlockCondition}
+							SEALED — {describeUnlock(def)}
 						</div>
 					) : (
 						<div className="mono text-muted text-sm flex flex-wrap items-center gap-x-5 gap-y-1">

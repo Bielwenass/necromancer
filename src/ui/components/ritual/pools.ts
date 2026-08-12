@@ -1,4 +1,5 @@
-import type { PoolId, Rarity } from "../../../game/types";
+import { UNIT_COLORS } from "../../../game/data/units";
+import type { PoolId } from "../../../game/types";
 import bannerArt from "../../assets/rituals/banner.png";
 import carrionArt from "../../assets/rituals/carrion.png";
 import forbiddenArt from "../../assets/rituals/forbidden.png";
@@ -15,13 +16,11 @@ export interface PoolMeta {
 	 * brighter at the same value.
 	 */
 	tint: string;
-	pityMax: number;
-	pityGuaranteed: Rarity | null;
 }
 
 /**
  * Presentation for each gacha pool. The odds, costs and pity rules themselves
- * live in `POOL_CONFIGS` (`src/game/gacha.ts`) — this is only how a pool looks.
+ * live in `POOL_CONFIGS` (`game/data/gacha.ts`) — this is only how a pool looks.
  */
 export const POOL_META: Record<PoolId, PoolMeta> = {
 	banner: {
@@ -31,18 +30,14 @@ export const POOL_META: Record<PoolId, PoolMeta> = {
 		art: bannerArt,
 		accent: "var(--c-ember)",
 		tint: "rgba(214,122,48,0.07)",
-		pityMax: 0,
-		pityGuaranteed: null,
 	},
 	carrion: {
 		name: "Carrion Ritual",
 		blurb:
 			"Bodies laid out in a ring and left to it. The circle takes the flesh and hands back what was buried in it.",
 		art: carrionArt,
-		accent: "var(--sq-zombie)",
+		accent: UNIT_COLORS.zombie,
 		tint: "rgba(149,184,122,0.08)",
-		pityMax: 40,
-		pityGuaranteed: "epic",
 	},
 	forbidden: {
 		name: "Forbidden Ritual",
@@ -51,7 +46,5 @@ export const POOL_META: Record<PoolId, PoolMeta> = {
 		art: forbiddenArt,
 		accent: "var(--c-soul)",
 		tint: "rgba(155,122,214,0.08)",
-		pityMax: 50,
-		pityGuaranteed: "legendary",
 	},
 };

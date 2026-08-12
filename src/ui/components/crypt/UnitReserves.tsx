@@ -1,5 +1,5 @@
-import { canAffordCost } from "../../../game/resources";
-import { summonCost } from "../../../game/summoning";
+import { canAffordCost } from "../../../game/rules/resources";
+import { summonCost } from "../../../game/rules/summoning";
 import type { GameState, Squad, Units, UnitType } from "../../../game/types";
 import { formatCost } from "../../format";
 import { UNIT_COLORS } from "../../theme";

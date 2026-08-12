@@ -3,7 +3,8 @@ import { rarityColor, rarityName } from "../../theme";
 import { SectionLabel } from "../common/SectionLabel";
 
 interface DropOddsTableProps {
-	odds: { rarity: Rarity; weight: number }[];
+	/** Normalised percentages from `poolOdds()` — never raw pool weights. */
+	odds: { rarity: Rarity; pct: number }[];
 }
 
 /** The stacked odds bar and its per-rarity breakdown. */
@@ -19,7 +20,7 @@ export function DropOddsTable({ odds }: DropOddsTableProps) {
 					<div
 						key={o.rarity}
 						className="opacity-[0.85]"
-						style={{ width: `${o.weight}%`, background: rarityColor(o.rarity) }}
+						style={{ width: `${o.pct}%`, background: rarityColor(o.rarity) }}
 					/>
 				))}
 			</div>
@@ -42,7 +43,7 @@ export function DropOddsTable({ odds }: DropOddsTableProps) {
 						{rarityName(o.rarity)}
 					</span>
 					<span className="mono text-[11px] text-bone ml-auto">
-						{o.weight.toFixed(1)}
+						{o.pct.toFixed(1)}
 						<span className="text-dim">%</span>
 					</span>
 				</div>

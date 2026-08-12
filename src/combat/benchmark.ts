@@ -1,20 +1,25 @@
 /**
  * Headless combat benchmark with accel sub-phase breakdown.
  *
- * Run: `npx tsx src/combat/benchmark.ts`
+ * Run: `bunx tsx src/combat/benchmark.ts`
  *
- * Replace STATS / makeConfig with your real buildAttackerConfig + enemy defs
- * for accurate numbers. The phase split is what tells us where to optimize.
+ * Both sides are level-zero skeletons, mustered in the real spawn bands — a
+ * symmetric worst case, not a real dungeon. The phase split is what tells us
+ * where to optimize; the absolute numbers only matter relative to each other.
  */
 
-import { COMBAT_H, COMBAT_W } from "./dungeonCombat";
+import { ENGINE_DT, MAX_HEADLESS_TICKS } from "../game/data/pacing";
+import { UNIT_STAT_CONFIG } from "../game/data/units";
+import {
+	ATTACKER_SPAWN,
+	COMBAT_H,
+	COMBAT_W,
+	DEFENDER_SPAWN,
+} from "./dungeonCombat";
 import { CombatEngine } from "./engine";
 import type { SideConfig } from "./types";
 
-// ── Adjust to match real unit stats ──────────────────────────
-const STATS = {
-	skeleton: { hp: 10, dmg: 2, speed: 1 },
-};
+const SKELETON = UNIT_STAT_CONFIG.skeleton;
 
 function makeConfig(count: number, leftSide: boolean): SideConfig {
 	return {
@@ -22,19 +27,20 @@ function makeConfig(count: number, leftSide: boolean): SideConfig {
 			{
 				name: "skeleton",
 				amount: count,
-				stats: STATS.skeleton,
+				stats: {
+					hp: SKELETON.hp.base,
+					dmg: SKELETON.dmg.base,
+					speed: SKELETON.speed.base,
+				},
 				color: "white",
 			},
 		],
-		spawnArea: leftSide
-			? { x: 10, y: 10, w: 55, h: COMBAT_H - 20 }
-			: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
+		spawnArea: leftSide ? ATTACKER_SPAWN : DEFENDER_SPAWN,
 	};
 }
 
 const SCENARIOS = [100, 250, 500, 1000];
 const SEEDS = [0xcafe, 0xbeef, 0xf00d];
-const MAX_TICKS = 20000;
 
 interface RunResult {
 	n: number;
@@ -61,8 +67,11 @@ function runOnce(n: number, seed: number): RunResult {
 	engine.setSide("b", makeConfig(n, false));
 	engine.start();
 
-	while (engine.getWinner() === null && engine.stats.numTicks < MAX_TICKS) {
-		engine.tick(16);
+	while (
+		engine.getWinner() === null &&
+		engine.stats.numTicks < MAX_HEADLESS_TICKS
+	) {
+		engine.tick(ENGINE_DT);
 	}
 
 	const s = engine.stats;

@@ -1,42 +1,36 @@
-import { AFFIX_DEFS, RELIC_BASES } from "./data/relics";
-import type { Rarity, Relic, RelicSlotType, SlotId } from "./types";
+import {
+	AFFIX_DEFS,
+	DUST_VALUES,
+	MINOR_COUNT,
+	POS_BOOST_RARITY,
+	RARITY_ORDER,
+	RELIC_BASES,
+	RELIC_UPGRADE_STEP,
+} from "../data/relics";
+import type { Rarity, Relic, RelicSlotType, SlotId } from "../types";
+
+export { DUST_VALUES };
 
 let relicCounter = 0;
 
 function rollPosition(rarity: Rarity): number {
-	// if (Math.random() < 0.8) {
-	//   // center band 40-60%
-	//   return 0.4 + Math.random() * 0.2;
-	// }
-	return Math.random() + POS_BOOST_RARITY[rarity]; // full range with rarity boost
+	return Math.random() + POS_BOOST_RARITY[rarity];
 }
 
 function rollValue(range: [number, number], pos: number): number {
 	return range[0] + (range[1] - range[0]) * pos;
 }
 
-const MINOR_COUNT: Record<Rarity, number> = {
-	common: 0,
-	uncommon: 1,
-	rare: 2,
-	epic: 3,
-	legendary: 3,
-};
-
-const POS_BOOST_RARITY: Record<Rarity, number> = {
-	common: 0.0,
-	uncommon: 0.1,
-	rare: 0.2,
-	epic: 0.35,
-	legendary: 0.5,
-};
+/** Where a rarity sits on the ladder. Used to compare gacha guarantees. */
+export function rarityRank(r: Rarity): number {
+	return RARITY_ORDER.indexOf(r);
+}
 
 export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	const base = RELIC_BASES.find((b) => b.id === baseId);
 	if (!base) throw new Error(`Unknown relic base: ${baseId}`);
 
 	const mainPos = rollPosition(rarity);
-	const mainAffixDef = AFFIX_DEFS[base.mainAffixId];
 	let mainValue = rollValue(base.mainAffixRange, mainPos);
 
 	const minorCount = MINOR_COUNT[rarity];
@@ -62,9 +56,6 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 		(allPositions.reduce((s, p) => s + p, 0) / allPositions.length) * 100,
 	);
 
-	// Suppress unused variable warning
-	void mainAffixDef;
-
 	return {
 		id: `relic-${++relicCounter}-${Date.now()}`,
 		baseId,
@@ -82,13 +73,15 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	};
 }
 
-export const DUST_VALUES: Record<Rarity, number> = {
-	common: 1,
-	uncommon: 2,
-	rare: 5,
-	epic: 10,
-	legendary: 30,
-};
+/** Dust paid for sacrificing a batch of relics. */
+export function dustValue(relics: Pick<Relic, "rarity">[]): number {
+	return relics.reduce((sum, r) => sum + DUST_VALUES[r.rarity], 0);
+}
+
+/** Affix multiplier from a relic's upgrade level. */
+export function relicUpgradeMultiplier(upgradeLevel: number): number {
+	return 1 + upgradeLevel * RELIC_UPGRADE_STEP;
+}
 
 /**
  * A relic may only occupy a slot listed on its base. Unknown bases are rejected
@@ -118,7 +111,7 @@ export function formatAffixValue(
 	upgradeLevel = 0,
 ): string {
 	const unit = getAffixUnit(affixId);
-	const boosted = value * (1 + upgradeLevel * 0.1);
+	const boosted = value * relicUpgradeMultiplier(upgradeLevel);
 	if (unit === "%") {
 		return `+${Math.round(boosted)}%`;
 	}

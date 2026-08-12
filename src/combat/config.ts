@@ -1,30 +1,25 @@
 /**
  * Combat tuning config.
  *
- * NOTE ON THE MODEL CHANGE: the simulation now uses a cell-aggregate flocking model.
- * Cohesion and alignment are averaged over a 3x3 block of grid cells (O(1) per
- * unit) rather than iterated per-neighbor. Separation and combat targeting use
- * a small fine-hash query at radius max(separationRadius, attackRadius). As a
- * result, a few former fields no longer do anything — they're marked UNUSED
- * below but kept so nothing that imports them breaks. Remove at your leisure.
+ * The model is cell-aggregate flocking: cohesion and alignment are averaged
+ * over a 3x3 block of grid cells (O(1) per unit) rather than iterated
+ * per-neighbor, while separation and combat targeting use a fine-hash query at
+ * radius max(separationRadius, attackRadius).
  *
- * General tuning advice: change ONE value at a time and watch a small fight
- * (20v20) where individual unit behavior is legible, then sanity-check a big
- * one (500v500+) for emergent blob behavior. Weights interact, so big
- * simultaneous changes are hard to reason about.
+ * Tune ONE value at a time. Watch a small fight (20v20) where individual unit
+ * behavior is legible, then sanity-check a big one (500v500+) for emergent blob
+ * behavior. Weights interact, so simultaneous changes are hard to reason about.
  */
 export const COMBAT_CONFIG = {
 	simulation: {
 		// ── Separation: short-range "don't crowd me" push ──────────
-		// The soft half of collision avoidance (the hard half is the phase-3
-		// positional pass, which guarantees no overlap regardless of this).
-		// Separation just makes the approach decelerate smoothly instead of
-		// units interpenetrating and getting shoved.
+		// The soft half of collision avoidance — it decelerates the approach
+		// smoothly. The hard half is the phase-3 positional pass, which
+		// guarantees no overlap regardless of these values.
 
 		// How close (px) before same-side units push apart. Keep at or slightly
-		// above unit diameter (dotRadius*2 = 4px). Also note: this and attackRadius
-		// jointly set the fine-query radius, which is the main per-tick cost — so
-		// bigger here literally costs performance.
+		// above unit diameter (dotRadius*2 = 4px). With attackRadius this sets the
+		// fine-query radius, the main per-tick cost — bigger costs performance.
 		// Range: 4–12.  Lower = tighter packing (mushier crush). Higher = airier.
 		separationRadius: 6,
 
@@ -58,13 +53,11 @@ export const COMBAT_CONFIG = {
 		// Range: 25–80.  Smaller = tighter, more local cohesion AND more grid
 		// cells (still cheap). Larger = broader blobs, coarser movement (units may
 		// visibly "snap" between cells if this is much larger than the arena/6).
-		// If you'd rather decouple cohesion feel from grid resolution, add a
-		// separate `aggregateCellSize` field and point simulation.ts's `aggCell` at it.
 		cohesionRadius: 50,
 
 		// ── Seek: drive toward the enemy ───────────────────────────
-		// Now sourced from the aggregate grid: enemy local center of mass if any
-		// enemy is in the 3x3 block, else the global enemy centroid. No query.
+		// Read off the aggregate grid — enemy local center of mass if any enemy is
+		// in the 3x3 block, else the global enemy centroid. No query.
 		// Strength of the advance. With maxAccel=100, any value >=100 means seek
 		// saturates the acceleration clamp and units beeline — cohesion/alignment
 		// then barely shape the approach. Lower it to let formation behavior show.
@@ -92,6 +85,41 @@ export const COMBAT_CONFIG = {
 		// Range: 10–60.  Tune so a fight lasts a satisfying number of seconds at
 		// combatSpeedMultiplier=1. Higher = faster, more frantic battles.
 		speedScale: 20,
+
+		// Floor on the distance used in the separation falloff, which goes as
+		// 1/d and would blow up at contact. Range: 0.25–1.  Lower = harsher
+		// shove when two units overlap; higher = softer but mushier crowds.
+		separationMinDistance: 0.5,
+
+		// Damage per second for a unit whose `dmg` stat is missing. A fallback
+		// only — every real unit carries a stat from `UNIT_STAT_CONFIG`.
+		defaultDamage: 1,
+
+		// Velocity retained when a unit hits a wall, as a fraction, negated.
+		// Range: 0–0.8.  0 = units stick to walls, higher = livelier rebound.
+		wallRestitution: 0.5,
+	},
+
+	collision: {
+		// Hard-collision spacing as a multiple of `rendering.dotRadius`, plus a
+		// small margin, so dots resolve just shy of visually overlapping.
+		// Range: 1.5–3.  Higher = looser packing, fewer units in contact.
+		radiusPerDot: 2,
+		radiusMargin: 0.5,
+
+		// Spatial-hash cell size as a multiple of the collision radius. Purely a
+		// performance knob: smaller = more cells, more overhead, fewer candidates
+		// per query. Measure with `bunx tsx src/combat/benchmark.ts` before moving it.
+		cellSizeMultiple: 3,
+
+		// Fraction of an overlap each unit is pushed out per pass. 0.5 splits the
+		// correction evenly between the pair. Range: 0.25–0.5.  Higher = stiffer
+		// separation but more jitter.
+		correction: 0.5,
+
+		// Below this squared distance two units count as coincident and are left
+		// alone, since the push direction would be meaningless.
+		minSeparation2: 0.0001,
 	},
 
 	rendering: {

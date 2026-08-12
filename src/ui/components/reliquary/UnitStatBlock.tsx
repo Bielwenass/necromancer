@@ -1,3 +1,4 @@
+import { effectiveUnitStats } from "../../../combat/dungeonCombat";
 import type { GameState, UnitType } from "../../../game/types";
 
 interface UnitStatBlockProps {
@@ -6,28 +7,33 @@ interface UnitStatBlockProps {
 }
 
 /**
- * The flat stat and its relic/upgrade bonus, per unit type. Both halves come
- * straight from `derived`, so this always reflects what combat will use.
+ * The flat stat and its relic/upgrade bonus, per unit type.
+ *
+ * The total is taken from `effectiveUnitStats` — the same function that builds
+ * the combat side — and the bonus is the remainder, so `flat + bonus` is
+ * exactly the number the engine will fight with. Never derive the two halves
+ * here; that is how the panel and the engine drift apart.
  */
 export function UnitStatBlock({ unitType, derived }: UnitStatBlockProps) {
 	const d = derived[unitType];
+	const eff = effectiveUnitStats(derived, unitType);
 	const hundredths = (n: number) => Math.floor(n * 100) / 100;
 
 	const stats = [
 		{
 			label: "HP",
 			flat: Math.floor(d.hpFlat),
-			bonus: Math.floor(d.hpFlat * d.hpBonus),
+			bonus: Math.floor(eff.hp) - Math.floor(d.hpFlat),
 		},
 		{
 			label: "Damage",
 			flat: Math.floor(d.dmgFlat),
-			bonus: Math.floor(d.dmgFlat * d.dmgBonus),
+			bonus: Math.floor(eff.dmg) - Math.floor(d.dmgFlat),
 		},
 		{
 			label: "Speed",
 			flat: hundredths(d.speedFlat),
-			bonus: hundredths(d.speedFlat * d.speedBonus),
+			bonus: hundredths(eff.speed - d.speedFlat),
 		},
 	];
 

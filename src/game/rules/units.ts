@@ -1,7 +1,7 @@
-import type { UnitType } from "./types";
+import { UNDYING_TYPES, UNIT_TYPES } from "../data/units";
+import type { UnitType } from "../types";
 
-/** Canonical unit order. Squad compositions are keyed by exactly these. */
-export const UNIT_TYPES = ["skeleton", "zombie", "wraith"] as const;
+export { UNIT_TYPES };
 
 /** How many units a composition holds, across every type. */
 export function squadSize(composition: Record<UnitType, number>): number {
@@ -9,13 +9,6 @@ export function squadSize(composition: Record<UnitType, number>): number {
 	for (const type of UNIT_TYPES) total += composition[type];
 	return total;
 }
-
-/**
- * Units that reform after a fight however it went. A wraith is bound spirit
- * rather than flesh: scattering it costs it nothing it cannot gather back, so
- * it comes home at full count from a clear *and* from a wipe.
- */
-const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>(["wraith"]);
 
 export function isUndying(type: UnitType): boolean {
 	return UNDYING_TYPES.has(type);

@@ -1,37 +1,31 @@
 import {
 	buildAttackerConfig,
+	buildDefenderConfig,
 	COMBAT_H,
 	COMBAT_W,
 } from "../combat/dungeonCombat";
 import { CombatEngine } from "../combat/engine";
 import { mulberry32 } from "../combat/prng";
 import { DUNGEON_DEFS } from "./data/dungeons";
-import { checkUnlockConditions } from "./dungeons";
 import {
-	clearMultiplier,
-	dungeonEnemyCount,
-	effectiveSoulChance,
-	rollCorpses,
-} from "./tick";
-import { effectiveTravelTicks } from "./travel";
-import type { GameState, Resources, Squad } from "./types";
-import { compositionAfterFight, remnantAfterWipe } from "./units";
-
-// ── Constants ────────────────────────────────────────────────
-// Game-tick interval. Derived from your existing TICKS_PER_DAY=1200 over a
-// 2-minute in-game day → 100ms per tick.
-const TICK_MS = 100;
-const ENGINE_DT = 16; // engine fixed timestep, must match the worker
-const TICKS_PER_DAY = 1200;
-const MAX_OFFLINE_MS = 8 * 60 * 60 * 1000;
-const MAX_HEADLESS_TICKS = 20000; // safety cap per fight (~5 min sim time)
+	ENGINE_DT,
+	MAX_HEADLESS_TICKS,
+	MAX_OFFLINE_MS,
+	TICK_MS,
+	TICKS_PER_DAY,
+} from "./data/pacing";
+import { resolveFightOutcome } from "./rules/fight";
+import { accruePassive, depositLoot, shouldAutoDeploy } from "./rules/loot";
+import { effectiveTravelTicks } from "./rules/travel";
+import { squadSize } from "./rules/units";
+import { checkUnlockConditions } from "./rules/unlocks";
+import type { CombatOutcome, GameState, Squad } from "./types";
 
 // ── Types ────────────────────────────────────────────────────
 
-type FightOutcome = {
-	winner: "a" | "b" | "draw";
-	survivors: Record<string, number>;
-	durationTicks: number; // game ticks, factoring derived.combatSpeedMultiplier
+type FightOutcome = CombatOutcome & {
+	/** Game ticks, factoring `derived.combatSpeedMultiplier`. */
+	durationTicks: number;
 };
 
 type EventKind = "outboundArrive" | "fightDone" | "returnArrive";
@@ -154,65 +148,27 @@ function computeTravelTime(state: GameState, dungeonId: string): number {
 	return effectiveTravelTicks(def, state.derived.squadTravelSpeedBonus);
 }
 
-function totalUnits(c: Record<string, number>): number {
-	let n = 0;
-	for (const k of Object.keys(c)) n += c[k];
-	return n;
-}
-
-// Seeded mirror of tick.ts's generateLoot. The live function uses
-// Math.random() (intentionally non-deterministic); catchup needs determinism
-// so a mid-window refresh produces identical results.
-function generateLootSeeded(
-	dungeonId: string,
-	clearCount: number,
-	soulHarvestBonus: number,
-	rand: () => number,
-): Partial<Resources> {
-	const def = DUNGEON_DEFS[dungeonId];
-	if (!def) return {};
-	const lt = def.lootTable;
-	const clearBonus = clearMultiplier(clearCount);
-	const bones = Math.round(
-		(lt.bonesMin + rand() * (lt.bonesMax - lt.bonesMin)) * clearBonus,
-	);
-	const coins = Math.round(
-		(lt.coinsMin + rand() * (lt.coinsMax - lt.coinsMin)) * clearBonus,
-	);
-	const corpses = rollCorpses(dungeonEnemyCount(def), rand);
-	const souls =
-		rand() < effectiveSoulChance(lt.soulChance, soulHarvestBonus) ? 1 : 0;
-	return { bones, coins, corpses, souls };
-}
-
 // ── Fight resolution ─────────────────────────────────────────
 
-function resolveFight(
+function runFight(
 	state: GameState,
 	squad: Squad,
 	dungeon: { id: string; clearCount: number },
 	cache: Map<string, FightOutcome>,
 ): FightOutcome {
 	// Empty squad loses instantly without engine cost.
-	if (totalUnits(squad.composition) === 0) {
-		return { winner: "b", survivors: {}, durationTicks: 1 };
+	if (squadSize(squad.composition) === 0) {
+		return { winner: "b", survivorsByType: {}, durationTicks: 1 };
 	}
 
 	const cacheKey = `${dungeon.id}|${compositionSig(squad.composition)}`;
 	const cached = cache.get(cacheKey);
 	if (cached) return cached;
 
-	const attackerConfig = buildAttackerConfig(squad.composition, state.derived);
-	const dungeonDef = DUNGEON_DEFS[dungeon.id];
-	const defenderConfig = {
-		units: dungeonDef.enemies,
-		spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
-	};
-
 	const seed = deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount);
 	const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed });
-	engine.setSide("a", attackerConfig);
-	engine.setSide("b", defenderConfig);
+	engine.setSide("a", buildAttackerConfig(squad.composition, state.derived));
+	engine.setSide("b", buildDefenderConfig(DUNGEON_DEFS[dungeon.id]));
 	engine.start();
 
 	let safety = 0;
@@ -223,17 +179,17 @@ function resolveFight(
 
 	const winner = (engine.getWinner() ?? "draw") as "a" | "b" | "draw";
 	const counts = engine.getCounts();
-	const survivors = winner === "a" ? counts.a : {};
+	const survivorsByType = winner === "a" ? counts.a : {};
 
 	// engine.getT() is sim time in ms. Divide by combatSpeedMultiplier to get
 	// wall-clock time the player would have waited, then convert to game ticks.
 	const csm = state.derived.combatSpeedMultiplier || 1;
 	const durationTicks = Math.max(1, Math.ceil(engine.getT() / (TICK_MS * csm)));
 
-	const outcome: FightOutcome = { winner, survivors, durationTicks };
+	const outcome: FightOutcome = { winner, survivorsByType, durationTicks };
 
 	// Cache only lossless wins — exactly the "always-wins" case.
-	if (winner === "a" && isLossless(squad.composition, survivors)) {
+	if (winner === "a" && isLossless(squad.composition, survivorsByType)) {
 		cache.set(cacheKey, outcome);
 	}
 	return outcome;
@@ -322,49 +278,37 @@ function processEvent(
 				};
 			}
 
-			const outcome = resolveFight(state, squad, dungeon, cache);
+			const outcome = runFight(state, squad, dungeon, cache);
 
-			// A wipe leaves only the undying, mirroring `resolveFight`: they reform
-			// and walk home with nothing, and a squad without any is destroyed
-			// outright rather than walking an empty squad home, which would leave
-			// debris in the Crypt. No further event references a destroyed squad —
-			// `processEvent` looks the squad up by id and bails when it is gone.
-			if (outcome.winner !== "a") {
-				const remnant = remnantAfterWipe(squad.composition);
-				if (totalUnits(remnant) === 0) {
-					state.squads = state.squads.filter((s) => s.id !== squad.id);
-					return null;
-				}
-				Object.assign(squad.composition, remnant);
-				squad.pendingLoot = null;
-				// Mirrors the online retreat: auto-deploy must not re-throw the
-				// remnant into the fight that just killed everyone else.
-				squad.manualRecall = true;
-				squad._phaseStart = cursor;
-				squad._phaseEnd = cursor + outcome.durationTicks;
-				return {
-					kind: "fightDone",
-					ticksUntil: cursor + outcome.durationTicks,
-					squadId: squad.id,
-				};
-			}
-
-			Object.assign(
-				squad.composition,
-				compositionAfterFight(squad.composition, outcome.survivors),
-			);
+			// From here the rules are `resolveFightOutcome`, shared with the live
+			// store action. Catchup differs only in seeding the loot roll, so a
+			// mid-window refresh reproduces the same haul.
 			const lootRand = mulberry32(
 				deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount) ^ 0xdeadbeef,
 			);
-			squad.pendingLoot = generateLootSeeded(
-				dungeon.id,
+			const res = resolveFightOutcome(
+				squad.composition,
+				DUNGEON_DEFS[dungeon.id],
 				dungeon.clearCount,
+				outcome,
 				state.derived.soulHarvestBonus,
 				lootRand,
 			);
-			dungeon.clearCount++;
-			// Clearing pays banners, exactly as `resolveFight` does online.
-			state.resources.banners += DUNGEON_DEFS[dungeon.id].tier;
+
+			// A destroyed squad is removed outright rather than walking an empty
+			// squad home, which would leave debris in the Crypt. No further event
+			// references it — `processEvent` looks the squad up by id and bails
+			// when it is gone.
+			if (res.kind === "destroyed") {
+				state.squads = state.squads.filter((s) => s.id !== squad.id);
+				return null;
+			}
+
+			Object.assign(squad.composition, res.composition);
+			squad.pendingLoot = res.loot;
+			squad.manualRecall = res.suppressAutoDeploy;
+			dungeon.clearCount += res.clearCountDelta;
+			state.resources.banners += res.bannersAwarded;
 
 			squad._phaseStart = cursor;
 			squad._phaseEnd = cursor + outcome.durationTicks;
@@ -389,41 +333,33 @@ function processEvent(
 		}
 
 		case "returnArrive": {
-			// Deposit loot with yield bonuses
 			if (squad.pendingLoot) {
-				const l = squad.pendingLoot;
-				const r = state.resources;
-				r.bones += (l.bones ?? 0) * (1 + state.derived.boneYieldBonus);
-				r.coins += (l.coins ?? 0) * (1 + state.derived.coinYieldBonus);
-				r.souls += (l.souls ?? 0) * (1 + state.derived.soulsYieldBonus);
-				r.corpses += (l.corpses ?? 0) * (1 + state.derived.corpseYieldBonus);
+				depositLoot(state.resources, squad.pendingLoot, state.derived);
 			}
 			squad.pendingLoot = null;
-
-			// manualRecall must be read before being cleared, mirroring tick.ts.
-			const wasManualRecall = squad.manualRecall;
-			squad.manualRecall = false;
 			squad.state = "idle";
 			squad.position = 0;
 
 			// Loot may have triggered new unlocks
 			state.dungeons = checkUnlockConditions(state.dungeons);
 
-			// Auto-deploy if eligible
-			if (state.derived.autoDeploy && !wasManualRecall) {
-				const dn = state.dungeons.find((d) => d.id === squad.targetDungeonId);
-				if (dn?.unlocked && totalUnits(squad.composition) > 0) {
-					squad.state = "traveling";
-					squad.position = 0;
-					const tt = computeTravelTime(state, squad.targetDungeonId);
-					squad._phaseStart = cursor;
-					squad._phaseEnd = cursor + tt;
-					return {
-						kind: "outboundArrive",
-						ticksUntil: cursor + tt,
-						squadId: squad.id,
-					};
-				}
+			// `manualRecall` must be read before being cleared, as it is online: the
+			// flag describes the trip that just ended, not the next one.
+			const dn = state.dungeons.find((d) => d.id === squad.targetDungeonId);
+			const redeploy = shouldAutoDeploy(state.derived, squad, dn);
+			squad.manualRecall = false;
+
+			if (redeploy) {
+				squad.state = "traveling";
+				squad.position = 0;
+				const tt = computeTravelTime(state, squad.targetDungeonId);
+				squad._phaseStart = cursor;
+				squad._phaseEnd = cursor + tt;
+				return {
+					kind: "outboundArrive",
+					ticksUntil: cursor + tt,
+					squadId: squad.id,
+				};
 			}
 
 			squad._phaseStart = undefined;
@@ -431,14 +367,6 @@ function processEvent(
 			return null;
 		}
 	}
-}
-
-function accruePassive(state: GameState, ticks: number): void {
-	const r = state.resources;
-	const d = state.derived;
-	r.bones += d.bonesPerTick * ticks;
-	r.coins += d.coinsPerTick * ticks;
-	r.souls += d.soulsPerTick * ticks;
 }
 
 function cloneForCatchup(state: GameState): GameState {
@@ -518,7 +446,7 @@ export async function simulateOffline(
 		const advance = Math.min(next.ticksUntil - cursor, targetTicks - cursor);
 
 		if (advance > 0) {
-			accruePassive(w, advance);
+			accruePassive(w.resources, w.derived, advance);
 			cursor += advance;
 		}
 
@@ -541,7 +469,7 @@ export async function simulateOffline(
 
 	// Accrue any remaining passive after the last event
 	if (cursor < targetTicks) {
-		accruePassive(w, targetTicks - cursor);
+		accruePassive(w.resources, w.derived, targetTicks - cursor);
 		cursor = targetTicks;
 	}
 

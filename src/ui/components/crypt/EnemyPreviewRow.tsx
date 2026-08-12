@@ -1,4 +1,5 @@
 import type { EnemyDef } from "../../../game/types";
+import { UnitDot } from "../common/UnitDot";
 
 function prettyName(name: string): string {
 	return name
@@ -10,10 +11,7 @@ function prettyName(name: string): string {
 export function EnemyPreviewRow({ enemy }: { enemy: EnemyDef }) {
 	return (
 		<div className="flex items-center gap-[10px] py-[5px] border-b border-rule last:border-b-0">
-			<div
-				className="w-2.5 h-2.5 rounded-full shrink-0"
-				style={{ background: enemy.color }}
-			/>
+			<UnitDot color={enemy.color} />
 			<span className="flex-1 text-sm text-bone truncate">
 				{prettyName(enemy.name)}
 			</span>

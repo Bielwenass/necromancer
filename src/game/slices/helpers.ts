@@ -1,13 +1,12 @@
+import { recomputeDerived } from "../rules/derived";
 import type { GameState, SlotId, Units, UnitType } from "../types";
-import { recomputeDerived } from "../upgrades";
 
 /**
  * Apply a patch and refresh `derived` from the result in one step.
  *
  * `derived` is a projection of upgrades + workshop + equipped relics, and
  * nothing recomputes it on a timer — every action that touches those inputs
- * must refresh it explicitly. Routing them all through here keeps that contract
- * in one place instead of six hand-written spreads.
+ * must refresh it explicitly, which is what this exists to guarantee.
  */
 export function withDerived(
 	prev: GameState,
@@ -60,8 +59,4 @@ export function withoutRelic(
 		if (id === relicId) delete next[slot as SlotId];
 	}
 	return next;
-}
-
-export function totalUnits(counts: Record<UnitType, number>): number {
-	return counts.skeleton + counts.zombie + counts.wraith;
 }

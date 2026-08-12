@@ -1,11 +1,9 @@
 import type { CombatEngine } from "../../combat/engine";
+import { TICK_MS, TICKS_PER_AUTOSAVE } from "../data/pacing";
+import { recomputeDerived } from "../rules/derived";
 import { saveGame } from "../save";
 import { gameTick } from "../tick";
-import { recomputeDerived } from "../upgrades";
 import type { SliceCreator } from "./types";
-
-const TICK_MS = 100;
-const TICKS_PER_AUTOSAVE = 50; // 5s
 
 export interface CombatSlice {
 	/** Live engines keyed by squad id. Runtime-only — never persisted. */

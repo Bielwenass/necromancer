@@ -1,17 +1,20 @@
 import { UPGRADE_NODES } from "../../../game/data/upgrades";
-import { canAffordCost } from "../../../game/resources";
-import type { Resources, WorkshopState } from "../../../game/types";
-import { upgradeCost } from "../../../game/upgrades";
+import { upgradeCost } from "../../../game/rules/derived";
 import {
-	CRYPT_CONFIG,
+	describeCryptLevel,
+	describeCryptTrack,
+	summarizeUpgradeEffects,
+} from "../../../game/rules/describe";
+import { canAffordCost } from "../../../game/rules/resources";
+import {
 	cryptCost,
 	GARDEN_PLOTS,
 	gardenCost,
 	gardenYield,
 	UNIT_STAT_CONFIG,
-	type UnitKey,
 	unitStatCost,
-} from "../../../game/workshopUpgrades";
+} from "../../../game/rules/workshop";
+import type { Resources, UnitType, WorkshopState } from "../../../game/types";
 import { IconSkeleton, IconWraith, IconZombie } from "../icons";
 import { resourceMeta } from "./cost";
 import type { WorkshopRow, WorkshopSection } from "./types";
@@ -36,7 +39,7 @@ function skillRows(purchased: string[], branch: string): WorkshopRow[] {
 	).map((n) => ({
 		id: n.id,
 		name: n.name,
-		description: n.description,
+		description: summarizeUpgradeEffects(n),
 		flavor: n.flavor,
 		icon: n.icon,
 		level: purchased.includes(n.id) ? 1 : 0,
@@ -45,12 +48,12 @@ function skillRows(purchased: string[], branch: string): WorkshopRow[] {
 		buyLabel: () => "Inscribe",
 		costFn: (lv) => (lv >= 1 ? null : upgradeCost(n)),
 		valueFn: (lv) => (lv >= 1 ? "Inscribed" : "—"),
-		nextFn: (lv) => (lv >= 1 ? "— maxed —" : n.description),
+		nextFn: (lv) => (lv >= 1 ? "— maxed —" : summarizeUpgradeEffects(n)),
 		skill: { upgradeId: n.id },
 	}));
 }
 
-const UNIT_FLAVOR: Record<UnitKey, Record<"hp" | "dmg" | "speed", string>> = {
+const UNIT_FLAVOR: Record<UnitType, Record<"hp" | "dmg" | "speed", string>> = {
 	skeleton: {
 		hp: "Denser bone takes longer to break.",
 		dmg: "Sharpened at the joint, swung without hesitation.",
@@ -69,7 +72,7 @@ const UNIT_FLAVOR: Record<UnitKey, Record<"hp" | "dmg" | "speed", string>> = {
 };
 
 function unitRows(
-	unit: UnitKey,
+	unit: UnitType,
 	levels: { hp: number; dmg: number; speed: number },
 ): WorkshopRow[] {
 	const cfg = UNIT_STAT_CONFIG[unit];
@@ -96,23 +99,23 @@ function cryptRows(crypt: WorkshopState["crypt"]): WorkshopRow[] {
 			id: "crypt.squadSize",
 			name: "Squad Capacity",
 			icon: "army",
-			description: CRYPT_CONFIG.squadSize.label,
+			description: describeCryptTrack("squadSize"),
 			flavor: "Widen the circle, and more rise inside it.",
 			level: crypt.squadSize,
 			costFn: () => cryptCost("squadSize", crypt.squadSize),
-			valueFn: (l) => `+${l}`,
-			nextFn: (l) => `+${l + 1}`,
+			valueFn: (l) => describeCryptLevel("squadSize", l),
+			nextFn: (l) => describeCryptLevel("squadSize", l + 1),
 		},
 		{
 			id: "crypt.travelSpeed",
 			name: "March Speed",
 			icon: "retreat",
-			description: CRYPT_CONFIG.travelSpeed.label,
+			description: describeCryptTrack("travelSpeed"),
 			flavor: "The roads remember your banners, and shorten for them.",
 			level: crypt.travelSpeed,
 			costFn: () => cryptCost("travelSpeed", crypt.travelSpeed),
-			valueFn: (l) => `+${l * 8}%`,
-			nextFn: (l) => `+${(l + 1) * 8}%`,
+			valueFn: (l) => describeCryptLevel("travelSpeed", l),
+			nextFn: (l) => describeCryptLevel("travelSpeed", l + 1),
 		},
 	];
 }

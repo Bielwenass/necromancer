@@ -25,7 +25,6 @@ export function TopBar() {
 	const [importSuccess, setImportSuccess] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const bonesPerSec = derived.bonesPerTick * 10;
 	const dayStr = `DAY ${meta.dayCount}`;
 
 	// Souls and dust stay hidden until the player has any, so the bar doesn't
@@ -35,7 +34,7 @@ export function TopBar() {
 			label: "Bones",
 			value: resources.bones,
 			Icon: IconBone,
-			note: bonesPerSec > 0 ? formatRate(derived.bonesPerTick) : null,
+			note: derived.bonesPerTick > 0 ? formatRate(derived.bonesPerTick) : null,
 		},
 		{ label: "Corpses", value: resources.corpses, Icon: IconCorpse },
 		...(resources.souls > 0

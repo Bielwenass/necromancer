@@ -1,51 +1,61 @@
-import type { GameState } from "../game/types";
+import { UNIT_COLORS } from "../game/data/units";
+import type { DungeonDef, GameState, UnitType } from "../game/types";
 import type { SideConfig } from "./types";
 
 export const COMBAT_W = 360;
 export const COMBAT_H = 180;
 
-const PLAYER_COLORS = {
-	skeleton: "#D4B88C",
-	zombie: "#7A9E6E",
-	wraith: "#9B7ED4",
+/** Where each side musters, as mirrored bands at the edges of the arena. */
+export const ATTACKER_SPAWN = { x: 10, y: 10, w: 55, h: COMBAT_H - 20 };
+export const DEFENDER_SPAWN = {
+	x: COMBAT_W - 65,
+	y: 10,
+	w: 55,
+	h: COMBAT_H - 20,
 };
 
-export function buildAttackerConfig(
-	composition: Record<"skeleton" | "zombie" | "wraith", number>,
+/**
+ * A unit type's stats as combat actually uses them: the flat value from the
+ * workshop, raised by the percentage bonuses from upgrades and relics.
+ *
+ * The single source of truth for what a unit is worth in a fight. The
+ * Reliquary's stat panel reads it too, so the panel and the engine can't
+ * disagree by a point of rounding.
+ */
+export function effectiveUnitStats(
 	derived: GameState["derived"],
-): SideConfig {
-	const statsByUnit = {
-		skeleton: {
-			hp: derived.skeleton.hpFlat * (1 + derived.skeleton.hpBonus),
-			dmg: derived.skeleton.dmgFlat * (1 + derived.skeleton.dmgBonus),
-			speed: derived.skeleton.speedFlat * (1 + derived.skeleton.speedBonus),
-		},
-		zombie: {
-			hp: derived.zombie.hpFlat * (1 + derived.zombie.hpBonus),
-			dmg: derived.zombie.dmgFlat * (1 + derived.zombie.dmgBonus),
-			speed: derived.zombie.speedFlat * (1 + derived.zombie.speedBonus),
-		},
-		wraith: {
-			hp: derived.wraith.hpFlat * (1 + derived.wraith.hpBonus),
-			dmg: derived.wraith.dmgFlat * (1 + derived.wraith.dmgBonus),
-			speed: derived.wraith.speedFlat * (1 + derived.wraith.speedBonus),
-		},
-	};
-
+	type: UnitType,
+): { hp: number; dmg: number; speed: number } {
+	const d = derived[type];
 	return {
-		units: Object.entries(composition).map(([key, value]) => {
-			return {
-				name: key,
-				amount: value,
-				stats: statsByUnit[key as "skeleton" | "zombie" | "wraith"],
-				color: PLAYER_COLORS[key as "skeleton" | "zombie" | "wraith"],
-			};
-		}),
-		spawnArea: { x: 10, y: 10, w: 55, h: COMBAT_H - 20 },
+		hp: d.hpFlat * (1 + d.hpBonus),
+		dmg: d.dmgFlat * (1 + d.dmgBonus),
+		speed: d.speedFlat * (1 + d.speedBonus),
 	};
 }
 
-export type CombatOutcome = {
-	winner: "a" | "b" | "draw";
-	survivorsByType: Record<string, number>;
-};
+export function buildAttackerConfig(
+	composition: Record<UnitType, number>,
+	derived: GameState["derived"],
+): SideConfig {
+	return {
+		units: Object.entries(composition).map(([key, value]) => {
+			const type = key as UnitType;
+			return {
+				name: type,
+				amount: value,
+				stats: effectiveUnitStats(derived, type),
+				color: UNIT_COLORS[type],
+			};
+		}),
+		spawnArea: ATTACKER_SPAWN,
+	};
+}
+
+/**
+ * The dungeon's side of the fight, shared by the live loop, offline catchup and
+ * the benchmark so none of them writes the spawn rectangle out by hand.
+ */
+export function buildDefenderConfig(def: DungeonDef): SideConfig {
+	return { units: def.enemies, spawnArea: DEFENDER_SPAWN };
+}

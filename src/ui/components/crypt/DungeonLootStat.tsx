@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { IconComponent } from "../icons/IconProps";
 
 /**
  * One projected payout figure on a dungeon card. `boosted` brightens the value
@@ -11,7 +11,7 @@ export function DungeonLootStat({
 	boosted,
 	title,
 }: {
-	icon: ComponentType<{ size?: number; color?: string }>;
+	icon: IconComponent;
 	value: string;
 	boosted?: boolean;
 	title: string;

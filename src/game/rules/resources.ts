@@ -1,4 +1,4 @@
-import type { Resources } from "./types";
+import type { Resources } from "../types";
 
 /**
  * Generic resource-cost helpers. A cost is a `Partial<Resources>` — absent keys

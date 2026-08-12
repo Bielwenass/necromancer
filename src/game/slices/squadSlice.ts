@@ -1,13 +1,8 @@
 import { DUNGEON_DEFS } from "../data/dungeons";
-import { generateLoot } from "../tick";
+import { resolveFightOutcome } from "../rules/fight";
+import { squadSize } from "../rules/units";
 import type { UnitType } from "../types";
-import { compositionAfterFight, remnantAfterWipe } from "../units";
-import {
-	applyUnitDelta,
-	hasUnitsAvailable,
-	totalUnits,
-	withDerived,
-} from "./helpers";
+import { applyUnitDelta, hasUnitsAvailable, withDerived } from "./helpers";
 import type { SliceCreator } from "./types";
 
 let squadIdCounter = 0;
@@ -52,7 +47,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 			if (!squad || !dungeonState) return prev;
 			if (!dungeonState.unlocked) return prev;
 			if (squad.state !== "idle") return prev;
-			if (totalUnits(squad.composition) === 0) return prev;
+			if (squadSize(squad.composition) === 0) return prev;
 
 			return {
 				squads: prev.squads.map((s) =>
@@ -86,7 +81,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 
 	createSquad: (composition, name) => {
 		const state = get();
-		const size = totalUnits(composition);
+		const size = squadSize(composition);
 		if (size === 0 || size > state.derived.maxSquadSize) return null;
 		if (state.squads.length >= state.derived.maxSquads) return null;
 		if (!hasUnitsAvailable(state.units, composition)) return null;
@@ -136,47 +131,24 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 			const def = DUNGEON_DEFS[dungeonId];
 			if (!dungeonState || !def) return prev;
 
-			// A wipe destroys the squad — except for its undying, who reform on the
-			// spot and walk home empty-handed. With none of them the squad is simply
-			// gone, and nothing is left to carry loot or claim a banner.
-			if (winner !== "a") {
-				const remnant = remnantAfterWipe(squad.composition);
-				if (totalUnits(remnant) === 0) {
-					return { squads: prev.squads.filter((s) => s.id !== squadId) };
-				}
-				return {
-					squads: prev.squads.map((s) =>
-						s.id === squadId
-							? {
-									...s,
-									state: "returning" as const,
-									position: 1.0,
-									composition: remnant,
-									pendingLoot: null,
-									// Counts as a recall so auto-deploy doesn't march the
-									// remnant straight back into the fight that just killed
-									// everyone else.
-									manualRecall: true,
-								}
-							: s,
-					),
-				};
-			}
-
-			const composition = compositionAfterFight(
+			// The rules themselves live in `rules/fight.ts`, which offline catchup
+			// calls too — this action only applies the result to store state.
+			const res = resolveFightOutcome(
 				squad.composition,
-				survivorsByType,
-			);
-			const pendingLoot = generateLoot(
-				dungeonId,
+				def,
 				dungeonState.clearCount,
+				{ winner, survivorsByType },
 				prev.derived.soulHarvestBonus,
 			);
+
+			if (res.kind === "destroyed") {
+				return { squads: prev.squads.filter((s) => s.id !== squadId) };
+			}
 
 			return withDerived(prev, {
 				resources: {
 					...prev.resources,
-					banners: prev.resources.banners + def.tier,
+					banners: prev.resources.banners + res.bannersAwarded,
 				},
 				squads: prev.squads.map((s) =>
 					s.id === squadId
@@ -184,13 +156,16 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 								...s,
 								state: "returning" as const,
 								position: 1.0,
-								composition,
-								pendingLoot,
+								composition: res.composition,
+								pendingLoot: res.loot,
+								manualRecall: res.suppressAutoDeploy,
 							}
 						: s,
 				),
 				dungeons: prev.dungeons.map((ds) =>
-					ds.id === dungeonId ? { ...ds, clearCount: ds.clearCount + 1 } : ds,
+					ds.id === dungeonId
+						? { ...ds, clearCount: ds.clearCount + res.clearCountDelta }
+						: ds,
 				),
 			});
 		});

@@ -1,4 +1,4 @@
-import type { DungeonDef, Squad } from "./types";
+import type { DungeonDef, Squad } from "../types";
 
 /**
  * Travel duration in ticks after squad travel-speed upgrades are applied.

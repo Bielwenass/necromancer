@@ -2,7 +2,7 @@
 
 Equippable items that feed `derived`. Obtained only from the Ritual of Calling (gacha); can be equipped or sacrificed for dust.
 
-Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`); rolling in `game/relics.ts`; affix application in `recomputeDerived`.
+Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`); rolling in `game/rules/relics.ts`; affix application in `recomputeDerived`.
 
 ## Anatomy
 
@@ -54,7 +54,7 @@ There is **no fusion**. `upgradeLevel` (0–5) is read when applying affixes and
 
 ## Equipping
 
-`equipRelic` rejects any slot not listed on the relic's base, via `canEquipInSlot(baseId, slotId)` in `game/relics.ts` — an unknown `baseId` is rejected rather than allowed through.
+`equipRelic` rejects any slot not listed on the relic's base, via `canEquipInSlot(baseId, slotId)` in `game/rules/relics.ts` — an unknown `baseId` is rejected rather than allowed through.
 
 Equipping happens **only** from the EQUIP TO SLOT buttons in `RelicDetail`, which are generated from `base.slotIds` and so can only ever offer valid targets. Clicking an equipped slot selects that relic to inspect it; an empty slot is display-only. The store guard is the backstop, not the mechanism.
 

@@ -1,26 +1,6 @@
-import { UNIT_POOL } from "./slices/helpers";
-import type { GameState, Resources, UnitType } from "./types";
-
-/** Per-unit base summoning price. Balance numbers live here, not in the store. */
-const SUMMON_COSTS: Record<UnitType, Partial<Resources>> = {
-	skeleton: { bones: 10 },
-	zombie: { bones: 5, corpses: 1 },
-	wraith: { bones: 20, souls: 1 },
-};
-
-/**
- * Resources exempt from the owned-count scaling below — they stay at list price
- * no matter how large the army is. Wraith souls are the only one: souls are a
- * rare drop, so scaling them would gate wraiths on soul income instead of price.
- */
-const UNSCALED_COSTS: Record<UnitType, readonly (keyof Resources)[]> = {
-	skeleton: [],
-	zombie: [],
-	wraith: ["souls"],
-};
-
-/** Steepness of the summon price curve. */
-const SCALING_K = 0.5;
+import { SUMMON_COSTS, SUMMON_SCALING_K, UNSCALED_COSTS } from "../data/units";
+import { UNIT_POOL } from "../slices/helpers";
+import type { GameState, Resources, UnitType } from "../types";
 
 /**
  * Price multiplier for the next unit of a type when `owned` of it already
@@ -29,7 +9,7 @@ const SCALING_K = 0.5;
  * exponential wouldn't allow.
  */
 export function summonScaling(owned: number): number {
-	return Math.exp(SCALING_K * Math.sqrt(Math.max(0, owned)));
+	return Math.exp(SUMMON_SCALING_K * Math.sqrt(Math.max(0, owned)));
 }
 
 /**
@@ -55,8 +35,8 @@ export type SummonContext = Pick<GameState, "units" | "squads" | "derived">;
  * the scaling curve — so ten single raises and one batch of ten cost the same.
  *
  * `derived.summonCostBonus` discounts skeletons only — zombies and wraiths pay
- * list price. That is deliberate, not an oversight: the discount comes from the
- * summoning branch, which is skeleton-flavoured.
+ * list price. Deliberate: the discount comes from the summoning branch, which
+ * is skeleton-flavoured.
  */
 export function summonCost(
 	type: UnitType,

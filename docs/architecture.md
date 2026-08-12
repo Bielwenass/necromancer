@@ -8,35 +8,52 @@ Vite 5 · React 18 · TypeScript 5 (strict) · Zustand 4 · Tailwind 3 · Biome 
 
 ```
 src/game/     simulation + state. No React imports.
+  data/       balance numbers only. Imports nothing but ./types.
+  rules/      pure functions over that data. No store, no React.
+  slices/     store actions.
 src/combat/   battle engine. No React imports.
 src/ui/       screens and components. Reads state via useGameStore selectors.
 ```
 
+**Every balance number lives in `src/game/data/`.** That is the folder to open to
+retune the game: `pacing.ts` (every clock), `economy.ts` (starting state, drop
+chances, payout curves), `units.ts` (stat curves, summon prices, unit colours),
+`workshop.ts` (crypt and garden curves), `dungeons.ts`, `upgrades.ts`,
+`relics.ts`, `gacha.ts`. The one deliberate exception is `src/combat/config.ts`,
+which holds combat *feel* — flocking weights, collision spacing, render sizes —
+next to the loop it tunes.
+
+`rules/` holds the pure functions over that data: `derived.ts`, `loot.ts`,
+`fight.ts`, `travel.ts`, `units.ts`, `summoning.ts`, `workshop.ts`, `relics.ts`,
+`gacha.ts`, `unlocks.ts`, `resources.ts`, and `describe.ts` — which generates the
+player-facing text for every rule from the rule itself, so a description can no
+longer promise a number the simulation doesn't apply.
+
 One component per file. `src/ui/components/` is split by feature — one folder per screen (`crypt/`, `reliquary/`, `ritual/`, `workshop/`), each holding its components plus the pure builders and helpers only it uses. Two folders are cross-cutting: `common/` for the shared primitives (`Screen`, `Modal`, `ConfirmAction`, `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`) and `chrome/` for the app frame (`TopBar`, `TabBar`, `ResourceReadout`, `CatchupOverlay`). Check `common/` before hand-rolling a panel, dialog, or confirm.
 
-`src/ui/theme.ts` holds colour lookups (rarity, unit) and `src/ui/format.ts` the number/time formatters.
+`src/ui/theme.ts` holds the rarity colour lookups and re-exports `UNIT_COLORS` from `game/data/units.ts` — the canvas can't read a CSS variable, so the unit palette is a single hex table in the game layer. `src/ui/format.ts` holds the number/time formatters.
 
-The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup and in `src/combat/benchmark.ts`.
+The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup, in `src/combat/benchmark.ts`, and in `src/game/parityCheck.ts`.
 
 ## Tick pipeline
 
 `useGameLifecycle` is the only driver. Every 100 ms it:
 
-1. Calls `store.tick(100)`, whose accumulator drains exact 100 ms steps through `gameTick(state)`.
+1. Calls `store.tick(TICK_MS)`, whose accumulator drains exact steps through `gameTick(state)`.
 2. Creates a `CombatEngine` for any squad that just entered `fighting`.
-3. Advances live engines in 16 ms steps and calls `resolveFight` when one reports a winner.
+3. Advances live engines in `ENGINE_DT` steps and calls `resolveFight` when one reports a winner.
 
-`gameTick` (`game/tick.ts`) is pure — `GameState → Partial<GameState>`. It never mutates and never touches the engine. Autosave runs every 50 ticks (5 s). 1200 ticks = one in-game day.
+`gameTick` (`game/tick.ts`) is pure — `GameState → Partial<GameState>`. It never mutates and never touches the engine. Every constant above is in `game/data/pacing.ts`, which is the sole owner of `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, and `MAX_HEADLESS_TICKS`.
 
 ## `derived`
 
-`GameState.derived` projects *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads. Computed by `recomputeDerived` (`game/upgrades.ts`), never persisted, and **not** recomputed on a timer — every action that changes those inputs must recompute explicitly, via the `withDerived` helper in `game/slices/helpers.ts`:
+`GameState.derived` projects *upgrades purchased + workshop levels + equipped relic affixes* into flat numbers the rest of the code reads. Computed by `recomputeDerived` (`game/rules/derived.ts`), never persisted, and **not** recomputed on a timer — every action that changes those inputs must recompute explicitly, via the `withDerived` helper in `game/slices/helpers.ts`:
 
 ```ts
 return withDerived(prev, { /* patch */ });
 ```
 
-Some `derived` fields are computed but not yet consumed (`boneSurgeActive`, `rarityBoostActive`). Check the consumer before assuming a value has an effect.
+`recomputeDerived` folds its three sources in order — upgrade nodes, then workshop levels, then equipped relics — and the order matters: a `pctOfSelf` effect takes a share of the running total, so relics must see a settled base.
 
 ## State shape
 

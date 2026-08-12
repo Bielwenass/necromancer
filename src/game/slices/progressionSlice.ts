@@ -1,15 +1,19 @@
-import { applyCost, canAffordCost } from "../resources";
-import { isUnitUnlocked, summonCost } from "../summoning";
-import type { GardenPlotId, UnitType } from "../types";
-import { canPurchaseUpgrade, UPGRADE_NODES, upgradeCost } from "../upgrades";
+import { DIG_BONE_YIELD } from "../data/economy";
+import {
+	canPurchaseUpgrade,
+	UPGRADE_NODES,
+	upgradeCost,
+} from "../rules/derived";
+import { applyCost, canAffordCost } from "../rules/resources";
+import { isUnitUnlocked, summonCost } from "../rules/summoning";
 import {
 	type CryptKey,
 	cryptCost,
 	gardenCost,
 	type StatKey,
-	type UnitKey,
 	unitStatCost,
-} from "../workshopUpgrades";
+} from "../rules/workshop";
+import type { GardenPlotId, UnitType } from "../types";
 import { applyUnitDelta, withDerived } from "./helpers";
 import type { SliceCreator } from "./types";
 
@@ -55,7 +59,7 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 				cost = cryptCost(stat, level);
 				workshop = { ...ws, crypt: { ...ws.crypt, [stat]: level + 1 } };
 			} else {
-				const [unit, stat] = key.split(".") as [UnitKey, StatKey];
+				const [unit, stat] = key.split(".") as [UnitType, StatKey];
 				const level = ws[unit][stat];
 				cost = unitStatCost(unit, stat, level);
 				workshop = { ...ws, [unit]: { ...ws[unit], [stat]: level + 1 } };
@@ -85,7 +89,10 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 
 	digBone: () => {
 		set((prev) => ({
-			resources: { ...prev.resources, bones: prev.resources.bones + 1 },
+			resources: {
+				...prev.resources,
+				bones: prev.resources.bones + DIG_BONE_YIELD,
+			},
 		}));
 	},
 });

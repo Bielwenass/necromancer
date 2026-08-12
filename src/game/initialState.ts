@@ -1,20 +1,18 @@
 import { DUNGEON_DEFS } from "./data/dungeons";
-import { makeDungeonState } from "./dungeons";
+import {
+	STARTING_DUNGEON_ID,
+	STARTING_RESOURCES,
+	STARTING_UNITS,
+} from "./data/economy";
+import { recomputeDerived } from "./rules/derived";
+import { makeDungeonState } from "./rules/unlocks";
 import { loadGame } from "./save";
 import { syncSquadIdCounter } from "./slices/squadSlice";
 import type { GameState } from "./types";
-import { recomputeDerived } from "./upgrades";
 
 function buildDefaults(): Omit<GameState, "derived"> {
 	return {
-		resources: {
-			bones: 100,
-			coins: 0,
-			souls: 0,
-			dust: 0,
-			corpses: 0,
-			banners: 0,
-		},
+		resources: { ...STARTING_RESOURCES },
 		workshop: {
 			skeleton: { hp: 0, dmg: 0, speed: 0 },
 			zombie: { hp: 0, dmg: 0, speed: 0 },
@@ -22,10 +20,10 @@ function buildDefaults(): Omit<GameState, "derived"> {
 			crypt: { squadSize: 0, travelSpeed: 0 },
 			garden: { bones: 0, souls: 0, dust: 0, corpses: 0 },
 		},
-		units: { skeletons: 10, zombies: 0, wraiths: 0 },
+		units: { ...STARTING_UNITS },
 		squads: [],
 		dungeons: Object.values(DUNGEON_DEFS).map((def) =>
-			makeDungeonState(def, def.id === "paupers-tomb"),
+			makeDungeonState(def, def.id === STARTING_DUNGEON_ID),
 		),
 		relics: { inventory: [], equipped: {} },
 		upgrades: { purchased: [] },
@@ -61,9 +59,8 @@ export function buildHydratedState(): GameState {
 	syncSquadIdCounter(saved.squads ?? []);
 
 	const defaults = buildDefaults();
-	// Skill points used to live at `upgrades.availablePoints`; they are the
-	// `banners` resource now. Carry the old balance across rather than voiding
-	// every point the player earned before the change.
+	// Skill points became the `banners` resource. Carry a pre-change balance
+	// across rather than voiding every point the player earned.
 	const legacyPoints = (saved as LegacySave).upgrades?.availablePoints;
 
 	const base = {
@@ -75,10 +72,9 @@ export function buildHydratedState(): GameState {
 			banners: saved.resources?.banners ?? legacyPoints ?? 0,
 		},
 		upgrades: { purchased: saved.upgrades?.purchased ?? [] },
-		// The pools were renamed (`bone` → `banner`, `soul` → `carrion`), so a
-		// save written before that carries counters under keys nothing reads.
-		// They aren't worth migrating — the defaults fill the new pools in at
-		// zero, and the stale keys ride along harmlessly.
+		// A save predating the pool rename (`bone` → `banner`, `soul` → `carrion`)
+		// carries counters under keys nothing reads. Not worth migrating: the
+		// defaults fill the current pools in at zero and the stale keys ride along.
 		gacha: {
 			...defaults.gacha,
 			...saved.gacha,

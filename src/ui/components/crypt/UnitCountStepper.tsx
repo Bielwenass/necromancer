@@ -1,5 +1,6 @@
+import { isUndying } from "../../../game/rules/units";
 import type { UnitType } from "../../../game/types";
-import { isUndying } from "../../../game/units";
+import { UnitDot } from "../common/UnitDot";
 
 export function UnitCountStepper({
 	type,
@@ -25,10 +26,7 @@ export function UnitCountStepper({
 
 	return (
 		<div className="flex items-center gap-3 py-2 border-b border-rule">
-			<div
-				className="w-2.5 h-2.5 rounded-full shrink-0"
-				style={{ background: color }}
-			/>
+			<UnitDot color={color} />
 			<span className="text-sm text-bone">{label}</span>
 			{isUndying(type) && (
 				<span

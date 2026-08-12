@@ -8,8 +8,8 @@ interface SectionLabelProps {
 /**
  * The uppercase, wide-tracked eyebrow that heads a panel or column.
  *
- * Uses Tailwind's `font-display` rather than the legacy `.display` class, so no
- * `!tracking-[…]` override is needed to beat that class's own letter-spacing.
+ * Uses Tailwind's `font-display`, not the legacy `.display` class — that class
+ * sets its own letter-spacing and would need a `!tracking-[…]` to override.
  */
 export function SectionLabel({ children, className }: SectionLabelProps) {
 	return (

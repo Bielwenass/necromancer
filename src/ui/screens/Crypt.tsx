@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { COMBAT_CONFIG } from "../../combat/config";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
+import { projectLoot } from "../../game/rules/loot";
+import {
+	effectiveTravelTicks,
+	squadRemainingTicks,
+} from "../../game/rules/travel";
 import { useGameStore } from "../../game/store";
-import { projectLoot } from "../../game/tick";
-import { effectiveTravelTicks, squadRemainingTicks } from "../../game/travel";
 import type { DungeonDef } from "../../game/types";
 import type { TabId } from "../components/chrome/TabBar";
 import { EmptyState } from "../components/common/EmptyState";
@@ -111,7 +115,10 @@ export function Crypt({ onTabChange }: CryptProps) {
 				/>
 
 				{watchedSquad && watchedDungeon && (
-					<div className="border-b border-rule bg-[#0A0A0F] shrink-0">
+					<div
+						className="border-b border-rule shrink-0"
+						style={{ background: COMBAT_CONFIG.rendering.backgroundColor }}
+					>
 						<div className="flex items-center justify-between px-4 py-1.5 border-b border-rule">
 							<SectionLabel className="text-[11px] text-parchm tracking-[0.28em]">
 								BATTLE · {watchedDungeon.name.toUpperCase()}
@@ -146,9 +153,11 @@ export function Crypt({ onTabChange }: CryptProps) {
 							const def = squad.targetDungeonId
 								? (DUNGEON_DEFS[squad.targetDungeonId] ?? null)
 								: null;
+							// A squad with no target is idle, and `squadRemainingTicks`
+							// returns null for an idle squad whatever it is handed.
 							const travelTicks = def
 								? effectiveTravelTicks(def, derived.squadTravelSpeedBonus)
-								: 100;
+								: 0;
 							return (
 								<SquadRow
 									key={squad.id}

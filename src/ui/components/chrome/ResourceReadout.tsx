@@ -1,10 +1,11 @@
 import type React from "react";
 import { formatNumber } from "../../format";
+import type { IconComponent } from "../icons/IconProps";
 
 interface ResourceReadoutProps {
 	label: string;
 	value: number;
-	Icon: React.FC<{ size?: number; color?: string }>;
+	Icon: IconComponent;
 	/** Trailing note, e.g. the bones-per-second rate. */
 	note?: React.ReactNode;
 }

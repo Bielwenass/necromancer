@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RELIC_BASES } from "../../../game/data/relics";
-import { formatAffixValue, getAffixLabel } from "../../../game/relics";
+import { formatAffixValue, getAffixLabel } from "../../../game/rules/relics";
 import type { Relic } from "../../../game/types";
 import "./RelicCard.css";
 import { RelicCardBack } from "./RelicCardBack";

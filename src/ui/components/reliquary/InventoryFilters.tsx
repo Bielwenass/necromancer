@@ -1,10 +1,11 @@
+import { RARITY_ORDER } from "../../../game/data/relics";
+import { UNIT_COLORS } from "../../../game/data/units";
 import type { Rarity, RelicSlotType } from "../../../game/types";
 import { rarityColor } from "../../theme";
 import { ConfirmAction } from "../common/ConfirmAction";
 import { IconCrypt, IconSkeleton, IconWraith, IconZombie } from "../icons";
+import type { IconComponent } from "../icons/IconProps";
 import { FilterChip } from "./FilterChip";
-
-type IconComponent = (props: { size?: number; color?: string }) => JSX.Element;
 
 const SLOT_FILTERS: {
 	id: RelicSlotType;
@@ -12,20 +13,14 @@ const SLOT_FILTERS: {
 	Icon: IconComponent;
 }[] = [
 	// The crypt has no squad color of its own; the coin gold reads as distinct
-	// from --sq-skeleton, which is the same bone tone as --ink-bone.
+	// from UNIT_COLORS.skeleton, which is the same bone tone as --ink-bone.
 	{ id: "crypt", color: "var(--c-coin)", Icon: IconCrypt },
-	{ id: "skeleton", color: "var(--sq-skeleton)", Icon: IconSkeleton },
-	{ id: "zombie", color: "var(--sq-zombie)", Icon: IconZombie },
-	{ id: "wraith", color: "var(--sq-wraith)", Icon: IconWraith },
+	{ id: "skeleton", color: UNIT_COLORS.skeleton, Icon: IconSkeleton },
+	{ id: "zombie", color: UNIT_COLORS.zombie, Icon: IconZombie },
+	{ id: "wraith", color: UNIT_COLORS.wraith, Icon: IconWraith },
 ];
 
-const RARITY_FILTERS: Rarity[] = [
-	"common",
-	"uncommon",
-	"rare",
-	"epic",
-	"legendary",
-];
+const RARITY_FILTERS: readonly Rarity[] = RARITY_ORDER;
 
 export function InventoryFilters({
 	filterSlot,

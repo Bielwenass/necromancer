@@ -1,5 +1,6 @@
-import type { ComponentType } from "react";
 import type { UnitType } from "../../../game/types";
+import { UnitDot } from "../common/UnitDot";
+import type { IconComponent } from "../icons/IconProps";
 
 export function UnitReserveRow({
 	type,
@@ -12,7 +13,7 @@ export function UnitReserveRow({
 }: {
 	type: UnitType;
 	count: number;
-	icon?: ComponentType<{ size?: number; color?: string }>;
+	icon?: IconComponent;
 	color: string;
 	canSummon: (v: number) => boolean;
 	onSummon: () => void;
@@ -25,14 +26,7 @@ export function UnitReserveRow({
 
 	return (
 		<div className="flex items-center gap-2.5">
-			{Icon ? (
-				<Icon size={16} color={color} />
-			) : (
-				<div
-					className="w-2.5 h-2.5 rounded-full shrink-0"
-					style={{ background: color }}
-				/>
-			)}
+			{Icon ? <Icon size={16} color={color} /> : <UnitDot color={color} />}
 			<span className="mono text-base text-bone min-w-8">{count}</span>
 			<span className="mono text-xs uppercase tracking-[0.1em] flex-1 text-muted">
 				{type}

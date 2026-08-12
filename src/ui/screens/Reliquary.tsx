@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DUST_VALUES, getRelicSlotType } from "../../game/relics";
+import { dustValue, getRelicSlotType } from "../../game/rules/relics";
 import { useGameStore } from "../../game/store";
 import type { Rarity, RelicSlotType, SlotId } from "../../game/types";
 import type { TabId } from "../components/chrome/TabBar";
@@ -46,10 +46,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 		.filter((r) => !filterRarity || r.rarity === filterRarity)
 		.filter((r) => !filterSlot || getRelicSlotType(r.baseId) === filterSlot);
 
-	const filteredDust = filteredInventory.reduce(
-		(sum, r) => sum + DUST_VALUES[r.rarity],
-		0,
-	);
+	const filteredDust = dustValue(filteredInventory);
 
 	// Slots only select the relic they hold — equipping is done from the
 	// EQUIP TO SLOT buttons in RelicDetail, which offer only valid slots.

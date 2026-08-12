@@ -11,13 +11,13 @@ export interface PerfStats {
 	collisionMs: number;
 	damageMs: number;
 
-	// Accel sub-phases (repurposed for the aggregate model):
+	// Accel sub-phases:
 	queryMs: number; // fine-hash queryRadius (separation + combat)
 	neighborLoopMs: number; // per-neighbor separation + combat loop
 	seekFallbackMs: number; // aggregate-grid reads (cohesion/align/seek)
 	integrateMs: number; // integration pass
 
-	neighborsVisited: number; // fine-hash neighbors iterated (should be small now)
+	neighborsVisited: number; // fine-hash neighbors iterated
 	queryCalls: number;
 	maxNeighbors: number;
 	unitsProcessed: number;
@@ -112,6 +112,9 @@ export function tickSimulation(
 	const maxAccel = cfg.maxAccel;
 	const maxAccel2 = maxAccel * maxAccel;
 	const speedScale = cfg.speedScale;
+	const sepMinD = cfg.separationMinDistance;
+	const defaultDmg = cfg.defaultDamage;
+	const wallRestitution = cfg.wallRestitution;
 
 	// ── Phase 1: aggregate grid + fine hash + global centroids ──
 	const p1Start = stats ? performance.now() : 0;
@@ -266,9 +269,8 @@ export function tickSimulation(
 		}
 
 		// Seek: toward enemy local COM if any enemies in the block, else toward
-		// the global enemy centroid. Replaces the old radius-200 query + march.
-		// Only read when haveSeek is true; zero-initialized so the hot loop needs
-		// no null checks or assertions.
+		// the global enemy centroid. Only read when haveSeek is true;
+		// zero-initialized so the hot loop needs no null checks or assertions.
 		let seekTx = 0,
 			seekTy = 0,
 			haveSeek = false;
@@ -331,7 +333,7 @@ export function tickSimulation(
 			// Separation (inverse-distance; spikes at contact).
 			if (d2 < sepR2) {
 				const d = Math.sqrt(d2);
-				const dc = d < 0.5 ? 0.5 : d;
+				const dc = d < sepMinD ? sepMinD : d;
 				const w = sameSide ? sepWeight : enemySepWeight;
 				const k = ((sepR / dc - 1) * w) / d;
 				ax -= dx * k;
@@ -362,7 +364,7 @@ export function tickSimulation(
 		accY[i] = ay;
 
 		if (nearestEnemyId !== -1 && nearestEnemyDist2 < attackR2) {
-			const dmg = (u.dmg ?? 1) * dt;
+			const dmg = (u.dmg ?? defaultDmg) * dt;
 			damageBuffer.set(
 				nearestEnemyId,
 				(damageBuffer.get(nearestEnemyId) ?? 0) + dmg,
@@ -392,17 +394,17 @@ export function tickSimulation(
 
 		if (u.x < 0) {
 			u.x = 0;
-			u.vx *= -0.5;
+			u.vx *= -wallRestitution;
 		} else if (u.x > width) {
 			u.x = width;
-			u.vx *= -0.5;
+			u.vx *= -wallRestitution;
 		}
 		if (u.y < 0) {
 			u.y = 0;
-			u.vy *= -0.5;
+			u.vy *= -wallRestitution;
 		} else if (u.y > height) {
 			u.y = height;
-			u.vy *= -0.5;
+			u.vy *= -wallRestitution;
 		}
 	}
 	if (stats) stats.integrateMs += performance.now() - intStart;
@@ -412,9 +414,11 @@ export function tickSimulation(
 	// ── Phase 3: hard collision resolution ──────────────────────
 	const p3Start = stats ? performance.now() : 0;
 
-	const collRadius = COMBAT_CONFIG.rendering.dotRadius * 2 + 0.5;
+	const coll = COMBAT_CONFIG.collision;
+	const collRadius =
+		COMBAT_CONFIG.rendering.dotRadius * coll.radiusPerDot + coll.radiusMargin;
 	const collRadius2 = collRadius * collRadius;
-	const collHash = new SpatialHash<SimUnit>(collRadius * 3);
+	const collHash = new SpatialHash<SimUnit>(collRadius * coll.cellSizeMultiple);
 	for (const u of units) collHash.insert(u);
 
 	for (const u of units) {
@@ -423,9 +427,9 @@ export function tickSimulation(
 			const dx = u.x - n.x;
 			const dy = u.y - n.y;
 			const d2 = dx * dx + dy * dy;
-			if (d2 >= collRadius2 || d2 < 0.0001) continue;
+			if (d2 >= collRadius2 || d2 < coll.minSeparation2) continue;
 			const d = Math.sqrt(d2);
-			const push = ((collRadius - d) * 0.5) / d;
+			const push = ((collRadius - d) * coll.correction) / d;
 			u.x += dx * push;
 			u.y += dy * push;
 		}

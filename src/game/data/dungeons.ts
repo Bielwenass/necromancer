@@ -25,7 +25,7 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.03,
 		},
 		travelTimeTicks: 60,
-		unlockCondition: "available from start",
+		unlock: { kind: "always" },
 		kind: "skull",
 	},
 
@@ -55,7 +55,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.04,
 		},
 		travelTimeTicks: 100,
-		unlockCondition: "clear pauper's tomb 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "paupers-tomb", count: 3 }],
+		},
 		kind: "ruin",
 	},
 
@@ -85,7 +88,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.04,
 		},
 		travelTimeTicks: 150,
-		unlockCondition: "clear wolf den 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "wolf-den", count: 3 }],
+		},
 		kind: "ruin",
 	},
 
@@ -121,7 +127,7 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.08,
 		},
 		travelTimeTicks: 220,
-		unlockCondition: "clear all other tier-1 dungeons",
+		unlock: { kind: "allOfTier", tier: 1, except: ["hollow-keep"], count: 1 },
 		kind: "tower",
 	},
 
@@ -155,7 +161,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.08,
 		},
 		travelTimeTicks: 320,
-		unlockCondition: "clear hollow keep",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "hollow-keep", count: 1 }],
+		},
 		kind: "tower",
 	},
 
@@ -185,7 +194,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.09,
 		},
 		travelTimeTicks: 400,
-		unlockCondition: "clear watcher's spire 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "watchers-spire", count: 3 }],
+		},
 		kind: "ruin",
 	},
 
@@ -215,7 +227,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.1,
 		},
 		travelTimeTicks: 460,
-		unlockCondition: "clear watcher's spire 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "watchers-spire", count: 3 }],
+		},
 		kind: "skull",
 	},
 
@@ -251,7 +266,13 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.14,
 		},
 		travelTimeTicks: 540,
-		unlockCondition: "clear sunken chapel and black marsh",
+		unlock: {
+			kind: "clears",
+			requires: [
+				{ dungeonId: "sunken-chapel", count: 1 },
+				{ dungeonId: "black-marsh", count: 1 },
+			],
+		},
 		kind: "ruin",
 	},
 
@@ -285,7 +306,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.16,
 		},
 		travelTimeTicks: 700,
-		unlockCondition: "clear whisper wells",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "whisper-wells", count: 1 }],
+		},
 		kind: "tower",
 	},
 
@@ -321,7 +345,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.18,
 		},
 		travelTimeTicks: 820,
-		unlockCondition: "clear ossuary of vael 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "ossuary-of-vael", count: 3 }],
+		},
 		kind: "skull",
 	},
 
@@ -357,7 +384,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.2,
 		},
 		travelTimeTicks: 960,
-		unlockCondition: "clear ossuary of vael 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "ossuary-of-vael", count: 3 }],
+		},
 		kind: "ruin",
 	},
 
@@ -405,7 +435,13 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.28,
 		},
 		travelTimeTicks: 1120,
-		unlockCondition: "clear burning reliquary and sepulchre of kings",
+		unlock: {
+			kind: "clears",
+			requires: [
+				{ dungeonId: "burning-reliquary", count: 1 },
+				{ dungeonId: "sepulchre-of-kings", count: 1 },
+			],
+		},
 		kind: "tower",
 	},
 
@@ -445,7 +481,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.32,
 		},
 		travelTimeTicks: 1500,
-		unlockCondition: "clear citadel of ash",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "citadel-of-ash", count: 1 }],
+		},
 		kind: "tower",
 	},
 
@@ -481,7 +520,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.36,
 		},
 		travelTimeTicks: 1800,
-		unlockCondition: "clear bone cathedral 3 times",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "bone-cathedral", count: 3 }],
+		},
 		kind: "tower",
 	},
 
@@ -529,7 +571,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 			soulChance: 0.55,
 		},
 		travelTimeTicks: 2000,
-		unlockCondition: "clear throne of marrow",
+		unlock: {
+			kind: "clears",
+			requires: [{ dungeonId: "throne-of-marrow", count: 1 }],
+		},
 		kind: "tower",
 	},
 };

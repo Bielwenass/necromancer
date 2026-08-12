@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { DUNGEON_DEFS } from "../../../game/data/dungeons";
 import { randomSquadName } from "../../../game/data/squadNames";
+import { UNIT_COLORS } from "../../../game/data/units";
+import { squadSize } from "../../../game/rules/units";
 import { useGameStore } from "../../../game/store";
 import type { UnitType } from "../../../game/types";
-import { squadSize } from "../../../game/units";
 import { Modal } from "../common/Modal";
 import { EnemyPreview } from "./EnemyPreview";
 import { UnitCountStepper } from "./UnitCountStepper";
@@ -180,7 +181,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 					<UnitCountStepper
 						type="skeleton"
 						label="Skeleton"
-						color="var(--sq-skeleton)"
+						color={UNIT_COLORS.skeleton}
 						count={composition.skeleton}
 						available={units.skeletons}
 						onAdjust={(d) => adjust("skeleton", d)}
@@ -191,7 +192,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 						<UnitCountStepper
 							type="zombie"
 							label="Zombie"
-							color="var(--sq-zombie)"
+							color={UNIT_COLORS.zombie}
 							count={composition.zombie}
 							available={units.zombies}
 							onAdjust={(d) => adjust("zombie", d)}
@@ -203,7 +204,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 						<UnitCountStepper
 							type="wraith"
 							label="Wraith"
-							color="var(--sq-wraith)"
+							color={UNIT_COLORS.wraith}
 							count={composition.wraith}
 							available={units.wraiths}
 							onAdjust={(d) => adjust("wraith", d)}

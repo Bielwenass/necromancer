@@ -1,5 +1,6 @@
 import type React from "react";
 import type { Rarity } from "../../../game/types";
+import { rarityName } from "../../theme";
 
 // ── rarity config ────────────────────────────────────────────────
 export type RarityConfig = {
@@ -25,7 +26,7 @@ export type RarityConfig = {
  */
 export const RARITIES: Record<Rarity, RarityConfig> = {
 	common: {
-		label: "Common",
+		label: rarityName("common"),
 		glyph: "♦",
 		color: "#a8a39a",
 		deep: "#3a352e",
@@ -37,7 +38,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		backShimmer: 0.0,
 	},
 	uncommon: {
-		label: "Uncommon",
+		label: rarityName("uncommon"),
 		glyph: "❖",
 		color: "#8fb78a",
 		deep: "#1f3a26",
@@ -49,7 +50,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		backShimmer: 0.75,
 	},
 	rare: {
-		label: "Rare",
+		label: rarityName("rare"),
 		glyph: "⋈",
 		color: "#7aa6d6",
 		deep: "#15243c",
@@ -61,7 +62,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		backShimmer: 0.45,
 	},
 	epic: {
-		label: "Epic",
+		label: rarityName("epic"),
 		glyph: "❉",
 		color: "#b083d6",
 		deep: "#2c1a3d",
@@ -73,7 +74,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		backShimmer: 0.65,
 	},
 	legendary: {
-		label: "Legendary",
+		label: rarityName("legendary"),
 		glyph: "✠",
 		color: "#f3c0a8",
 		deep: "#6a2e1e",

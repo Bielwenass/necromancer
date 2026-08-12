@@ -1,5 +1,5 @@
 import { RELIC_BASES } from "../../../game/data/relics";
-import { DUST_VALUES } from "../../../game/relics";
+import { DUST_VALUES } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
 import { rarityColor } from "../../theme";
 import { ConfirmAction } from "../common/ConfirmAction";

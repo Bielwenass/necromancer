@@ -1,12 +1,12 @@
-import type React from "react";
 import { formatNumber } from "../../format";
+import type { IconComponent } from "../icons/IconProps";
 
 interface PullButtonProps {
 	label: string;
 	cost: number;
 	affordable: boolean;
 	accent: string;
-	Icon: React.FC<{ size?: number; color?: string }>;
+	Icon: IconComponent;
 	onClick: () => void;
 	/** The ×10 button is wider and washed with the pool tint. */
 	wide?: boolean;

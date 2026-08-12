@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { UNIT_COLORS } from "../../../game/data/units";
 import type { Resources } from "../../../game/types";
 import {
 	IconBanner,
@@ -8,14 +8,10 @@ import {
 	IconDust,
 	IconSoul,
 } from "../icons";
-
-export type ResourceIconComponent = ComponentType<{
-	size?: number;
-	color?: string;
-}>;
+import type { IconComponent } from "../icons/IconProps";
 
 export interface ResourceMeta {
-	icon: ResourceIconComponent;
+	icon: IconComponent;
 	color: string;
 	label: string;
 }
@@ -25,7 +21,7 @@ const RESOURCE_META: Record<string, ResourceMeta> = {
 	coins: { icon: IconCoin, color: "var(--c-coin)", label: "Gold" },
 	souls: { icon: IconSoul, color: "var(--c-soul)", label: "Souls" },
 	dust: { icon: IconDust, color: "var(--ink-parchm)", label: "Dust" },
-	corpses: { icon: IconCorpse, color: "var(--sq-zombie)", label: "Corpses" },
+	corpses: { icon: IconCorpse, color: UNIT_COLORS.zombie, label: "Corpses" },
 	banners: { icon: IconBanner, color: "var(--c-ember)", label: "Banners" },
 };
 
@@ -45,7 +41,7 @@ export interface CostLine {
 	amount: number;
 	/** Whether the player currently holds enough of this resource. */
 	ok: boolean;
-	icon: ResourceIconComponent;
+	icon: IconComponent;
 	color: string;
 	label: string;
 }

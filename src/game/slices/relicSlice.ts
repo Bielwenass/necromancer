@@ -1,5 +1,5 @@
-import { executePull, POOL_CONFIGS } from "../gacha";
-import { canEquipInSlot, DUST_VALUES } from "../relics";
+import { executePull, POOL_CONFIGS } from "../rules/gacha";
+import { canEquipInSlot, DUST_VALUES } from "../rules/relics";
 import type { PoolId, SlotId } from "../types";
 import { withDerived, withoutRelic } from "./helpers";
 import type { SliceCreator } from "./types";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { POOL_CONFIGS } from "../../../game/gacha";
+import { POOL_CONFIGS, poolOdds } from "../../../game/rules/gacha";
 import { useGameStore } from "../../../game/store";
 import type { PoolId, Relic } from "../../../game/types";
 import { IconBanner, IconCorpse, IconSoul } from "../icons";
@@ -82,13 +82,13 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 				</div>
 			</div>
 
-			<DropOddsTable odds={config.odds} />
+			<DropOddsTable odds={poolOdds(poolId)} />
 
-			{meta.pityGuaranteed && meta.pityMax > 0 && (
+			{config.pityRarity && config.pityInterval > 0 && (
 				<PityMeter
 					counter={pityCounter}
-					max={meta.pityMax}
-					guaranteed={meta.pityGuaranteed}
+					max={config.pityInterval}
+					guaranteed={config.pityRarity}
 				/>
 			)}
 

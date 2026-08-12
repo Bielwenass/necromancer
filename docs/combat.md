@@ -26,7 +26,7 @@ There is no fight timer and no dungeon HP pool — the simulation runs in real t
 
 ## Unit stats
 
-Attacker stats come entirely from `derived`, as `flat * (1 + bonus)` per unit type, where `flat` is the workshop base plus per-level gains from `UNIT_STAT_CONFIG` and `bonus` accumulates upgrades and relic affixes. Enemy stats are literal values on each dungeon's `enemies` array. Both live in code, not here — see `game/workshopUpgrades.ts` and `game/data/dungeons.ts`.
+Attacker stats come entirely from `derived`, as `flat * (1 + bonus)` per unit type, where `flat` is the workshop base plus per-level gains from `UNIT_STAT_CONFIG` and `bonus` accumulates upgrades and relic affixes. Enemy stats are literal values on each dungeon's `enemies` array. Both live in code, not here — see `game/data/units.ts` and `game/data/dungeons.ts`.
 
 ## Determinism
 
@@ -36,7 +36,7 @@ The engine takes an optional `seed`; with one it uses `mulberry32`, otherwise `M
 
 `simulation.ts` uses a cell-aggregate flocking model: cohesion and alignment are averaged over a 3×3 block of grid cells (O(1) per unit) instead of iterated per neighbour. Only separation and target selection do a fine-hash query, at `max(separationRadius, attackRadius)` — which makes those two radii the dominant per-tick cost.
 
-Some `config.ts` fields are marked UNUSED, left over from that rewrite. Tune one value at a time: watch a 20v20 where individual behaviour is legible, then sanity-check 500v500 for emergent blob behaviour. Measure with the benchmark before restructuring; `engine.stats` breaks time down by sub-phase.
+Tune one `config.ts` value at a time: watch a 20v20 where individual behaviour is legible, then sanity-check 500v500 for emergent blob behaviour. Measure with the benchmark before restructuring; `engine.stats` breaks time down by sub-phase.
 
 ## Offline catchup
 

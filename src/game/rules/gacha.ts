@@ -1,55 +1,21 @@
-import { RELIC_BASES } from "./data/relics";
-import { rollRelic } from "./relics";
-import type { GameState, PoolId, Rarity, Relic, Resources } from "./types";
+import { POOL_CONFIGS, type PoolConfig } from "../data/gacha";
+import { RELIC_BASES } from "../data/relics";
+import type { GameState, PoolId, Rarity, Relic } from "../types";
+import { rarityRank, rollRelic } from "./relics";
 
-interface PoolConfig {
-	odds: { rarity: Rarity; weight: number }[];
-	pityRarity: Rarity | null;
-	pityInterval: number;
-	x10Guarantee: Rarity | null;
-	cost1: { resource: keyof Resources; amount: number };
-	cost10: { resource: keyof Resources; amount: number };
+export { POOL_CONFIGS };
+
+/**
+ * A pool's drop table as displayed percentages. The weights are relative, so
+ * they are normalised here rather than printed raw — they happen to sum to 100
+ * in every pool today, and reading them as percentages directly would break
+ * silently the first time one didn't.
+ */
+export function poolOdds(poolId: PoolId): { rarity: Rarity; pct: number }[] {
+	const { odds } = POOL_CONFIGS[poolId];
+	const total = odds.reduce((s, o) => s + o.weight, 0);
+	return odds.map((o) => ({ rarity: o.rarity, pct: (o.weight / total) * 100 }));
 }
-
-export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
-	banner: {
-		odds: [
-			{ rarity: "common", weight: 70 },
-			{ rarity: "uncommon", weight: 25 },
-			{ rarity: "rare", weight: 5 },
-		],
-		pityRarity: null,
-		pityInterval: 0,
-		x10Guarantee: "uncommon",
-		cost1: { resource: "banners", amount: 10 },
-		cost10: { resource: "banners", amount: 90 },
-	},
-	carrion: {
-		odds: [
-			{ rarity: "common", weight: 30 },
-			{ rarity: "uncommon", weight: 40 },
-			{ rarity: "rare", weight: 25 },
-			{ rarity: "epic", weight: 5 },
-		],
-		pityRarity: "epic",
-		pityInterval: 40,
-		x10Guarantee: "rare",
-		cost1: { resource: "corpses", amount: 1000 },
-		cost10: { resource: "corpses", amount: 9000 },
-	},
-	forbidden: {
-		odds: [
-			{ rarity: "rare", weight: 75 },
-			{ rarity: "epic", weight: 20 },
-			{ rarity: "legendary", weight: 5 },
-		],
-		pityRarity: "legendary",
-		pityInterval: 50,
-		x10Guarantee: "epic",
-		cost1: { resource: "souls", amount: 5 },
-		cost10: { resource: "souls", amount: 45 },
-	},
-};
 
 function rollRarity(config: PoolConfig): Rarity {
 	const total = config.odds.reduce((s, o) => s + o.weight, 0);
@@ -61,21 +27,17 @@ function rollRarity(config: PoolConfig): Rarity {
 	return config.odds[config.odds.length - 1].rarity;
 }
 
-function rarityRank(r: Rarity): number {
-	return { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 }[r];
-}
-
+/** Up to two rolls for `rarity` or better, falling back to `rarity` itself. */
 function guaranteeAtLeast(rarity: Rarity, config: PoolConfig): Rarity {
 	const rolled = rollRarity(config);
 	if (rarityRank(rolled) >= rarityRank(rarity)) return rolled;
-	// try to reroll once more
 	const rerolled = rollRarity(config);
 	if (rarityRank(rerolled) >= rarityRank(rarity)) return rerolled;
 	return rarity;
 }
 
+/** Every base is eligible at every rarity, hence the unused parameter. */
 function pickBase(_rarity: Rarity): string {
-	// All bases are eligible for all rarities
 	const bases = RELIC_BASES;
 	return bases[Math.floor(Math.random() * bases.length)].id;
 }
@@ -92,7 +54,8 @@ export function executePull(
 	for (let i = 0; i < count; i++) {
 		let rarity: Rarity;
 
-		// Pity check
+		// A natural roll at or above the pity rarity resets the counter too, so
+		// the guarantee never fires right after the player already got one.
 		if (config.pityRarity && config.pityInterval > 0) {
 			pity++;
 			if (pity >= config.pityInterval) {
@@ -112,14 +75,14 @@ export function executePull(
 		relics.push(rollRelic(baseId, rarity));
 	}
 
-	// x10 guarantee
+	// A ×10 that rolled nothing at the guaranteed rarity has its last relic
+	// replaced, rather than an extra one appended.
 	const x10Guarantee = config.x10Guarantee;
 	if (count === 10 && x10Guarantee) {
 		const hasGuarantee = relics.some(
 			(r) => rarityRank(r.rarity) >= rarityRank(x10Guarantee),
 		);
 		if (!hasGuarantee) {
-			// Replace last relic with guaranteed rarity
 			const guaranteedRarity = guaranteeAtLeast(x10Guarantee, config);
 			const baseId = pickBase(guaranteedRarity);
 			relics[relics.length - 1] = rollRelic(baseId, guaranteedRarity);

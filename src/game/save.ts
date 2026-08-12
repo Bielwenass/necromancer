@@ -20,10 +20,9 @@ export type SavedState = Omit<GameState, "derived">;
 
 /**
  * Set once the app has committed to replacing the save and reloading (import or
- * reset). Both of those write localStorage and then wait ~1s for the reload, and
- * the simulation keeps running in the meantime — an autosave or the tail of an
- * in-flight offline catchup would otherwise overwrite the bytes we just wrote
- * with the state we are trying to discard. One-way by design.
+ * reset). Those write localStorage and then wait ~1s for the reload while the
+ * simulation keeps running, so without this an autosave or a finishing offline
+ * catchup would overwrite the bytes just written. One-way by design.
  */
 let persistenceSuspended = false;
 

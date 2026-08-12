@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
 	buildAttackerConfig,
+	buildDefenderConfig,
 	COMBAT_H,
 	COMBAT_W,
 } from "../combat/dungeonCombat";
 import { CombatEngine } from "../combat/engine";
 import { type CatchupStats, simulateOffline } from "./catchupOffline";
 import { DUNGEON_DEFS } from "./data/dungeons";
+import { CATCHUP_THRESHOLD_MS, ENGINE_DT, TICK_MS } from "./data/pacing";
+import { recomputeDerived } from "./rules/derived";
 import { saveGame } from "./save";
 import { useGameStore } from "./store";
-import { recomputeDerived } from "./upgrades";
-
-const FIXED_DT = 16;
-const CATCHUP_THRESHOLD_MS = 2000;
 
 export interface CatchupState {
 	progress: number;
@@ -32,8 +31,8 @@ export function useGameLifecycle(): {
 		function startInterval(): void {
 			if (intervalRef.current !== null) return;
 			intervalRef.current = setInterval(() => {
-				// 1. Advance game tick (accumulator handles exact 100ms ticks internally)
-				useGameStore.getState().tick(100);
+				// 1. Advance game tick (the accumulator drains exact TICK_MS steps)
+				useGameStore.getState().tick(TICK_MS);
 
 				// 2. Create engines for squads that just entered fighting state
 				const stateAfterTick = useGameStore.getState();
@@ -55,10 +54,7 @@ export function useGameLifecycle(): {
 							"a",
 							buildAttackerConfig(squad.composition, stateAfterTick.derived),
 						);
-						engine.setSide("b", {
-							units: def.enemies,
-							spawnArea: { x: COMBAT_W - 65, y: 10, w: 55, h: COMBAT_H - 20 },
-						});
+						engine.setSide("b", buildDefenderConfig(def));
 						engine.start();
 						stateAfterTick.addCombatEngine(squad.id, engine);
 					}
@@ -67,13 +63,13 @@ export function useGameLifecycle(): {
 				// 3. Advance all active engines and resolve any finished fights
 				const { combatEngines, derived, resolveFight, removeCombatEngine } =
 					useGameStore.getState();
-				const simMs = 100 * derived.combatSpeedMultiplier;
+				const simMs = TICK_MS * derived.combatSpeedMultiplier;
 
 				for (const [squadId, engine] of combatEngines) {
 					let remaining = simMs;
-					while (remaining >= FIXED_DT && engine.getWinner() === null) {
-						engine.tick(FIXED_DT);
-						remaining -= FIXED_DT;
+					while (remaining >= ENGINE_DT && engine.getWinner() === null) {
+						engine.tick(ENGINE_DT);
+						remaining -= ENGINE_DT;
 					}
 					if (remaining > 0 && engine.getWinner() === null) {
 						engine.tick(remaining);
@@ -85,7 +81,7 @@ export function useGameLifecycle(): {
 						removeCombatEngine(squadId);
 					}
 				}
-			}, 100);
+			}, TICK_MS);
 		}
 
 		function stopInterval(): void {

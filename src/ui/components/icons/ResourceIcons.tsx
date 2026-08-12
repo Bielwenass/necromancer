@@ -1,3 +1,4 @@
+import { UNIT_COLORS } from "../../../game/data/units";
 import type { IconProps } from "./IconProps";
 
 export const IconBone = ({ size = 14, color = "var(--c-bone)" }: IconProps) => (
@@ -88,7 +89,7 @@ export const IconBanner = ({
 
 export const IconCorpse = ({
 	size = 14,
-	color = "var(--sq-zombie)",
+	color = UNIT_COLORS.zombie,
 }: IconProps) => (
 	<svg
 		aria-hidden="true"
