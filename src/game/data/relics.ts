@@ -1,4 +1,30 @@
-import type { AffixEffect, Rarity, RelicBase } from "../types";
+import type { AffixEffect, Rarity, RelicBase, SlotId } from "../types";
+
+/**
+ * Slots open before any upgrade is bought — one crypt slot and the first slot
+ * of each summoning circle. Every other slot is unlocked by a node in the
+ * necromancy branch. A circle's slots stay hidden until its unit is unlocked,
+ * so opening `II1` costs nothing while zombies are still buried.
+ */
+export const BASE_UNLOCKED_SLOTS: readonly SlotId[] = [
+	"C1",
+	"I1",
+	"II1",
+	"III1",
+];
+
+/** Short name for a slot, as the Reliquary and the upgrade tree both print it. */
+export const SLOT_LABELS: Record<SlotId, string> = {
+	C1: "C-I",
+	C2: "C-II",
+	C3: "C-III",
+	I1: "S-I",
+	I2: "S-II",
+	II1: "Z-I",
+	II2: "Z-II",
+	III1: "W-I",
+	III2: "W-II",
+};
 
 /** Rarity from worst to best. Everything that ranks rarities derives from this. */
 export const RARITY_ORDER = [
@@ -58,7 +84,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "boneYield",
 		mainAffixRange: [15, 30],
-		minorAffixPool: ["boneYield", "corpseYield", "rarityWeight", "soulOnKill"],
+		minorAffixPool: ["boneYield", "corpseYield", "summonRites", "tombRobber"],
 		glyph: "ring",
 		description:
 			"A halo of calcified marrow. Amplifies the passive bone trickle.",
@@ -68,9 +94,9 @@ export const RELIC_BASES: RelicBase[] = [
 		name: "Bone Censer",
 		slot: "crypt",
 		slotIds: ["C1", "C2", "C3"],
-		mainAffixId: "soulOnKill",
+		mainAffixId: "soulHarvest",
 		mainAffixRange: [10, 25],
-		minorAffixPool: ["soulOnKill", "boneYield", "corpseYield", "rarityWeight"],
+		minorAffixPool: ["soulHarvest", "soulYield", "boneYield", "corpseYield"],
 		glyph: "flame",
 		description:
 			"Burning bones raise a smoke the departing cannot cross. They linger, and are taken.",
@@ -82,7 +108,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "squadTravelSpeed",
 		mainAffixRange: [10, 25],
-		minorAffixPool: ["squadTravelSpeed", "dispatchBonus", "firstStrikeBonus"],
+		minorAffixPool: ["squadTravelSpeed", "warHorn", "reapersDue"],
 		glyph: "star",
 		description: "An ivory seal that beckons squads onward.",
 	},
@@ -93,7 +119,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "boneYield",
 		mainAffixRange: [15, 35],
-		minorAffixPool: ["boneYield", "rarityWeight", "corpseYield", "soulOnKill"],
+		minorAffixPool: ["boneYield", "tombRobber", "corpseYield", "enemyFrailty"],
 		glyph: "hex",
 		description: "A hexagonal lantern that illuminates hidden loot.",
 	},
@@ -108,8 +134,9 @@ export const RELIC_BASES: RelicBase[] = [
 			"squadSizeBonus",
 			"corpseYield",
 			"boneYield",
-			"dispatchBonus",
+			"gravebound",
 		],
+		signatureAffixId: "dreadCommand",
 		glyph: "crown",
 		description: "A crown of empty sockets. The wearer commands more dead.",
 	},
@@ -118,11 +145,12 @@ export const RELIC_BASES: RelicBase[] = [
 		name: "Reliquarium",
 		slot: "crypt",
 		slotIds: ["C1", "C2", "C3"],
-		mainAffixId: "rarityWeight",
-		mainAffixRange: [3, 12],
-		minorAffixPool: ["rarityWeight", "corpseYield", "boneYield", "soulOnKill"],
+		mainAffixId: "tombRobber",
+		mainAffixRange: [15, 45],
+		minorAffixPool: ["tombRobber", "reapersDue", "boneYield", "soulYield"],
 		glyph: "urn",
-		description: "A vessel that preserves what should be rare.",
+		description:
+			"A vessel that remembers every tomb you have already emptied, and where you missed.",
 	},
 	{
 		id: "wax-effigy",
@@ -133,8 +161,8 @@ export const RELIC_BASES: RelicBase[] = [
 		mainAffixRange: [10, 25],
 		minorAffixPool: [
 			"squadTravelSpeed",
-			"dispatchBonus",
-			"firstStrikeBonus",
+			"warHorn",
+			"recklessRites",
 			"boneYield",
 		],
 		glyph: "figure",
@@ -151,8 +179,8 @@ export const RELIC_BASES: RelicBase[] = [
 		minorAffixPool: [
 			"corpseYield",
 			"squadTravelSpeed",
-			"boneYield",
-			"rarityWeight",
+			"reapersDue",
+			"enemyPalsy",
 		],
 		glyph: "banner",
 		description:
@@ -173,8 +201,8 @@ export const RELIC_BASES: RelicBase[] = [
 			"skeletonDamage",
 			"skeletonSpeed",
 			"skeletonHp",
-			"boneYieldFromKills",
 			"overwhelm",
+			"brittleEdge",
 		],
 		glyph: "ring",
 		description: "A ring of cold iron that sharpens skeletal strikes.",
@@ -190,7 +218,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"skeletonSpeed",
 			"skeletonDamage",
 			"skeletonHp",
-			"firstStrikeBonus",
+			"firstStrike",
 			"overwhelm",
 		],
 		glyph: "spike",
@@ -208,8 +236,8 @@ export const RELIC_BASES: RelicBase[] = [
 			"skeletonHp",
 			"skeletonDamage",
 			"skeletonSpeed",
-			"boneYieldFromKills",
 			"lastStand",
+			"brittleEdge",
 		],
 		glyph: "blade",
 		description:
@@ -227,8 +255,9 @@ export const RELIC_BASES: RelicBase[] = [
 			"skeletonHp",
 			"skeletonDamage",
 			"overwhelm",
-			"firstStrikeBonus",
+			"firstStrike",
 		],
+		signatureAffixId: "lichBond",
 		glyph: "shield",
 		description: "Bound rib bones form armor that does not bleed.",
 	},
@@ -243,8 +272,8 @@ export const RELIC_BASES: RelicBase[] = [
 			"overwhelm",
 			"skeletonDamage",
 			"skeletonSpeed",
-			"boneYieldFromKills",
-			"firstStrikeBonus",
+			"firstStrike",
+			"brittleEdge",
 		],
 		glyph: "tooth",
 		description:
@@ -264,10 +293,11 @@ export const RELIC_BASES: RelicBase[] = [
 		minorAffixPool: [
 			"zombieDamage",
 			"zombieHp",
-			"corpseYield",
-			"undyingFlesh",
 			"berserk",
+			"frenziedRot",
+			"undyingFlesh",
 		],
+		signatureAffixId: "bloodfeast",
 		glyph: "cross",
 		description:
 			"A stone seething with necrotic infection. Zombies hit harder.",
@@ -304,6 +334,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"berserk",
 			"lastStand",
 		],
+		signatureAffixId: "deathAura",
 		glyph: "flame",
 		description: "It burns nothing, but the dead inhale and refuse to die.",
 	},
@@ -318,8 +349,8 @@ export const RELIC_BASES: RelicBase[] = [
 			"berserk",
 			"zombieDamage",
 			"zombieHp",
+			"frenziedRot",
 			"undyingFlesh",
-			"lastStand",
 		],
 		glyph: "tongue",
 		description:
@@ -340,7 +371,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"wraithDamage",
 			"wraithSpeed",
 			"wraithHp",
-			"soulOnKill",
+			"executioner",
 			"spectralStrike",
 		],
 		glyph: "eye",
@@ -357,9 +388,10 @@ export const RELIC_BASES: RelicBase[] = [
 			"wraithSpeed",
 			"wraithDamage",
 			"wraithHp",
-			"soulOnKill",
 			"spectralStrike",
+			"executioner",
 		],
+		signatureAffixId: "vanguardDrums",
 		glyph: "drop",
 		description:
 			"Ash from a ghost-fire that never burned out. Wraiths blur across the field.",
@@ -369,14 +401,14 @@ export const RELIC_BASES: RelicBase[] = [
 		name: "Soul Reed",
 		slot: "wraith",
 		slotIds: ["III1", "III2"],
-		mainAffixId: "soulOnKill",
+		mainAffixId: "soulHarvest",
 		mainAffixRange: [20, 40],
 		minorAffixPool: [
-			"soulOnKill",
+			"soulHarvest",
+			"soulYield",
 			"wraithDamage",
 			"wraithSpeed",
 			"spectralStrike",
-			"wraithHp",
 		],
 		glyph: "blade",
 		description:
@@ -388,13 +420,13 @@ export const RELIC_BASES: RelicBase[] = [
 		slot: "wraith",
 		slotIds: ["III1", "III2"],
 		mainAffixId: "spectralStrike",
-		mainAffixRange: [5, 15],
+		mainAffixRange: [10, 25],
 		minorAffixPool: [
 			"spectralStrike",
 			"wraithDamage",
-			"soulOnKill",
+			"executioner",
 			"wraithSpeed",
-			"wraithHp",
+			"hollowVessel",
 		],
 		glyph: "shard",
 		description:
@@ -411,8 +443,8 @@ export const RELIC_BASES: RelicBase[] = [
 			"wraithHp",
 			"wraithSpeed",
 			"wraithDamage",
-			"soulOnKill",
-			"spectralStrike",
+			"executioner",
+			"hollowVessel",
 		],
 		glyph: "veil",
 		description:
@@ -420,57 +452,79 @@ export const RELIC_BASES: RelicBase[] = [
 	},
 ];
 
-export const AFFIX_DEFS: Record<
-	string,
-	{
-		label: string;
-		unit: string;
-		range: [number, number];
-		/**
-		 * Where the rolled value lands. `elsewhere` marks an affix that rolls
-		 * onto relics but has no effect yet.
-		 */
-		effect: AffixEffect;
-		description?: string;
-	}
-> = {
+export interface AffixDefinition {
+	label: string;
+	/** `%` or `''` for a flat count. */
+	unit: string;
+	range: [number, number];
+	/**
+	 * Where the rolled value lands. More than one entry makes a trade-off affix:
+	 * every effect reads the same roll, and a negative `scale` turns part of it
+	 * into a cost.
+	 */
+	effects: AffixEffect[];
+	/**
+	 * Locks the affix to relics of this rarity or better. A gated affix is never
+	 * drawn into a minor slot — the only way to one is a base that names it as
+	 * its `signatureAffixId`.
+	 */
+	minRarity?: Rarity;
+	description?: string;
+}
+
+export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 	// ── Economy (Crypt slot) ───────────────────────────────────────
 	boneYield: {
 		label: "Bone Yield",
 		unit: "%",
 		range: [5, 35],
-		effect: { kind: "global", stat: "boneYieldBonus", op: "add" },
+		effects: [{ kind: "global", stat: "boneYieldBonus", op: "add" }],
 		description: "Increases bone income from all sources.",
-	},
-	/**
-	 * Retired along with coins. No base rolls it, but the def stays so relics
-	 * already in a save render a label and a value — `applyAffix` still honours
-	 * it, on a resource nothing spends.
-	 */
-	coinYield: {
-		label: "Coin Yield",
-		unit: "%",
-		range: [5, 30],
-		effect: { kind: "global", stat: "coinYieldBonus", op: "add" },
-		description: "Retired — coins are no longer spent on anything.",
 	},
 	corpseYield: {
 		label: "Corpse Yield",
 		unit: "%",
 		range: [5, 20],
-		effect: { kind: "global", stat: "corpseYieldBonus", op: "add" },
+		effects: [{ kind: "global", stat: "corpseYieldBonus", op: "add" }],
 		description: "Increases corpse drops from all sources.",
 	},
-	rarityWeight: {
-		label: "Rarity Weight",
+	soulYield: {
+		label: "Soul Yield",
 		unit: "%",
-		range: [3, 15],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Shifts Ritual odds toward higher rarities.",
-		},
-		description: "Shifts gacha odds toward higher rarities.",
+		range: [10, 45],
+		effects: [{ kind: "global", stat: "soulsYieldBonus", op: "add" }],
+		description: "Increases the souls banked each time a clear drops them.",
+	},
+	soulHarvest: {
+		label: "Soul Harvest",
+		unit: "%",
+		range: [5, 40],
+		effects: [
+			{ kind: "global", stat: "soulHarvestBonus", op: "add", scale: 2 },
+		],
+		description: "Increases the chance a clear drops souls at all.",
+	},
+	tombRobber: {
+		label: "Tomb Robber",
+		unit: "%",
+		range: [10, 40],
+		effects: [{ kind: "global", stat: "clearMultBonus", op: "add" }],
+		description:
+			"Steepens the repeat-clear payout curve — worth most on a dungeon you have farmed.",
+	},
+	reapersDue: {
+		label: "Reaper's Due",
+		unit: "%",
+		range: [3, 12],
+		effects: [{ kind: "global", stat: "bannerChanceBonus", op: "add" }],
+		description: "Chance a clear pays one banner beyond the dungeon's tier.",
+	},
+	summonRites: {
+		label: "Summon Rites",
+		unit: "%",
+		range: [3, 12],
+		effects: [{ kind: "global", stat: "summonCostBonus", op: "add" }],
+		description: "Skeletons cost less bone to raise.",
 	},
 
 	// ── Squad / dispatch (Crypt slot) ──────────────────────────────
@@ -478,26 +532,101 @@ export const AFFIX_DEFS: Record<
 		label: "Squad Travel Speed",
 		unit: "%",
 		range: [5, 25],
-		effect: { kind: "global", stat: "squadTravelSpeedBonus", op: "add" },
+		effects: [{ kind: "global", stat: "squadTravelSpeedBonus", op: "add" }],
 		description: "Squads move faster to and from dungeons.",
 	},
 	squadSizeBonus: {
 		label: "Squad Size",
 		unit: "%",
 		range: [5, 25],
-		effect: { kind: "global", stat: "maxSquadSize", op: "pctOfSelf" },
+		effects: [{ kind: "global", stat: "maxSquadSize", op: "pctOfSelf" }],
 		description: "Increases max squad size while equipped.",
 	},
-	dispatchBonus: {
-		label: "Dispatch Bonus",
+
+	// ── Enemy debuffs (Crypt slot) ─────────────────────────────────
+	enemyFrailty: {
+		label: "Frailty",
 		unit: "%",
-		range: [10, 25],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Bonus on dispatch.",
-		},
-		description: "First 10s after squad arrival: bonus damage.",
+		range: [3, 12],
+		effects: [{ kind: "global", stat: "enemyHpPenalty", op: "add" }],
+		description: "Dungeon defenders muster with less HP.",
+	},
+	enemyPalsy: {
+		label: "Palsy",
+		unit: "%",
+		range: [3, 12],
+		effects: [{ kind: "global", stat: "enemyDmgPenalty", op: "add" }],
+		description: "Dungeon defenders strike for less.",
+	},
+
+	// ── Trade-offs — one roll, paid for out of another stat ────────
+	recklessRites: {
+		label: "Reckless Rites",
+		unit: "%",
+		range: [10, 30],
+		effects: [
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "dmgBonus",
+			},
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "hpBonus",
+				scale: -0.5,
+			},
+		],
+		description: "Every unit hits harder and breaks sooner.",
+	},
+	gravebound: {
+		label: "Gravebound",
+		unit: "%",
+		range: [10, 30],
+		effects: [
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "hpBonus",
+			},
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "speedBonus",
+				scale: -0.5,
+			},
+		],
+		description: "The grave holds your dead together, and holds them back.",
+	},
+	brittleEdge: {
+		label: "Brittle Edge",
+		unit: "%",
+		range: [15, 40],
+		effects: [
+			{ kind: "unit", units: ["skeleton"], stat: "dmgBonus" },
+			{ kind: "unit", units: ["skeleton"], stat: "hpBonus", scale: -0.6 },
+		],
+		description: "Bone honed to an edge that cuts once and splinters.",
+	},
+	frenziedRot: {
+		label: "Frenzied Rot",
+		unit: "%",
+		range: [10, 30],
+		effects: [
+			{ kind: "unit", units: ["zombie"], stat: "speedBonus" },
+			{ kind: "unit", units: ["zombie"], stat: "hpBonus", scale: -0.5 },
+		],
+		description: "The rot drives them faster than their flesh can bear.",
+	},
+	hollowVessel: {
+		label: "Hollow Vessel",
+		unit: "%",
+		range: [15, 40],
+		effects: [
+			{ kind: "unit", units: ["wraith"], stat: "dmgBonus" },
+			{ kind: "unit", units: ["wraith"], stat: "speedBonus", scale: -0.5 },
+		],
+		description: "A wraith poured into one place strikes harder, and drifts.",
 	},
 
 	// ── Skeleton (Skeleton slot) ───────────────────────────────────
@@ -505,56 +634,47 @@ export const AFFIX_DEFS: Record<
 		label: "Skeleton Damage",
 		unit: "%",
 		range: [5, 30],
-		effect: { kind: "unit", units: ["skeleton"], stat: "dmgBonus" },
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "dmgBonus" }],
 		description: "Increases skeleton damage.",
 	},
 	skeletonSpeed: {
 		label: "Skeleton Speed",
 		unit: "%",
 		range: [5, 25],
-		effect: { kind: "unit", units: ["skeleton"], stat: "speedBonus" },
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "speedBonus" }],
 		description: "Skeletons move faster.",
 	},
 	skeletonHp: {
 		label: "Skeleton HP",
 		unit: "%",
 		range: [5, 30],
-		effect: { kind: "unit", units: ["skeleton"], stat: "hpBonus" },
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "hpBonus" }],
 		description: "Increases skeleton HP.",
-	},
-	boneYieldFromKills: {
-		label: "Bones from Kills",
-		unit: "%",
-		range: [3, 15],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Grants bones per enemy killed.",
-		},
-		description:
-			"Each enemy killed drops bonus bones. REWORK from current passive boost.",
 	},
 	overwhelm: {
 		label: "Overwhelm",
 		unit: "%",
 		range: [5, 20],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Bonus damage while outnumbering the enemy.",
-		},
-		description: "Damage scales when squad outnumbers enemies in radius.",
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "overwhelm" }],
+		description:
+			"Skeletons hit harder the further they outnumber the enemies around them.",
 	},
-	firstStrikeBonus: {
+	firstStrike: {
 		label: "First Strike",
 		unit: "%",
 		range: [10, 30],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Bonus damage on the opening exchange.",
-		},
-		description: "Bonus damage in the first 5s of a battle.",
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "vanguard" }],
+		description: "Skeletons deal bonus damage in the opening of a battle.",
+	},
+	lastStand: {
+		label: "Last Stand",
+		unit: "%",
+		range: [25, 60],
+		effects: [
+			{ kind: "unit", units: ["skeleton", "zombie"], stat: "lastStand" },
+		],
+		description:
+			"Bonus damage once your side is reduced to a fraction of what marched in.",
 	},
 
 	// ── Zombie (Zombie slot) ───────────────────────────────────────
@@ -562,48 +682,30 @@ export const AFFIX_DEFS: Record<
 		label: "Zombie Damage",
 		unit: "%",
 		range: [5, 25],
-		effect: { kind: "unit", units: ["zombie"], stat: "dmgBonus" },
+		effects: [{ kind: "unit", units: ["zombie"], stat: "dmgBonus" }],
 		description: "Increases zombie damage.",
 	},
 	zombieHp: {
 		label: "Zombie HP",
 		unit: "%",
 		range: [5, 35],
-		effect: { kind: "unit", units: ["zombie"], stat: "hpBonus" },
+		effects: [{ kind: "unit", units: ["zombie"], stat: "hpBonus" }],
 		description: "Increases zombie HP.",
 	},
 	undyingFlesh: {
 		label: "Undying Flesh",
 		unit: "%",
 		range: [1, 4],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Zombies survive a killing blow.",
-		},
-		description: "Zombies regenerate HP per second in combat.",
+		effects: [{ kind: "unit", units: ["zombie"], stat: "regen" }],
+		description:
+			"Zombies regenerate a share of their HP every second of combat.",
 	},
 	berserk: {
 		label: "Berserk",
 		unit: "%",
 		range: [10, 30],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Damage rises as HP falls.",
-		},
-		description: "Damage scales with HP missing.",
-	},
-	lastStand: {
-		label: "Last Stand",
-		unit: "%",
-		range: [25, 60],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Bonus stats for the final surviving unit.",
-		},
-		description: "Massive bonus when squad drops below 20% units.",
+		effects: [{ kind: "unit", units: ["zombie"], stat: "berserk" }],
+		description: "Zombie damage rises as their own HP falls.",
 	},
 
 	// ── Wraith (Wraith slot) ───────────────────────────────────────
@@ -611,39 +713,96 @@ export const AFFIX_DEFS: Record<
 		label: "Wraith Damage",
 		unit: "%",
 		range: [5, 35],
-		effect: { kind: "unit", units: ["wraith"], stat: "dmgBonus" },
+		effects: [{ kind: "unit", units: ["wraith"], stat: "dmgBonus" }],
 		description: "Increases wraith damage.",
 	},
 	wraithSpeed: {
 		label: "Wraith Speed",
 		unit: "%",
 		range: [5, 30],
-		effect: { kind: "unit", units: ["wraith"], stat: "speedBonus" },
+		effects: [{ kind: "unit", units: ["wraith"], stat: "speedBonus" }],
 		description: "Wraiths move faster.",
 	},
 	wraithHp: {
 		label: "Wraith HP",
 		unit: "%",
 		range: [5, 25],
-		effect: { kind: "unit", units: ["wraith"], stat: "hpBonus" },
+		effects: [{ kind: "unit", units: ["wraith"], stat: "hpBonus" }],
 		description: "Increases wraith HP.",
-	},
-	soulOnKill: {
-		label: "Soul on Kill",
-		unit: "%",
-		range: [5, 40],
-		effect: { kind: "global", stat: "soulHarvestBonus", op: "add", scale: 2 },
-		description: "Chance to gain a soul per enemy killed.",
 	},
 	spectralStrike: {
 		label: "Spectral Strike",
 		unit: "%",
-		range: [3, 10],
-		effect: {
-			kind: "elsewhere",
-			where: "unimplemented",
-			note: "Wraith damage scales with target HP.",
-		},
-		description: "Wraith damage scales with target HP%.",
+		range: [10, 25],
+		effects: [{ kind: "unit", units: ["wraith"], stat: "spectral" }],
+		description: "Wraiths tear hardest into targets still at full health.",
+	},
+	executioner: {
+		label: "Executioner",
+		unit: "%",
+		range: [10, 30],
+		effects: [{ kind: "unit", units: ["wraith"], stat: "executioner" }],
+		description: "Wraiths finish wounded targets far faster.",
+	},
+
+	// ── Signatures — gated, and reachable only through a base ──────
+	warHorn: {
+		label: "War Horn",
+		unit: "%",
+		range: [8, 20],
+		effects: [
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "vanguard",
+			},
+		],
+		description: "Every unit opens a battle swinging harder.",
+	},
+	vanguardDrums: {
+		label: "Vanguard Drums",
+		unit: "%",
+		range: [20, 45],
+		minRarity: "epic",
+		effects: [{ kind: "unit", units: ["wraith"], stat: "vanguard" }],
+		description:
+			"Wraiths reach the enemy first, and the opening exchange is theirs.",
+	},
+	deathAura: {
+		label: "Death Aura",
+		unit: "%",
+		range: [5, 12],
+		minRarity: "epic",
+		effects: [{ kind: "unit", units: ["zombie"], stat: "aura" }],
+		description:
+			"Rot bleeds off your zombies into every enemy standing near them.",
+	},
+	bloodfeast: {
+		label: "Bloodfeast",
+		unit: "%",
+		range: [2, 5],
+		minRarity: "legendary",
+		effects: [{ kind: "unit", units: ["zombie"], stat: "lifesteal" }],
+		description:
+			"A zombie that lands a blow eats part of it. Nothing is returned for a swing that misses.",
+	},
+	lichBond: {
+		label: "Lich Bond",
+		unit: "%",
+		range: [25, 35],
+		minRarity: "legendary",
+		effects: [{ kind: "unit", units: ["skeleton"], stat: "revive" }],
+		description:
+			"The first time a skeleton falls in a battle, it gets back up at this much HP.",
+	},
+	dreadCommand: {
+		label: "Dread Command",
+		unit: "",
+		range: [1, 1],
+		minRarity: "legendary",
+		// A flat count rather than a percentage, so `scale` undoes the conversion
+		// to a decimal that every other affix wants.
+		effects: [{ kind: "global", stat: "maxSquads", op: "add", scale: 100 }],
+		description: "One more warband may take the field.",
 	},
 };

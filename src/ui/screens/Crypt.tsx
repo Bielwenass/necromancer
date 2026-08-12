@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { COMBAT_CONFIG } from "../../combat/config";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
-import { projectLoot } from "../../game/rules/loot";
+import { projectLoot, shouldAutoDeploy } from "../../game/rules/loot";
 import {
 	effectiveTravelTicks,
 	squadRemainingTicks,
 } from "../../game/rules/travel";
+import { replenishDelta, squadSize } from "../../game/rules/units";
 import { useGameStore } from "../../game/store";
 import type { DungeonDef } from "../../game/types";
 import type { TabId } from "../components/chrome/TabBar";
@@ -31,6 +32,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 	const summonUnits = useGameStore((s) => s.summonUnits);
 	const recallSquad = useGameStore((s) => s.recallSquad);
 	const deleteSquad = useGameStore((s) => s.deleteSquad);
+	const replenishSquad = useGameStore((s) => s.replenishSquad);
 
 	const [dispatchTarget, setDispatchTarget] = useState<string | null>(null);
 	const [watchedSquadId, setWatchedSquadId] = useState<string | null>(null);
@@ -158,6 +160,9 @@ export function Crypt({ onTabChange }: CryptProps) {
 							const travelTicks = def
 								? effectiveTravelTicks(def, derived.squadTravelSpeedBonus)
 								: 0;
+							const dungeonState = dungeons.find(
+								(d) => d.id === squad.targetDungeonId,
+							);
 							return (
 								<SquadRow
 									key={squad.id}
@@ -165,8 +170,13 @@ export function Crypt({ onTabChange }: CryptProps) {
 									def={def}
 									remainingTicks={squadRemainingTicks(squad, travelTicks)}
 									index={i}
+									refillCount={squadSize(
+										replenishDelta(squad, units, derived.maxSquadSize),
+									)}
+									willRedeploy={shouldAutoDeploy(derived, squad, dungeonState)}
 									onDisband={() => deleteSquad(squad.id)}
 									onRecall={() => recallSquad(squad.id)}
+									onReplenish={() => replenishSquad(squad.id)}
 								/>
 							);
 						})}

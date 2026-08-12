@@ -16,6 +16,14 @@ export interface PoolConfig {
 	cost10: { resource: keyof Resources; amount: number };
 }
 
+/**
+ * The Phylactery's cadence: one free banner-pool pull per interval, banked up to
+ * the cap. The cap is what makes an overnight absence worth returning from
+ * without letting a week away pay for a hundred pulls.
+ */
+export const FREE_PULL_INTERVAL_TICKS = 3000;
+export const FREE_PULL_CAP = 10;
+
 export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 	banner: {
 		odds: [

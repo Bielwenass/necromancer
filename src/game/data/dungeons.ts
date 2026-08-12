@@ -20,8 +20,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 15,
 			bonesMax: 30,
-			coinsMin: 3,
-			coinsMax: 8,
 			soulChance: 0.03,
 		},
 		travelTimeTicks: 60,
@@ -50,8 +48,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 25,
 			bonesMax: 45,
-			coinsMin: 4,
-			coinsMax: 10,
 			soulChance: 0.04,
 		},
 		travelTimeTicks: 100,
@@ -83,8 +79,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 15,
 			bonesMax: 25,
-			coinsMin: 15,
-			coinsMax: 30,
 			soulChance: 0.04,
 		},
 		travelTimeTicks: 150,
@@ -122,8 +116,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 50,
 			bonesMax: 90,
-			coinsMin: 12,
-			coinsMax: 25,
 			soulChance: 0.08,
 		},
 		travelTimeTicks: 220,
@@ -156,8 +148,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 90,
 			bonesMax: 140,
-			coinsMin: 35,
-			coinsMax: 65,
 			soulChance: 0.08,
 		},
 		travelTimeTicks: 320,
@@ -189,8 +179,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 80,
 			bonesMax: 130,
-			coinsMin: 50,
-			coinsMax: 90,
 			soulChance: 0.09,
 		},
 		travelTimeTicks: 400,
@@ -222,8 +210,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 110,
 			bonesMax: 170,
-			coinsMin: 40,
-			coinsMax: 75,
 			soulChance: 0.1,
 		},
 		travelTimeTicks: 460,
@@ -261,8 +247,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 160,
 			bonesMax: 260,
-			coinsMin: 70,
-			coinsMax: 120,
 			soulChance: 0.14,
 		},
 		travelTimeTicks: 540,
@@ -301,8 +285,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 380,
 			bonesMax: 580,
-			coinsMin: 130,
-			coinsMax: 220,
 			soulChance: 0.16,
 		},
 		travelTimeTicks: 700,
@@ -340,8 +322,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 280,
 			bonesMax: 440,
-			coinsMin: 220,
-			coinsMax: 380,
 			soulChance: 0.18,
 		},
 		travelTimeTicks: 820,
@@ -379,8 +359,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 440,
 			bonesMax: 700,
-			coinsMin: 170,
-			coinsMax: 280,
 			soulChance: 0.2,
 		},
 		travelTimeTicks: 960,
@@ -430,8 +408,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 750,
 			bonesMax: 1200,
-			coinsMin: 320,
-			coinsMax: 520,
 			soulChance: 0.28,
 		},
 		travelTimeTicks: 1120,
@@ -476,8 +452,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 1600,
 			bonesMax: 2600,
-			coinsMin: 550,
-			coinsMax: 900,
 			soulChance: 0.32,
 		},
 		travelTimeTicks: 1500,
@@ -515,8 +489,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 1900,
 			bonesMax: 3000,
-			coinsMin: 750,
-			coinsMax: 1200,
 			soulChance: 0.36,
 		},
 		travelTimeTicks: 1800,
@@ -566,8 +538,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		lootTable: {
 			bonesMin: 3500,
 			bonesMax: 5500,
-			coinsMin: 1300,
-			coinsMax: 2200,
 			soulChance: 0.55,
 		},
 		travelTimeTicks: 2000,

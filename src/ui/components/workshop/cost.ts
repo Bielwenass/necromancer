@@ -1,13 +1,6 @@
 import { UNIT_COLORS } from "../../../game/data/units";
 import type { Resources } from "../../../game/types";
-import {
-	IconBanner,
-	IconBone,
-	IconCoin,
-	IconCorpse,
-	IconDust,
-	IconSoul,
-} from "../icons";
+import { IconBanner, IconBone, IconCorpse, IconDust, IconSoul } from "../icons";
 import type { IconComponent } from "../icons/IconProps";
 
 export interface ResourceMeta {
@@ -18,7 +11,6 @@ export interface ResourceMeta {
 
 const RESOURCE_META: Record<string, ResourceMeta> = {
 	bones: { icon: IconBone, color: "var(--c-bone)", label: "Bones" },
-	coins: { icon: IconCoin, color: "var(--c-coin)", label: "Gold" },
 	souls: { icon: IconSoul, color: "var(--c-soul)", label: "Souls" },
 	dust: { icon: IconDust, color: "var(--ink-parchm)", label: "Dust" },
 	corpses: { icon: IconCorpse, color: UNIT_COLORS.zombie, label: "Corpses" },

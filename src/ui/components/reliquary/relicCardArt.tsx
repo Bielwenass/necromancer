@@ -13,8 +13,6 @@ export type RarityConfig = {
 	glowMul: number;
 	foilMul: number;
 	edgeAnim: boolean;
-	/** How much rarity-tinted iridescence leaks through the card back. 0-1. */
-	backShimmer: number;
 };
 
 /**
@@ -35,7 +33,6 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		glowMul: 0.2,
 		foilMul: 0.15,
 		edgeAnim: false,
-		backShimmer: 0.0,
 	},
 	uncommon: {
 		label: rarityName("uncommon"),
@@ -47,7 +44,6 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		glowMul: 0.5,
 		foilMul: 0.25,
 		edgeAnim: false,
-		backShimmer: 0.75,
 	},
 	rare: {
 		label: rarityName("rare"),
@@ -59,7 +55,6 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		glowMul: 0.7,
 		foilMul: 0.55,
 		edgeAnim: true,
-		backShimmer: 0.45,
 	},
 	epic: {
 		label: rarityName("epic"),
@@ -71,7 +66,6 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		glowMul: 0.85,
 		foilMul: 0.75,
 		edgeAnim: true,
-		backShimmer: 0.65,
 	},
 	legendary: {
 		label: rarityName("legendary"),
@@ -83,7 +77,6 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		glowMul: 1.05,
 		foilMul: 1.0,
 		edgeAnim: true,
-		backShimmer: 0.75,
 	},
 };
 
@@ -107,13 +100,6 @@ export const CARD_CORNERS: [number, number, number][] = [
 	[15, 445, 270],
 	[305, 445, 180],
 ];
-
-export const SLOT_ART_LABELS: Record<string, string> = {
-	crypt: "CRYPT RELIC",
-	skeleton: "BONE CHARM",
-	zombie: "PLAGUE RELIC",
-	wraith: "SPECTRAL RELIC",
-};
 
 // ── foil builders ────────────────────────────────────────────────
 export function buildFoil(

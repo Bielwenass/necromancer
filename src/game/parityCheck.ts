@@ -30,6 +30,8 @@ import { DUNGEON_DEFS } from "./data/dungeons";
 import { ENGINE_DT, TICK_MS, TICKS_PER_DAY } from "./data/pacing";
 import { recomputeDerived } from "./rules/derived";
 import { resolveFightOutcome } from "./rules/fight";
+import { accrueFreePulls } from "./rules/gacha";
+import { generateLoot, projectLoot } from "./rules/loot";
 import { checkUnlockConditions, makeDungeonState } from "./rules/unlocks";
 import { gameTick } from "./tick";
 import type { DungeonState, GameState } from "./types";
@@ -56,7 +58,6 @@ function buildScenario(dispatched: boolean): GameState {
 	const base: Omit<GameState, "derived"> = {
 		resources: {
 			bones: 1000,
-			coins: 0,
 			souls: 0,
 			dust: 0,
 			corpses: 0,
@@ -68,6 +69,7 @@ function buildScenario(dispatched: boolean): GameState {
 				id: "S-01",
 				name: "Parity",
 				composition: { skeleton: 30, zombie: 0, wraith: 0 },
+				roster: { skeleton: 30, zombie: 0, wraith: 0 },
 				targetDungeonId: dispatched ? "paupers-tomb" : null,
 				state: dispatched ? ("traveling" as const) : ("idle" as const),
 				position: 0,
@@ -78,11 +80,30 @@ function buildScenario(dispatched: boolean): GameState {
 			makeDungeonState(def, def.id === "paupers-tomb"),
 		),
 		relics: { inventory: [], equipped: {} },
-		// c0 = auto-deploy, s0/s4a = squad size, n0 = soul chance.
-		upgrades: { purchased: ["c0", "s0", "s4a", "n0"] },
+		// c1 = auto-deploy, s1/s5 = squad size and count, n2/n5 = the corpse and
+		// soul gates, n4/n7 = the yield and soul-chance amplifiers. Both gates are
+		// bought so the loot path under test is the full one, with every resource
+		// in play.
+		upgrades: {
+			purchased: [
+				"c1",
+				"c2",
+				"s1",
+				"s2",
+				"s3",
+				"s5",
+				"n1",
+				"n2",
+				"n4",
+				"n5",
+				"n7",
+			],
+		},
 		gacha: {
 			pityCounters: { banner: 0, carrion: 0, forbidden: 0 },
 			lastPulledRelics: null,
+			freePulls: 0,
+			freePullTicks: 0,
 		},
 		workshop: {
 			skeleton: { hp: 12, dmg: 12, speed: 4 },
@@ -127,7 +148,7 @@ function runLive(start: GameState, ticks: number): GameState {
 				"a",
 				buildAttackerConfig(squad.composition, state.derived),
 			);
-			engine.setSide("b", buildDefenderConfig(def));
+			engine.setSide("b", buildDefenderConfig(def, state.derived));
 			engine.start();
 			engines.set(squad.id, engine);
 		}
@@ -168,7 +189,7 @@ function applyLiveFight(
 		def,
 		ds.clearCount,
 		{ winner, survivorsByType },
-		state.derived.soulHarvestBonus,
+		state.derived,
 	);
 
 	if (res.kind === "destroyed") {
@@ -314,14 +335,15 @@ async function main(): Promise<void> {
 	console.log("\n4. The shared fight rule itself");
 	{
 		const def = DUNGEON_DEFS["paupers-tomb"];
+		const derived = buildScenario(false).derived;
 		const before = { skeleton: 10, zombie: 2, wraith: 3 };
 		const win = {
 			winner: "a" as const,
 			survivorsByType: { skeleton: 7, zombie: 1 },
 		};
 
-		const a = resolveFightOutcome(before, def, 4, win, 0, mulberry32(99));
-		const b = resolveFightOutcome(before, def, 4, win, 0, mulberry32(99));
+		const a = resolveFightOutcome(before, def, 4, win, derived, mulberry32(99));
+		const b = resolveFightOutcome(before, def, 4, win, derived, mulberry32(99));
 		check("seeded rolls reproduce", JSON.stringify(a) === JSON.stringify(b));
 		check("a clear pays banners", a.bannersAwarded === def.tier);
 		check("a clear counts", a.clearCountDelta === 1);
@@ -333,7 +355,7 @@ async function main(): Promise<void> {
 			def,
 			4,
 			{ winner: "b", survivorsByType: {} },
-			0,
+			derived,
 			mulberry32(99),
 		);
 		check(
@@ -352,12 +374,74 @@ async function main(): Promise<void> {
 			def,
 			0,
 			{ winner: "b", survivorsByType: {} },
-			0,
+			derived,
 			mulberry32(1),
 		);
 		check(
 			"a wipe with nothing undying destroys the squad",
 			total.kind === "destroyed",
+		);
+	}
+
+	console.log("\n5. Gated economies and the rules layered on top of them");
+	{
+		const def = DUNGEON_DEFS["paupers-tomb"];
+		const open = buildScenario(false).derived;
+		// A necromancer who has bought nothing: both economies still shut.
+		const shut = recomputeDerived({
+			...buildScenario(false),
+			upgrades: { purchased: [] },
+		});
+		check("corpses start locked", !shut.corpsesUnlocked);
+		check("souls start locked", !shut.soulsUnlocked);
+
+		const lockedLoot = generateLoot(def.id, 3, shut, mulberry32(7));
+		check("a locked clear drops no corpses", (lockedLoot.corpses ?? 0) === 0);
+		check("a locked clear drops no souls", (lockedLoot.souls ?? 0) === 0);
+		check("a locked clear still drops bones", (lockedLoot.bones ?? 0) > 0);
+		check("the projection agrees", projectLoot(def, 3, shut).corpses === 0);
+
+		// Over many clears an opened economy must actually pay out, or the gate
+		// would be indistinguishable from a permanent lock.
+		let corpses = 0;
+		const rand = mulberry32(11);
+		for (let i = 0; i < 200; i++) {
+			corpses += generateLoot(def.id, 3, open, rand).corpses ?? 0;
+		}
+		check("an opened economy pays corpses", corpses > 0, `${corpses} in 200`);
+
+		// Reanimation is capped by the squad's size limit, however much it rolls.
+		const greedy = { ...open, reanimateChance: 1, maxSquadSize: 12 };
+		const res = resolveFightOutcome(
+			{ skeleton: 20, zombie: 0, wraith: 0 },
+			def,
+			0,
+			{ winner: "a", survivorsByType: { skeleton: 8 } },
+			greedy,
+			mulberry32(3),
+		);
+		check(
+			"reanimation never exceeds max squad size",
+			res.composition.skeleton === 12,
+			`${res.composition.skeleton}`,
+		);
+
+		// The Phylactery must pay the same whether the ticks arrive one at a time
+		// or all at once — that equality is what lets catchup batch it.
+		const start = { freePulls: 0, freePullTicks: 0 };
+		let stepwise = start;
+		for (let i = 0; i < 2500; i++) {
+			stepwise = accrueFreePulls(stepwise, true, 1);
+		}
+		const batched = accrueFreePulls(start, true, 2500);
+		check(
+			"free pulls accrue identically stepwise and batched",
+			JSON.stringify(stepwise) === JSON.stringify(batched),
+			`${JSON.stringify(stepwise)} vs ${JSON.stringify(batched)}`,
+		);
+		check(
+			"the Phylactery pays nothing while unbought",
+			accrueFreePulls(start, false, 100_000).freePulls === 0,
 		);
 	}
 

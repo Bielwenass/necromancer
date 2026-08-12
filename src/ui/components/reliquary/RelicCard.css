@@ -201,13 +201,6 @@
 	border: 1px solid
 		color-mix(in srgb, var(--rarity-color, #a8a39a) 55%, transparent);
 }
-.rc-back > .rc-face-inner {
-	border-color: color-mix(
-		in srgb,
-		var(--rarity-color, #a8a39a) 22%,
-		transparent
-	);
-}
 
 /* dark velvet substrate (front) */
 .rc-base {
@@ -221,88 +214,35 @@
 	);
 }
 
-/* ── BACK FACE elements ─────────────────────────────────────────── */
-.rc-back-base {
-	position: absolute;
-	inset: 0;
-	background:
-		radial-gradient(
-			ellipse 60% 50% at 50% 50%,
-			rgba(255, 255, 255, 0.025),
-			transparent 70%
-		),
-		repeating-linear-gradient(
-			45deg,
-			transparent 0 12px,
-			rgba(255, 255, 255, 0.012) 12px 13px
-		),
-		linear-gradient(160deg, #1a1914 0%, #0c0a08 60%, #100d0a 100%);
-	z-index: 1;
-}
-.rc-back-foil {
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	pointer-events: none;
-	mix-blend-mode: color-dodge;
-	filter: saturate(1.1) blur(0.5px);
-	-webkit-mask: radial-gradient(
-		ellipse 70% 50% at 50% 50%,
-		rgba(0, 0, 0, 1) 0%,
-		rgba(0, 0, 0, 0.4) 60%,
-		transparent 100%
-	);
-	mask: radial-gradient(
-		ellipse 70% 50% at 50% 50%,
-		rgba(0, 0, 0, 1) 0%,
-		rgba(0, 0, 0, 0.4) 60%,
-		transparent 100%
-	);
-}
+/* ── BACK FACE elements ─────────────────────────────────────────────
+   The back shares .rc-base, .rc-face-inner, .rc-noise, .rc-frame and
+   .rc-content with the front — same material, same footprint, same
+   padding grid. Only the seal and its two labels are its own. */
 .rc-back-seal {
 	position: absolute;
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	color: var(--rarity-color, #c9c2b3);
-	opacity: 0.85;
-	z-index: 3;
+	color: var(--rarity-color, #a8a39a);
+	/* The front's engraved marks sit at 0.18–0.3; the seal is the back's whole
+	   subject, so it reads a little stronger and no further. */
+	opacity: 0.6;
 	pointer-events: none;
-	filter: drop-shadow(
-		0 0 4px color-mix(in srgb, var(--rarity-color, #fff) 30%, transparent)
-	);
 }
-/* Slow rotation of the back seal — subtle living motion while hidden */
-.relic-stage[data-phase="hidden"] .rc-back-seal,
-.relic-stage[data-phase="flipping"] .rc-back-seal {
-	animation: rc-back-spin 18s linear infinite;
-	transform-origin: 50% 50%;
+
+.rc-back-content {
+	justify-content: space-between;
+	align-items: center;
+	pointer-events: none;
 }
-@keyframes rc-back-spin {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
-	}
-}
+
 .rc-back-text {
-	position: absolute;
-	left: 50%;
-	transform: translateX(-50%);
 	font-family: var(--f-mono, monospace);
-	font-size: 0.42em;
-	letter-spacing: 0.4em;
-	color: color-mix(in srgb, var(--rarity-color, #a8a39a) 60%, #837c70);
+	font-size: 0.8em;
+	letter-spacing: 0.2em;
 	text-transform: uppercase;
-	z-index: 4;
-}
-.rc-back-text-top {
-	top: 6%;
-}
-.rc-back-text-bot {
-	bottom: 6%;
-	letter-spacing: 0.32em;
+	color: var(--accent-2, #7e7669);
+	opacity: 0.75;
 }
 
 /* ── iridescence stack (front) ──────────────────────────────────── */
@@ -397,9 +337,6 @@
 	pointer-events: none;
 	color: var(--rarity-color, #a8a39a);
 }
-.rc-back .rc-frame {
-	opacity: 0.5;
-}
 
 /* edge shimmer — high-rarity pulse */
 .rc-edge-shimmer {
@@ -484,8 +421,8 @@
 
 .rc-rarity-tag {
 	font-family: var(--f-display, serif);
-	font-size: 0.9em;
-	letter-spacing: 0.1em;
+	font-size: 0.75em;
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var(--rarity-color, #a8a39a);
 	opacity: 0.9;
@@ -544,17 +481,6 @@
 	transform: translateY(-50%);
 }
 
-.rc-art-label {
-	font-family: var(--f-mono, monospace);
-	font-size: 0.42em;
-	letter-spacing: 0.2em;
-	color: var(--rarity-color, #a8a39a);
-	opacity: 0.5;
-	position: absolute;
-	bottom: 5%;
-	left: 5%;
-}
-
 .rc-art-sigil {
 	font-family: var(--f-display, serif);
 	font-size: 2.4em;
@@ -593,6 +519,7 @@
 
 /* stats footer */
 .rc-foot {
+	position: relative;
 	margin-top: auto;
 	flex-shrink: 0;
 }
@@ -614,6 +541,58 @@
 
 .rc-stats li:last-child {
 	border-bottom: none;
+}
+
+.rc-stats li:hover {
+	background: color-mix(in srgb, var(--rarity-color, #a8a39a) 10%, transparent);
+}
+
+/* affix description — sits above the stat list, inside the card face */
+.rc-stat-tip {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: calc(100% + 4px);
+	padding: 5% 5% 4.5%;
+	background: color-mix(in srgb, var(--rarity-deep, #3a352e) 55%, black);
+	border: 1px solid
+		color-mix(in srgb, var(--rarity-color, #a8a39a) 40%, transparent);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+	pointer-events: none;
+	animation: rc-tip-in 120ms ease-out both;
+}
+
+@keyframes rc-tip-in {
+	from {
+		opacity: 0;
+		transform: translateY(3px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.rc-tip-lines {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.rc-tip-lines li {
+	font-family: var(--f-mono, monospace);
+	font-size: 0.85em;
+	line-height: 1.5;
+	color: var(--rarity-color, #a8a39a);
+}
+
+.rc-tip-flavor {
+	font-size: 0.85em;
+	font-style: italic;
+	line-height: 1.45;
+	color: var(--accent-1, #cfc7b8);
+	opacity: 0.65;
+	margin: 4% 0 0;
 }
 
 .rc-stat-k {

@@ -27,8 +27,8 @@ export function TopBar() {
 
 	const dayStr = `DAY ${meta.dayCount}`;
 
-	// Souls and dust stay hidden until the player has any, so the bar doesn't
-	// advertise systems that aren't unlocked yet.
+	// Corpses, souls and dust stay hidden until the player has any, so the bar
+	// doesn't advertise economies the tree hasn't opened yet.
 	const readouts = [
 		{
 			label: "Bones",
@@ -36,7 +36,9 @@ export function TopBar() {
 			Icon: IconBone,
 			note: derived.bonesPerTick > 0 ? formatRate(derived.bonesPerTick) : null,
 		},
-		{ label: "Corpses", value: resources.corpses, Icon: IconCorpse },
+		...(derived.corpsesUnlocked || resources.corpses > 0
+			? [{ label: "Corpses", value: resources.corpses, Icon: IconCorpse }]
+			: []),
 		...(resources.souls > 0
 			? [{ label: "Souls", value: resources.souls, Icon: IconSoul }]
 			: []),

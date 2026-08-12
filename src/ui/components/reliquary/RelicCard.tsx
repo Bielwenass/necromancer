@@ -1,7 +1,13 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RELIC_BASES } from "../../../game/data/relics";
-import { formatAffixValue, getAffixLabel } from "../../../game/rules/relics";
+import { describeAffixEffects } from "../../../game/rules/describe";
+import {
+	allAffixes,
+	formatAffixValue,
+	getAffixDescription,
+	getAffixLabel,
+} from "../../../game/rules/relics";
 import type { Relic } from "../../../game/types";
 import "./RelicCard.css";
 import { RelicCardBack } from "./RelicCardBack";
@@ -11,7 +17,6 @@ import {
 	CardFrame,
 	RARITIES,
 	RARITY_SIGIL,
-	SLOT_ART_LABELS,
 } from "./relicCardArt";
 
 // ── tweaks ───────────────────────────────────────────────────────
@@ -25,8 +30,6 @@ export interface RelicCardTweaks {
 	edgeShimmer: boolean;
 	/** Total ms for the back→front flip animation. */
 	revealDuration: number;
-	/** 0–1 multiplier on rarity backShimmer (iridescence visible through the back). */
-	backShimmer: number;
 }
 
 const DEFAULT_TWEAKS: RelicCardTweaks = {
@@ -38,7 +41,6 @@ const DEFAULT_TWEAKS: RelicCardTweaks = {
 	idleDrift: true,
 	edgeShimmer: true,
 	revealDuration: 950,
-	backShimmer: 0.2,
 };
 
 const VARIANT_TWEAKS: Record<"pull" | "inventory", Partial<RelicCardTweaks>> = {
@@ -78,6 +80,8 @@ export function RelicCard({
 	const rafRef = useRef<number>(0);
 	const timersRef = useRef<number[]>([]);
 	const [hovered, setHovered] = useState(false);
+	// Which affix row the cursor is on, if any — drives the description tooltip.
+	const [tipAffixId, setTipAffixId] = useState<string | null>(null);
 	// Tri-state. When `revealing` is false we skip the animation entirely and
 	// land directly in 'revealed' — the card just appears face-up.
 	const [phase, setPhase] = useState<Phase>(revealing ? "hidden" : "revealed");
@@ -101,23 +105,22 @@ export function RelicCard({
 	const slotKey = base?.slot ?? "crypt";
 	const setLabel = base?.set ? ` · ${base?.set}` : "";
 	const slotLabel = `${slotKey.charAt(0).toUpperCase()}${slotKey.slice(1)}`;
-	const artLabel = SLOT_ART_LABELS[slotKey] ?? "RELIC";
 	const sigil = RARITY_SIGIL[relic.rarity];
 	const serial = `REL-${relic.id.replace(/\D/g, "").slice(0, 4).padStart(4, "0")}`;
-	const stats = [
-		{
-			k: getAffixLabel(relic.mainAffix.id),
-			v: formatAffixValue(
-				relic.mainAffix.id,
-				relic.mainAffix.value,
-				relic.upgradeLevel,
-			),
-		},
-		...relic.minorAffixes.map((a) => ({
-			k: getAffixLabel(a.id),
-			v: formatAffixValue(a.id, a.value, relic.upgradeLevel),
-		})),
-	];
+	// `allAffixes` already reads main → minors → signature. The signature is
+	// marked, since it is the reason a legendary of this base is worth chasing
+	// over a better-rolled common one.
+	const stats = allAffixes(relic).map((affix) => ({
+		id: affix.id,
+		value: affix.value,
+		k: `${affix.id === relic.uniqueAffix?.id ? "◆ " : ""}${getAffixLabel(affix.id)}`,
+		v: formatAffixValue(affix.id, affix.value, relic.upgradeLevel),
+	}));
+	const tipStat = stats.find((s) => s.id === tipAffixId);
+	const tipLines = tipStat
+		? describeAffixEffects(tipStat.id, tipStat.value, relic.upgradeLevel)
+		: [];
+	const tipFlavor = tipStat ? getAffixDescription(tipStat.id) : undefined;
 
 	// Stable per rarity + tilt, so effects can depend on it directly instead of
 	// listing the values it happens to close over.
@@ -216,6 +219,7 @@ export function RelicCard({
 
 	const onLeave = () => {
 		setHovered(false);
+		setTipAffixId(null);
 		if (phase === "revealed") setPose(0, 0);
 	};
 
@@ -271,7 +275,7 @@ export function RelicCard({
 				}
 			>
 				{/* BACK FACE */}
-				<RelicCardBack R={R} backShimmer={R.backShimmer * tweaks.backShimmer} />
+				<RelicCardBack noise={tweaks.noise} />
 
 				{/* FRONT FACE */}
 				<div className="rc-front">
@@ -397,7 +401,6 @@ export function RelicCard({
 									<span />
 									<span />
 								</div>
-								<span className="rc-art-label">{artLabel}</span>
 								<span className="rc-art-sigil">{sigil}</span>
 							</div>
 
@@ -412,9 +415,25 @@ export function RelicCard({
 							</div>
 
 							<footer className="rc-foot">
+								{tipStat && (
+									<div className="rc-stat-tip">
+										<ul className="rc-tip-lines">
+											{tipLines.map((line) => (
+												<li key={line.text}>{line.text}</li>
+											))}
+										</ul>
+										{tipFlavor && <p className="rc-tip-flavor">{tipFlavor}</p>}
+									</div>
+								)}
 								<ul className="rc-stats">
 									{stats.map((s) => (
-										<li key={s.k}>
+										<li
+											key={s.k}
+											onMouseEnter={() =>
+												phase === "revealed" && setTipAffixId(s.id)
+											}
+											onMouseLeave={() => setTipAffixId(null)}
+										>
 											<span className="rc-stat-k">{s.k}</span>
 											<span className="rc-stat-dot" />
 											<span className="rc-stat-v">{s.v}</span>

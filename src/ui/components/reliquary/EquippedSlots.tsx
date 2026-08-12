@@ -64,9 +64,9 @@ export function EquippedSlots({
 							return (
 								<RelicSlotCard
 									key={slot.id}
-									slotId={slot.id}
 									slotLabel={slot.label}
 									relic={relic ?? null}
+									locked={!derived.unlockedSlots.includes(slot.id)}
 									selected={selectedRelicId === relicId && !!relicId}
 									onSelect={() => onSelectSlot(slot.id)}
 									onUnequip={() => onUnequip(slot.id)}

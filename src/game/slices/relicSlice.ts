@@ -20,6 +20,7 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 			const relic = prev.relics.inventory.find((r) => r.id === relicId);
 			if (!relic) return prev;
 			if (!canEquipInSlot(relic.baseId, slotId)) return prev;
+			if (!prev.derived.unlockedSlots.includes(slotId)) return prev;
 
 			// Clear the relic's previous slot first, so moving it between slots
 			// can't leave it equipped twice. Whatever occupied `slotId` is simply
@@ -81,15 +82,22 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 		set((prev) => {
 			const config = POOL_CONFIGS[poolId];
 			const { resource, amount } = count === 1 ? config.cost1 : config.cost10;
-			if (prev.resources[resource] < amount) return prev;
+
+			// A Phylactery charge covers one banner pull outright. Charges are never
+			// spent on a ×10, so they can't be pooled into a bulk discount.
+			const free =
+				poolId === "banner" && count === 1 && prev.gacha.freePulls > 0;
+			if (!free && prev.resources[resource] < amount) return prev;
 
 			const { relics: pulled, pityCounter } = executePull(prev, poolId, count);
 
 			return {
-				resources: {
-					...prev.resources,
-					[resource]: prev.resources[resource] - amount,
-				},
+				resources: free
+					? prev.resources
+					: {
+							...prev.resources,
+							[resource]: prev.resources[resource] - amount,
+						},
 				relics: {
 					...prev.relics,
 					inventory: [
@@ -101,6 +109,7 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 					...prev.gacha,
 					pityCounters: { ...prev.gacha.pityCounters, [poolId]: pityCounter },
 					lastPulledRelics: pulled,
+					freePulls: free ? prev.gacha.freePulls - 1 : prev.gacha.freePulls,
 				},
 			};
 		});

@@ -1,5 +1,6 @@
 import { UNDYING_TYPES, UNIT_TYPES } from "../data/units";
-import type { UnitType } from "../types";
+import { UNIT_POOL } from "../slices/helpers";
+import type { Squad, Units, UnitType } from "../types";
 
 export { UNIT_TYPES };
 
@@ -30,6 +31,38 @@ export function compositionAfterFight(
 		next[type] = isUndying(type) ? before[type] : (survivors[type] ?? 0);
 	}
 	return next;
+}
+
+/** Two compositions summed type by type. */
+export function addComposition(
+	a: Record<UnitType, number>,
+	b: Record<UnitType, number>,
+): Record<UnitType, number> {
+	const next = {} as Record<UnitType, number>;
+	for (const type of UNIT_TYPES) next[type] = a[type] + b[type];
+	return next;
+}
+
+/**
+ * What the reserves can give a squad to bring it back to its `roster`: the
+ * per-type shortfall, capped by the pool and by the remaining room under the
+ * squad-size limit. Short reserves refill partially rather than not at all;
+ * every count is zero when there is nothing to do.
+ */
+export function replenishDelta(
+	squad: Pick<Squad, "composition" | "roster">,
+	units: Units,
+	maxSquadSize: number,
+): Record<UnitType, number> {
+	const delta = {} as Record<UnitType, number>;
+	let room = maxSquadSize - squadSize(squad.composition);
+	for (const type of UNIT_TYPES) {
+		const short = squad.roster[type] - squad.composition[type];
+		const take = Math.max(0, Math.min(short, units[UNIT_POOL[type]], room));
+		delta[type] = take;
+		room -= take;
+	}
+	return delta;
 }
 
 /** What is left of a squad that lost: the undying alone, at full strength. */

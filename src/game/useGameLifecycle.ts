@@ -54,7 +54,10 @@ export function useGameLifecycle(): {
 							"a",
 							buildAttackerConfig(squad.composition, stateAfterTick.derived),
 						);
-						engine.setSide("b", buildDefenderConfig(def));
+						engine.setSide(
+							"b",
+							buildDefenderConfig(def, stateAfterTick.derived),
+						);
 						engine.start();
 						stateAfterTick.addCombatEngine(squad.id, engine);
 					}

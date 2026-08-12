@@ -1,5 +1,6 @@
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { TICKS_PER_DAY } from "./data/pacing";
+import { accrueFreePulls } from "./rules/gacha";
 import { accruePassive, depositLoot, shouldAutoDeploy } from "./rules/loot";
 import { effectiveTravelTicks } from "./rules/travel";
 import { checkUnlockConditions } from "./rules/unlocks";
@@ -79,7 +80,16 @@ export function gameTick(state: GameState): Partial<GameState> {
 	if (!result.dungeons) result.dungeons = [...state.dungeons];
 	result.dungeons = checkUnlockConditions(result.dungeons);
 
-	// ── 6. Day count ─────────────────────────────────────────────
+	// ── 6. Phylactery ────────────────────────────────────────────
+	const freePulls = accrueFreePulls(state.gacha, derived.phylactery, 1);
+	if (
+		freePulls.freePulls !== state.gacha.freePulls ||
+		freePulls.freePullTicks !== state.gacha.freePullTicks
+	) {
+		result.gacha = { ...state.gacha, ...freePulls };
+	}
+
+	// ── 7. Day count ─────────────────────────────────────────────
 	const newMeta = {
 		...state.meta,
 		tickCount: state.meta.tickCount + 1,

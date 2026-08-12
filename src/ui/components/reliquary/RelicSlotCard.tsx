@@ -1,33 +1,32 @@
-import type { Relic, SlotId } from "../../../game/types";
+import type { Relic } from "../../../game/types";
 import { RelicCard } from "./RelicCard";
 
 export function RelicSlotCard({
-	slotId,
 	slotLabel,
 	relic,
+	locked,
 	selected,
 	onSelect,
 	onUnequip,
 }: {
-	slotId: SlotId;
 	slotLabel: string;
 	relic: Relic | null;
+	/** Slot exists but has not been opened by the upgrade tree yet. */
+	locked: boolean;
 	selected: boolean;
 	onSelect: () => void;
 	onUnequip: () => void;
 }) {
-	void slotId;
-
-	// An empty slot is display-only: relics are equipped from RelicDetail, so
-	// there is nothing to click here.
-	if (!relic) {
+	// An empty or locked slot is display-only: relics are equipped from
+	// RelicDetail, so there is nothing to click here.
+	if (locked || !relic) {
 		return (
 			<div className="w-[130px] aspect-[320/460] bg-bg-inset border border-dashed border-rule flex flex-col items-center justify-center relative">
 				<div className="mono absolute top-2 left-[10px] text-xs text-dim tracking-[0.1em]">
 					{slotLabel}
 				</div>
 				<div className="mono text-xs text-dim tracking-[0.14em] mt-[10px]">
-					EMPTY
+					{locked ? "SEALED" : "EMPTY"}
 				</div>
 			</div>
 		);

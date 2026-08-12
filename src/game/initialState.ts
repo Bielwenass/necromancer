@@ -30,6 +30,8 @@ function buildDefaults(): Omit<GameState, "derived"> {
 		gacha: {
 			pityCounters: { banner: 0, carrion: 0, forbidden: 0 },
 			lastPulledRelics: null,
+			freePulls: 0,
+			freePullTicks: 0,
 		},
 		meta: { tickCount: 0, dayCount: 0, version: 1, lastTickAt: Date.now() },
 	};
@@ -40,17 +42,15 @@ function buildInitialState(): GameState {
 	return { ...base, derived: recomputeDerived(base as GameState) };
 }
 
-/** Shapes this version has since replaced, still present in saves on disk. */
-type LegacySave = {
-	upgrades?: { availablePoints?: number };
-};
-
 /**
  * Build the state the store starts from. A save is spread over the defaults, so
  * top-level state fields added since the save was written get their default for
  * free. That does *not* hold inside a nested object — a saved `resources` or
- * `workshop` replaces the default wholesale — so every key added to one of those
- * needs a line here, the way `banners` does below.
+ * `gacha` replaces the default wholesale — so every key added to one of those
+ * needs a line here, the way `freePulls` does below.
+ *
+ * Only saves at the current `SAVE_VERSION` reach this: a bump rejects older ones
+ * outright, which is what keeps this free of migration code.
  */
 export function buildHydratedState(): GameState {
 	const saved = loadGame();
@@ -59,22 +59,18 @@ export function buildHydratedState(): GameState {
 	syncSquadIdCounter(saved.squads ?? []);
 
 	const defaults = buildDefaults();
-	// Skill points became the `banners` resource. Carry a pre-change balance
-	// across rather than voiding every point the player earned.
-	const legacyPoints = (saved as LegacySave).upgrades?.availablePoints;
 
 	const base = {
 		...defaults,
 		...saved,
-		resources: {
-			...defaults.resources,
-			...saved.resources,
-			banners: saved.resources?.banners ?? legacyPoints ?? 0,
-		},
+		resources: { ...defaults.resources, ...saved.resources },
+		// A squad saved before `roster` existed treats its current strength as the
+		// one it was raised at, so replenishing it is a no-op until it loses units.
+		squads: (saved.squads ?? []).map((s) => ({
+			...s,
+			roster: s.roster ?? s.composition,
+		})),
 		upgrades: { purchased: saved.upgrades?.purchased ?? [] },
-		// A save predating the pool rename (`bone` → `banner`, `soul` → `carrion`)
-		// carries counters under keys nothing reads. Not worth migrating: the
-		// defaults fill the current pools in at zero and the stale keys ride along.
 		gacha: {
 			...defaults.gacha,
 			...saved.gacha,
@@ -83,8 +79,8 @@ export function buildHydratedState(): GameState {
 				...saved.gacha?.pityCounters,
 			},
 		},
-		// Saves predating offline catchup have no `lastTickAt`; without one the
-		// elapsed-time check reads NaN and catchup never runs.
+		// A save written before the tab was hidden has no `lastTickAt`; without one
+		// the elapsed-time check reads NaN and catchup never runs.
 		meta: { ...saved.meta, lastTickAt: saved.meta?.lastTickAt ?? Date.now() },
 	};
 	return { ...base, derived: recomputeDerived(base as GameState) };

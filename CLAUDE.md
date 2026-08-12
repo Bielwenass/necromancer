@@ -91,11 +91,15 @@ Skipping it yields stale stats that silently correct on the next unrelated actio
 
 `src/combat/simulation.ts` is the hot loop (spatial hash, cell-aggregate flocking) — measure with the benchmark before restructuring. `config.ts` documents sane ranges per field; tune one value at a time.
 
+Relic-granted **combat modifiers** (`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`, `executioner`, `spectral`, `lastStand`) are the back half of `UnitDerivedStats`; `UnitMods` picks them off that type so the two can't drift. `SimUnit.mods` is `null` for any unit carrying none — the fast path — and enemies never carry any. Anything knowable before the first tick (Group Tactics, the enemy debuffs) belongs in `dungeonCombat.ts`, not the loop. The benchmark measures the modifier cost at 500v500; keep `auraRadius` honest, since it is the one that widens the fine query.
+
 ### Offline catchup shares its rules, not its sequencing
 
 `catchupOffline.ts` re-simulates up to `MAX_OFFLINE_MS` by jumping between squad events on a min-heap instead of stepping ticks, resolving fights headlessly with a cached, seeded engine.
 
-Both paths call the same `rules/` functions: `generateLoot` (catchup passes a seeded `rand`), `depositLoot`, `accruePassive`, `effectiveTravelTicks`, `shouldAutoDeploy`, `resolveFightOutcome`, `checkUnlockConditions`.
+Both paths call the same `rules/` functions: `generateLoot` (catchup passes a seeded `rand`), `depositLoot`, `accruePassive`, `effectiveTravelTicks`, `shouldAutoDeploy`, `resolveFightOutcome`, `checkUnlockConditions`, `accrueFreePulls`.
+
+A rule the catchup has to **batch** must be exact over any span — one call for N ticks landing where N calls for one do. `accrueFreePulls` is written that way and `parityCheck` asserts the equality directly.
 
 **A new rule touching travel, loot, fight resolution, or auto-deploy goes in `rules/` and is called from both sides.** Only sequencing may differ; `parityCheck.ts` verifies the two agree.
 
@@ -105,19 +109,21 @@ Two intentional deviations in `catchupOffline.ts`, both to preserve: it mutates 
 
 `data/*.ts` are pure data and their string ids are the contract with logic. Effects are declared in the table, not switched on by id:
 
-- **Upgrade nodes** carry `effects: UpgradeEffect[]`. Kinds: `global` (a scalar in `derived`, via `add`/`mult`/`pctOfSelf`), `unit` (one stat across listed unit types), `flag` (a boolean in `derived`), `elsewhere` (combat owns it, or it isn't built). A node with no effect is a type error.
-- **Relic affixes** carry `effect: AffixEffect` in `AFFIX_DEFS`, magnitude coming off the roll.
+- **Upgrade nodes** carry `effects: UpgradeEffect[]`. Kinds: `global` (a scalar in `derived`, via `add`/`mult`/`pctOfSelf`), `unit` (one stat across listed unit types), `flag` (a boolean in `derived`), `slot` (opens a relic slot), `elsewhere` (combat owns it, or it isn't built). A node with no effect is a type error. `cost` is a `Partial<Resources>`, not a banner count.
+- **Relic affixes** carry `effects: AffixEffect[]` in `AFFIX_DEFS`, magnitude coming off the roll. More than one entry makes a trade-off affix: every effect reads the same roll, and a negative `scale` turns part of it into a cost. A `minRarity` gates the affix out of every minor pool — the only route to one is a base naming it as `signatureAffixId`.
 - **Dungeon unlocks** carry `unlock: UnlockRule` (`always`/`clears`/`allOfTier`), evaluated by `checkUnlockConditions`.
 
 An `elsewhere` effect carries `where: "unimplemented"` unless it is genuinely read somewhere, plus a `note` describing the intent.
 
-**All player-facing effect text is generated** by `rules/describe.ts` (`describeUpgradeEffects`, `describeUnlock`, `describeCryptTrack`, `describeCryptLevel`). A node's `description` is optional qualitative colour — never restate a magnitude there.
+**All player-facing effect text is generated** by `rules/describe.ts` (`describeUpgradeEffects`, `describeAffixEffects`, `describeUnlock`, `describeCryptTrack`, `describeCryptLevel`). A node's `description` is optional qualitative colour — never restate a magnitude there.
 
-Prerequisite/unlock ids in the upgrade tree must round-trip; nothing validates them at build time.
+**The upgrade tree has two ordering rules and nothing validates either at build time.** A node whose effect scales corpses, souls, or one unit type must sit downstream of the node that opens it, *in the same branch*, so it can never be bought while worth zero. And `prerequisites` must never name another branch's node: `sections.ts` omits a node with unmet prerequisites, which reads as progressive reveal within a branch but as a missing node across two — reach across by charging that branch's resource in `cost` instead (Zombie Rites charges corpses; Veiled Circle charges souls). Prerequisite ids must also round-trip. Upgrade nodes must not use `pctOfSelf`: upgrades are folded before workshop levels and iterated in *purchase order*, so a share of a running total depends on both.
 
 ### Persistence
 
-`save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1`, gated on `SAVE_VERSION`. `buildHydratedState()` spreads loaded data over defaults, so new fields get defaults for free on old saves. **Adding a persisted slice means adding it to `PERSISTED_KEYS` and nothing else** — that list drives writing, import validation, and the required-field check.
+`save.ts` serializes the `PERSISTED_KEYS` allowlist (never `derived`) under `necromancer_save_v1`, gated on `SAVE_VERSION`. `buildHydratedState()` spreads loaded data over defaults, so new fields get defaults for free on old saves.
+
+**Bump `SAVE_VERSION` when a save's meaning changes, not just its shape** — reusing an upgrade node id for a different effect is the case that bit us. A bump rejects older saves outright, which is what keeps hydration free of migration code. **Adding a persisted slice means adding it to `PERSISTED_KEYS` and nothing else** — that list drives writing, import validation, and the required-field check.
 
 Import and reset are `persistenceSlice` actions, not direct `save.ts` calls, and both call `suspendPersistence()` first: the tick loop keeps running during the ~1s before reload and would otherwise overwrite the save just installed. Any new path that writes a save then reloads must suspend too.
 
@@ -176,6 +182,7 @@ Screens are keyboard-routed from `App.tsx` (keys `1`–`4`), derived from each t
 
 Not intentional design:
 
-- Nine upgrade nodes and ten relic affixes are `elsewhere: "unimplemented"` — they roll and display, but nothing applies them. Grep `"unimplemented"` for the current list.
-- **Coins are retired but still plumbed.** Loot rolls `coinsMin`/`coinsMax`, deposits bank them, `coinYieldBonus` accumulates — nothing spends or displays them. Kept for save compatibility; removing them is a deliberate change.
 - Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `×n` badge, fusion pips) but never written — there is no fusion or dedupe path, so that UI is inert.
+- No relic sets. No base sets `set:`, so `RelicBase.set` and the card's set label never render.
+
+Nothing is declared `elsewhere: "unimplemented"` today — grep `"unimplemented"` before assuming otherwise.

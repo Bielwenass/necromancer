@@ -1,4 +1,9 @@
-import { POOL_CONFIGS, type PoolConfig } from "../data/gacha";
+import {
+	FREE_PULL_CAP,
+	FREE_PULL_INTERVAL_TICKS,
+	POOL_CONFIGS,
+	type PoolConfig,
+} from "../data/gacha";
 import { RELIC_BASES } from "../data/relics";
 import type { GameState, PoolId, Rarity, Relic } from "../types";
 import { rarityRank, rollRelic } from "./relics";
@@ -42,12 +47,63 @@ function pickBase(_rarity: Rarity): string {
 	return bases[Math.floor(Math.random() * bases.length)].id;
 }
 
+/**
+ * Pulls between guarantees, after the Dark Pact discount. Never below one, so a
+ * stacked discount can't turn the counter into a guarantee on every pull.
+ */
+export function effectivePityInterval(
+	poolId: PoolId,
+	pityReduction: number,
+): number {
+	const { pityInterval } = POOL_CONFIGS[poolId];
+	if (pityInterval <= 0) return pityInterval;
+	return Math.max(1, Math.round(pityInterval * (1 - pityReduction)));
+}
+
+/**
+ * Advance the Phylactery by `ticks` and hand back the new counters.
+ *
+ * Written to be batch-exact: one call for a thousand ticks lands on the same
+ * numbers as a thousand calls for one, which is what lets the live tick and the
+ * offline catchup share it. At the cap, progress stops rather than banking a
+ * backlog, so a week away is worth the same as a night.
+ */
+export function accrueFreePulls(
+	gacha: Pick<GameState["gacha"], "freePulls" | "freePullTicks">,
+	phylactery: boolean,
+	ticks: number,
+): { freePulls: number; freePullTicks: number } {
+	const current = {
+		freePulls: gacha.freePulls,
+		freePullTicks: gacha.freePullTicks,
+	};
+	if (!phylactery || ticks <= 0) return current;
+	if (gacha.freePulls >= FREE_PULL_CAP) {
+		return { freePulls: FREE_PULL_CAP, freePullTicks: 0 };
+	}
+
+	const progress = gacha.freePullTicks + ticks;
+	const freePulls = Math.min(
+		FREE_PULL_CAP,
+		gacha.freePulls + Math.floor(progress / FREE_PULL_INTERVAL_TICKS),
+	);
+	return {
+		freePulls,
+		freePullTicks:
+			freePulls >= FREE_PULL_CAP ? 0 : progress % FREE_PULL_INTERVAL_TICKS,
+	};
+}
+
 export function executePull(
 	state: GameState,
 	poolId: PoolId,
 	count: 1 | 10,
 ): { relics: Relic[]; pityCounter: number } {
 	const config = POOL_CONFIGS[poolId];
+	const pityInterval = effectivePityInterval(
+		poolId,
+		state.derived.pityReduction,
+	);
 	let pity = state.gacha.pityCounters[poolId];
 	const relics: Relic[] = [];
 
@@ -56,9 +112,9 @@ export function executePull(
 
 		// A natural roll at or above the pity rarity resets the counter too, so
 		// the guarantee never fires right after the player already got one.
-		if (config.pityRarity && config.pityInterval > 0) {
+		if (config.pityRarity && pityInterval > 0) {
 			pity++;
-			if (pity >= config.pityInterval) {
+			if (pity >= pityInterval) {
 				rarity = config.pityRarity;
 				pity = 0;
 			} else {

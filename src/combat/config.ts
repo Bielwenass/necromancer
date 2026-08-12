@@ -100,6 +100,34 @@ export const COMBAT_CONFIG = {
 		wallRestitution: 0.5,
 	},
 
+	// ── Modifiers ────────────────────────────────────────────────
+	// Shape of the combat modifiers relics grant. The magnitudes are rolled and
+	// live in `game/data/relics.ts`; what's here is how each one *behaves*, and
+	// none of it costs anything for a unit that doesn't carry the modifier.
+	modifiers: {
+		// How long the `vanguard` bonus lasts, from the first tick of a fight.
+		// Fights resolve in seconds, so this must stay short — stretch it much
+		// past a fight's length and "opening damage" is just flat damage.
+		// Range: 1500–8000.
+		openingWindowMs: 4000,
+
+		// Reach of the `aura` modifier (px). Unlike every other modifier this one
+		// has a performance cost: it widens the fine-query radius, but ONLY in
+		// fights where a unit actually carries an aura. Keep it within ~2x
+		// attackRadius or the query starts pulling in the whole crush.
+		// Range: 8–20.
+		auraRadius: 14,
+
+		// Share of its starting count a side must fall below before `lastStand`
+		// pays out. Range: 0.1–0.35.
+		lastStandThreshold: 0.2,
+
+		// Ceiling on the local numerical advantage `overwhelm` scales with, in
+		// multiples of the enemy count nearby. Without it a lone straggler facing
+		// a swarm hands that swarm an unbounded multiplier. Range: 1–4.
+		overwhelmCap: 2,
+	},
+
 	collision: {
 		// Hard-collision spacing as a multiple of `rendering.dotRadius`, plus a
 		// small margin, so dots resolve just shy of visually overlapping.

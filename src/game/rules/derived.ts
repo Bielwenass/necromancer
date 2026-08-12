@@ -1,6 +1,11 @@
-import { BASE_MAX_SQUAD_SIZE, BASE_MAX_SQUADS } from "../data/economy";
+import {
+	BASE_MAX_SQUAD_SIZE,
+	BASE_MAX_SQUADS,
+	MAX_ENEMY_PENALTY,
+	MAX_PITY_REDUCTION,
+} from "../data/economy";
 import { TICKS_PER_SECOND } from "../data/pacing";
-import { AFFIX_DEFS } from "../data/relics";
+import { AFFIX_DEFS, BASE_UNLOCKED_SLOTS } from "../data/relics";
 import { UNIT_STAT_CONFIG, UNIT_TYPES } from "../data/units";
 import { UPGRADE_NODES } from "../data/upgrades";
 import { SQUAD_SIZE_PER_LEVEL, TRAVEL_SPEED_PER_LEVEL } from "../data/workshop";
@@ -10,24 +15,21 @@ import type {
 	GameState,
 	GlobalStatKey,
 	Resources,
+	SlotId,
 	UnitDerivedStats,
 	UnitType,
 	UpgradeEffect,
 	UpgradeNode,
 } from "../types";
-import { relicUpgradeMultiplier } from "./relics";
+import { allAffixes, relicUpgradeMultiplier } from "./relics";
 import { canAffordCost } from "./resources";
 import { gardenTotalYield } from "./workshop";
 
 export { UPGRADE_NODES };
 
-/**
- * An upgrade node's price, in the same `Partial<Resources>` shape every other
- * purchase in the game uses. Nodes are banner-only today; keeping the cost a
- * resource map means a node could charge souls or bones without a new code path.
- */
+/** An upgrade node's price. Already a resource map in the data table. */
 export function upgradeCost(node: UpgradeNode): Partial<Resources> {
-	return { banners: node.cost };
+	return node.cost;
 }
 
 type Globals = Record<GlobalStatKey, number>;
@@ -38,7 +40,6 @@ function baseGlobals(): Globals {
 	return {
 		bonesPassiveMult: 1,
 		boneYieldBonus: 0,
-		coinYieldBonus: 0,
 		soulsYieldBonus: 0,
 		corpseYieldBonus: 0,
 		maxSquadSize: BASE_MAX_SQUAD_SIZE,
@@ -46,6 +47,13 @@ function baseGlobals(): Globals {
 		soulHarvestBonus: 0,
 		squadTravelSpeedBonus: 0,
 		summonCostBonus: 0,
+		bannerChanceBonus: 0,
+		clearMultBonus: 0,
+		reanimateChance: 0,
+		groupTacticsBonus: 0,
+		enemyHpPenalty: 0,
+		enemyDmgPenalty: 0,
+		pityReduction: 0,
 	};
 }
 
@@ -59,6 +67,16 @@ function baseUnitStats(): UnitStats {
 			dmgBonus: 0,
 			speedFlat: 0,
 			speedBonus: 0,
+			lifesteal: 0,
+			regen: 0,
+			berserk: 0,
+			revive: 0,
+			vanguard: 0,
+			aura: 0,
+			overwhelm: 0,
+			executioner: 0,
+			spectral: 0,
+			lastStand: 0,
 		};
 	}
 	return stats;
@@ -91,6 +109,7 @@ function applyUpgradeEffect(
 	g: Globals,
 	units: UnitStats,
 	flags: Flags,
+	slots: Set<SlotId>,
 ): void {
 	switch (effect.kind) {
 		case "global":
@@ -102,13 +121,16 @@ function applyUpgradeEffect(
 		case "flag":
 			flags[effect.flag] = true;
 			break;
+		case "slot":
+			slots.add(effect.slot);
+			break;
 		case "elsewhere":
 			// Owned by the combat engine, or not built yet — nothing to fold in.
 			break;
 	}
 }
 
-/** `value` is the rolled affix magnitude, already scaled and converted to a decimal. */
+/** `value` is the rolled affix magnitude, converted to a decimal but unscaled. */
 function applyAffixEffect(
 	effect: AffixEffect,
 	value: number,
@@ -119,9 +141,11 @@ function applyAffixEffect(
 		case "global":
 			applyGlobal(g, effect.stat, effect.op, value * (effect.scale ?? 1));
 			break;
-		case "unit":
-			for (const type of effect.units) units[type][effect.stat] += value;
+		case "unit": {
+			const scaled = value * (effect.scale ?? 1);
+			for (const type of effect.units) units[type][effect.stat] += scaled;
 			break;
+		}
 		case "elsewhere":
 			break;
 	}
@@ -143,15 +167,19 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 	const flags: Flags = {
 		zombiesUnlocked: false,
 		wraithsUnlocked: false,
+		corpsesUnlocked: false,
+		soulsUnlocked: false,
 		autoDeploy: false,
+		phylactery: false,
 	};
+	const slots = new Set<SlotId>(BASE_UNLOCKED_SLOTS);
 
 	// ── 1. Purchased upgrade nodes ───────────────────────────────
 	for (const nodeId of state.upgrades.purchased) {
 		const node = NODES_BY_ID.get(nodeId);
 		if (!node) continue;
 		for (const effect of node.effects) {
-			applyUpgradeEffect(effect, g, units, flags);
+			applyUpgradeEffect(effect, g, units, flags, slots);
 		}
 	}
 
@@ -179,36 +207,41 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		if (!relic) continue;
 
 		const upgradeMultiplier = relicUpgradeMultiplier(relic.upgradeLevel);
-		const apply = (affixId: string, rolled: number) => {
-			const def = AFFIX_DEFS[affixId];
-			if (!def) return;
+		for (const affix of allAffixes(relic)) {
+			const def = AFFIX_DEFS[affix.id];
+			if (!def) continue;
 			// Affix values are percentages; every consumer wants a decimal.
-			applyAffixEffect(
-				def.effect,
-				(rolled * upgradeMultiplier) / 100,
-				g,
-				units,
-			);
-		};
-
-		apply(relic.mainAffix.id, relic.mainAffix.value);
-		for (const minor of relic.minorAffixes) apply(minor.id, minor.value);
+			const value = (affix.value * upgradeMultiplier) / 100;
+			for (const effect of def.effects) {
+				applyAffixEffect(effect, value, g, units);
+			}
+		}
 	}
 
 	return {
 		bonesPerTick: gardenBonesPerTick * g.bonesPassiveMult,
-		coinsPerTick: 0,
 		soulsPerTick: 0,
 		boneYieldBonus: g.boneYieldBonus,
-		coinYieldBonus: g.coinYieldBonus,
 		soulsYieldBonus: g.soulsYieldBonus,
 		corpseYieldBonus: g.corpseYieldBonus,
 		maxSquadSize: g.maxSquadSize,
 		maxSquads: g.maxSquads,
 		zombiesUnlocked: flags.zombiesUnlocked,
 		wraithsUnlocked: flags.wraithsUnlocked,
+		corpsesUnlocked: flags.corpsesUnlocked,
+		soulsUnlocked: flags.soulsUnlocked,
 		autoDeploy: flags.autoDeploy,
+		phylactery: flags.phylactery,
 		soulHarvestBonus: g.soulHarvestBonus,
+		bannerChanceBonus: g.bannerChanceBonus,
+		clearMultBonus: g.clearMultBonus,
+		reanimateChance: g.reanimateChance,
+		groupTacticsBonus: g.groupTacticsBonus,
+		// Clamped so a stacked debuff build can't erase a dungeon outright.
+		enemyHpPenalty: Math.min(MAX_ENEMY_PENALTY, g.enemyHpPenalty),
+		enemyDmgPenalty: Math.min(MAX_ENEMY_PENALTY, g.enemyDmgPenalty),
+		pityReduction: Math.min(MAX_PITY_REDUCTION, g.pityReduction),
+		unlockedSlots: [...slots],
 
 		skeleton: units.skeleton,
 		zombie: units.zombie,

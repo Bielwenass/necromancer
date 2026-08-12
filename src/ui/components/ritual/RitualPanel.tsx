@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { POOL_CONFIGS, poolOdds } from "../../../game/rules/gacha";
+import {
+	effectivePityInterval,
+	POOL_CONFIGS,
+	poolOdds,
+} from "../../../game/rules/gacha";
 import { useGameStore } from "../../../game/store";
 import type { PoolId, Relic } from "../../../game/types";
 import { IconBanner, IconCorpse, IconSoul } from "../icons";
@@ -18,6 +22,8 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 	const clearLastPulled = useGameStore((s) => s.clearLastPulled);
 	const lastPulledRelics = useGameStore((s) => s.gacha.lastPulledRelics);
 	const pityCounter = useGameStore((s) => s.gacha.pityCounters[poolId]);
+	const freePulls = useGameStore((s) => s.gacha.freePulls);
+	const pityReduction = useGameStore((s) => s.derived.pityReduction);
 
 	const [revealRelics, setRevealRelics] = useState<Relic[]>([]);
 	const [myPullPending, setMyPullPending] = useState(false);
@@ -26,8 +32,12 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 	const cost10 = config.cost10.amount;
 	const resource = config.cost1.resource;
 
+	// A Phylactery charge covers a single banner pull, and only that pool.
+	const free = poolId === "banner" && freePulls > 0;
+	const pityMax = effectivePityInterval(poolId, pityReduction);
+
 	const available = resources[resource];
-	const canPull1 = available >= cost1;
+	const canPull1 = free || available >= cost1;
 	const canPull10 = available >= cost10;
 
 	const doPull = (count: 1 | 10) => {
@@ -74,7 +84,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 				className="cornered mt-7 h-[180px] relative overflow-hidden opacity-95"
 				style={{
 					borderColor: meta.accent,
-					backgroundImage: `radial-gradient(ellipse at 50% 60%, ${meta.tint}, transparent 70%)`,
+					backgroundImage: `radial-gradient(ellipse at 50% 50%, ${meta.tint}, transparent 70%)`,
 				}}
 			>
 				<div className="relative w-full h-full">
@@ -84,10 +94,10 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 
 			<DropOddsTable odds={poolOdds(poolId)} />
 
-			{config.pityRarity && config.pityInterval > 0 && (
+			{config.pityRarity && pityMax > 0 && (
 				<PityMeter
 					counter={pityCounter}
-					max={config.pityInterval}
+					max={pityMax}
 					guaranteed={config.pityRarity}
 				/>
 			)}
@@ -95,11 +105,12 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 			<div className="mt-auto pt-5 flex gap-2.5">
 				<PullButton
 					label="PULL"
-					cost={cost1}
+					cost={free ? 0 : cost1}
 					affordable={canPull1}
 					accent={meta.accent}
 					Icon={ResourceIcon}
 					onClick={() => doPull(1)}
+					badge={free ? `FREE ×${freePulls}` : undefined}
 				/>
 				<PullButton
 					label="PULL × 10"

@@ -1,4 +1,4 @@
-import { RELIC_BASES } from "../../../game/data/relics";
+import { RELIC_BASES, SLOT_LABELS } from "../../../game/data/relics";
 import { DUST_VALUES } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
 import { rarityColor } from "../../theme";
@@ -9,12 +9,14 @@ import { RelicCard } from "./RelicCard";
 
 export function RelicDetail({
 	relic,
+	unlockedSlots,
 	onSacrifice,
 	onEquip,
 	confirmSacrifice,
 	onCancelSacrifice,
 }: {
 	relic: Relic;
+	unlockedSlots: SlotId[];
 	onSacrifice: () => void;
 	onEquip: (slotId: SlotId) => void;
 	confirmSacrifice: boolean;
@@ -98,16 +100,26 @@ export function RelicDetail({
 						EQUIP TO SLOT
 					</div>
 					<div className="flex gap-1.5 flex-wrap">
-						{base.slotIds.map((slotId) => (
-							<button
-								type="button"
-								key={slotId}
-								onClick={() => onEquip(slotId)}
-								className="px-[10px] py-1 border border-rule-strong mono text-sm tracking-wide text-muted"
-							>
-								{slotId}
-							</button>
-						))}
+						{base.slotIds.map((slotId) => {
+							// A sealed slot still shows, so the tree makes visible sense.
+							const locked = !unlockedSlots.includes(slotId);
+							return (
+								<button
+									type="button"
+									key={slotId}
+									disabled={locked}
+									onClick={() => onEquip(slotId)}
+									title={locked ? "Sealed — open it in the upgrade tree" : ""}
+									className={`px-[10px] py-1 border mono text-sm tracking-wide ${
+										locked
+											? "border-rule text-dim opacity-50 cursor-not-allowed"
+											: "border-rule-strong text-muted"
+									}`}
+								>
+									{SLOT_LABELS[slotId]}
+								</button>
+							);
+						})}
 					</div>
 				</div>
 			)}

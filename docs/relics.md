@@ -6,7 +6,7 @@ Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`); rolling
 
 ## Anatomy
 
-A relic instance = a **base** + a **rarity** + one rolled **main affix** + 0–3 rolled **minor affixes**, plus a derived `quality` and an `upgradeLevel` (0–5).
+A relic instance = a **base** + a **rarity** + one rolled **main affix** + 0–3 rolled **minor affixes** + an optional **signature affix**, plus a derived `quality` and an `upgradeLevel` (0–5).
 
 The base determines which slots accept it, its main affix id and range, its glyph, and the pool its minors are drawn from. 22 bases across four slot families:
 
@@ -32,17 +32,35 @@ Because the rarity boost is added to a 0–1 roll, **`pos` can exceed 1 and valu
 
 Minors are drawn without replacement from the base's pool. If a drawn minor matches the base's main affix id, its value is folded into the main affix instead of being added as a separate line. `quality` is the mean of all roll positions × 100.
 
+### Signatures and rarity gating
+
+An affix with a `minRarity` is **gated**: it is filtered out of every minor pool, and the only route to one is a base that names it as `signatureAffixId`. When such a relic rolls at or above that rarity it gets the affix outright, into `relic.uniqueAffix`, on top of its normal minors.
+
+| Base | Signature | Gate | Effect |
+|---|---|---|---|
+| Hollow Crown | Dread Command | legendary | +1 max squads |
+| Rib Cuirass | Lich Bond | legendary | skeletons revive once, at a share of max HP |
+| Plague Stone | Bloodfeast | legendary | zombie lifesteal |
+| Rot Censer | Death Aura | epic | zombies damage every enemy in reach |
+| Ghost Cinder | Vanguard Drums | epic | wraith damage in the opening seconds |
+
+This is what makes a legendary of a particular base worth chasing over a better-rolled common one, and it is the only place the strongest effects live.
+
 ## Applying affixes
 
-`recomputeDerived` walks `relics.equipped`, and for each relic applies main + minors through `applyAffix`:
+`recomputeDerived` walks `relics.equipped` and applies main + minors + signature. Every affix's targets are declared as `effects: AffixEffect[]` in `AFFIX_DEFS` — nothing switches on an affix id:
 
 ```
-boosted = value × (1 + upgradeLevel × 0.1) / 100
+value = rolled × (1 + upgradeLevel × 0.1) / 100
 ```
 
-Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true | false`; an unimplemented affix still rolls and still displays, but has no effect. Currently unimplemented: `rarityWeight` (wants gacha wiring), `dispatchBonus`, `firstStrikeBonus`, `overwhelm`, `berserk`, `lastStand`, `undyingFlesh`, `spectralStrike` (all want combat wiring), and `boneYieldFromKills` (needs reworking to per-kill). `corpseYield` and `soulOnKill` are fully wired now: `corpseYieldBonus` multiplies corpses on loot deposit, and `soulOnKill` feeds `soulHarvestBonus`, which multiplies a dungeon's soul chance. `soulOnKill` is still a misnomer — it scales the drop roll, not per-kill souls.
+Each effect then lands that value on a `derived` scalar (`global`), a per-unit stat (`unit`), or nothing (`elsewhere`). `scale` multiplies it per effect, which is what makes **trade-off affixes** possible: one roll, a positive effect at full scale and a negative one at a fraction of it. Reckless Rites, Gravebound, Brittle Edge, Frenzied Rot and Hollow Vessel are built this way, and `formatAffixValue` prints both halves (`+24% / −12%`) so a card can't advertise only the upside.
 
-`coinYield` is **retired**, which is a different thing from unimplemented: it is still wired to `coinYieldBonus` and still boosts coin loot, but coins are a retired resource (see [systems.md](systems.md#resources)) so the boost buys nothing. No base rolls it any more; the def and the `switch` case survive only so relics already in a save keep rendering.
+`scale` also carries the one flat affix: Dread Command rolls a `1` and scales by 100 to undo the percentage conversion.
+
+Hovering an affix row on a relic card opens a tooltip built by `describeAffixEffects` (`rules/describe.ts`), which walks the same `effects` array and names the stat each half lands on, followed by the affix's `description`. It rounds each magnitude the way `formatAffixValue` prints it, so the tooltip and the stat row above it can't disagree.
+
+**No affix is unimplemented.** Combat-facing affixes land on the combat modifier fields of `UnitDerivedStats` (`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`, `executioner`, `spectral`, `lastStand`), which the simulation reads per unit — see [combat.md](combat.md#modifiers). The two enemy debuffs (`enemyHpPenalty`, `enemyDmgPenalty`) are applied in `buildDefenderConfig`, outside the engine entirely.
 
 ## Sacrifice
 
@@ -54,7 +72,9 @@ There is **no fusion**. `upgradeLevel` (0–5) is read when applying affixes and
 
 ## Equipping
 
-`equipRelic` rejects any slot not listed on the relic's base, via `canEquipInSlot(baseId, slotId)` in `game/rules/relics.ts` — an unknown `baseId` is rejected rather than allowed through.
+`equipRelic` rejects any slot not listed on the relic's base, via `canEquipInSlot(baseId, slotId)` in `game/rules/relics.ts` — an unknown `baseId` is rejected rather than allowed through — and any slot not in `derived.unlockedSlots`.
+
+**Slots are bought.** `BASE_UNLOCKED_SLOTS` (C1, I1, II1, III1) are open from the start; C2, C3, I2, II2 and III2 are each opened by a node in the necromancy branch carrying a `{ kind: "slot" }` effect. A circle's slots stay hidden until its unit is unlocked, so opening II1 costs nothing while zombies are still buried. A sealed slot renders as `SEALED` in the Reliquary and its EQUIP button is disabled.
 
 Equipping happens **only** from the EQUIP TO SLOT buttons in `RelicDetail`, which are generated from `base.slotIds` and so can only ever offer valid targets. Clicking an equipped slot selects that relic to inspect it; an empty slot is display-only. The store guard is the backstop, not the mechanism.
 

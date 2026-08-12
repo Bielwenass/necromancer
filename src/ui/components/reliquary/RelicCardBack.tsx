@@ -1,34 +1,19 @@
-import {
-	buildFoil,
-	CardFrame,
-	type RarityConfig,
-	STAR_ANGLES,
-	TICK_ANGLES,
-} from "./relicCardArt";
+import { CardFrame, STAR_ANGLES, TICK_ANGLES } from "./relicCardArt";
 
-// Same silhouette across rarities to preserve the gacha mystery.
-// Higher rarities leak iridescence through the back as a hype tell.
-export function RelicCardBack({
-	R,
-	backShimmer,
-}: {
-	R: RarityConfig;
-	backShimmer: number;
-}) {
-	const backFoil = buildFoil(R.foilHues, 0.18, 72, 25);
+/**
+ * The card back. Same substrate, frame, noise and padding grid as the front —
+ * it is the same object turned over, so nothing here moves or glows. The seal
+ * is engraved line work at the front's art weight, and its silhouette is
+ * identical across rarities; only the tint the whole card carries comes
+ * through.
+ */
+export function RelicCardBack({ noise }: { noise: number }) {
 	return (
 		<div className="rc-back" aria-hidden>
 			<div className="rc-face-inner">
-				<div className="rc-back-base" />
-				{backShimmer > 0 && (
-					<div
-						className="rc-back-foil"
-						style={{
-							opacity: backShimmer * 0.7,
-							backgroundImage: backFoil,
-						}}
-					/>
-				)}
+				<div className="rc-base" />
+				<div className="rc-noise" style={{ opacity: noise }} />
+
 				<svg
 					aria-hidden="true"
 					className="rc-back-seal"
@@ -135,10 +120,15 @@ export function RelicCardBack({
 						<circle r="1.6" fill="currentColor" fillOpacity="0.85" />
 					</g>
 				</svg>
-				<CardFrame cornerOpacity={0.8} />
-				<div className="rc-noise" style={{ opacity: 0.4 }} />
-				<div className="rc-back-text rc-back-text-top">NECROMANCER</div>
-				<div className="rc-back-text rc-back-text-bot">RELIC · BOUND</div>
+
+				<CardFrame cornerOpacity={0.5} />
+
+				{/* Reuses .rc-content, so the two labels land on the same padding
+				    grid as the front's header and serial. */}
+				<div className="rc-content rc-back-content">
+					<span className="rc-back-text">NECROMANCER</span>
+					<span className="rc-back-text">RELIC · BOUND</span>
+				</div>
 			</div>
 		</div>
 	);

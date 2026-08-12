@@ -1,7 +1,16 @@
 import { BANNERS_PER_TIER } from "../data/economy";
-import type { CombatOutcome, DungeonDef, Resources, UnitType } from "../types";
+import type {
+	CombatOutcome,
+	DungeonDef,
+	GameState,
+	Resources,
+	UnitType,
+} from "../types";
 import { generateLoot } from "./loot";
 import { compositionAfterFight, remnantAfterWipe, squadSize } from "./units";
+
+/** The `derived` projection, as read by everything that resolves a fight. */
+type Derived = GameState["derived"];
 
 /**
  * What a finished fight does to the squad and the ledger.
@@ -25,18 +34,49 @@ export interface FightResolution {
 }
 
 /**
+ * Losses that claw their way home as skeletons, one independent roll per unit
+ * lost. Resolved out here rather than in the engine: a unit that dies mid-fight
+ * is genuinely gone from the battle, and only walks back out of the tomb once
+ * the fighting stops.
+ *
+ * Capped at the squad's own size limit, since the returning squad has to be a
+ * legal one.
+ */
+function reanimated(
+	before: Record<UnitType, number>,
+	after: Record<UnitType, number>,
+	derived: Derived,
+	rand: () => number,
+): number {
+	if (derived.reanimateChance <= 0) return 0;
+
+	let lost = 0;
+	for (const type of Object.keys(before) as UnitType[]) {
+		lost += Math.max(0, before[type] - after[type]);
+	}
+
+	let raised = 0;
+	for (let i = 0; i < lost; i++) {
+		if (rand() < derived.reanimateChance) raised++;
+	}
+
+	const room = derived.maxSquadSize - squadSize(after);
+	return Math.max(0, Math.min(raised, room));
+}
+
+/**
  * The rules for turning a combat result into game state — shared verbatim by
  * the live store action and the offline catchup.
  *
- * `rand` is threaded through to `generateLoot`: the live path leaves it at
- * `Math.random`, catchup passes a seeded generator.
+ * `rand` is threaded through to `generateLoot` and the reanimation rolls: the
+ * live path leaves it at `Math.random`, catchup passes a seeded generator.
  */
 export function resolveFightOutcome(
 	before: Record<UnitType, number>,
 	def: DungeonDef,
 	clearCount: number,
 	outcome: CombatOutcome,
-	soulHarvestBonus: number,
+	derived: Derived,
 	rand: () => number = Math.random,
 ): FightResolution {
 	if (outcome.winner !== "a") {
@@ -64,11 +104,19 @@ export function resolveFightOutcome(
 		};
 	}
 
+	const composition = compositionAfterFight(before, outcome.survivorsByType);
+	composition.skeleton += reanimated(before, composition, derived, rand);
+
+	// The bonus banner is rolled after the loot so that adding it can't shift the
+	// loot roll of an existing seed.
+	const loot = generateLoot(def.id, clearCount, derived, rand);
+	const bonusBanner = rand() < derived.bannerChanceBonus ? 1 : 0;
+
 	return {
 		kind: "cleared",
-		composition: compositionAfterFight(before, outcome.survivorsByType),
-		loot: generateLoot(def.id, clearCount, soulHarvestBonus, rand),
-		bannersAwarded: def.tier * BANNERS_PER_TIER,
+		composition,
+		loot,
+		bannersAwarded: def.tier * BANNERS_PER_TIER + bonusBanner,
 		clearCountDelta: 1,
 		suppressAutoDeploy: false,
 	};

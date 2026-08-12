@@ -1,7 +1,13 @@
 import type { GameState } from "./types";
 
 const SAVE_KEY = "necromancer_save_v1";
-const SAVE_VERSION = 1;
+/**
+ * Bumped when a save's *meaning* changes, not just its shape. Both bumps so far
+ * were upgrade-tree reworks that reused node ids for different effects — an
+ * older save would silently grant the wrong upgrades rather than fail. A
+ * mismatch makes `loadGame` return null and the game starts fresh.
+ */
+const SAVE_VERSION = 3;
 
 /** Slices written to disk. `derived` is deliberately absent — it is recomputed. */
 const PERSISTED_KEYS = [

@@ -3,7 +3,13 @@ import type { EventQueue } from "./events";
 import { SpatialHash } from "./spatialHash";
 import type { Side, SideConfig, SimUnit } from "./types";
 
-export type SimState = { units: SimUnit[] };
+export type SimState = {
+	units: SimUnit[];
+	/** Units each side spawned with — the denominator `lastStand` measures against. */
+	startCount: Record<Side, number>;
+	/** True when a unit carries an aura, which widens the fine-query radius. */
+	hasAura: boolean;
+};
 
 export interface PerfStats {
 	hashBuildMs: number;
@@ -24,7 +30,22 @@ export interface PerfStats {
 }
 
 export function createSimState(): SimState {
-	return { units: [] };
+	return { units: [], startCount: { a: 0, b: 0 }, hasAura: false };
+}
+
+/**
+ * Record what each side mustered, and whether an aura is in play. Called once,
+ * after both sides have spawned: `startCount` is what `lastStand` measures
+ * against, and `hasAura` is what keeps a fight with no aura in it querying at
+ * exactly the radius it always did.
+ */
+export function finalizeSpawn(state: SimState): void {
+	state.startCount = { a: 0, b: 0 };
+	state.hasAura = false;
+	for (const u of state.units) {
+		state.startCount[u.side]++;
+		if (u.mods !== null && u.mods.aura > 0) state.hasAura = true;
+	}
 }
 
 export function spawnUnits(
@@ -50,6 +71,8 @@ export function spawnUnits(
 				dmg: unit.stats.dmg,
 				speed: unit.stats.speed,
 				side,
+				mods: unit.mods ?? null,
+				revived: false,
 			});
 		}
 	}
@@ -97,9 +120,18 @@ export function tickSimulation(
 	// tighter/more local cohesion, larger = broader blobs.
 	const aggCell = cfg.cohesionRadius;
 	// Fine hash only needs to cover the largest *short-range* interaction:
-	// separation (sep radius) and combat targeting (attack radius).
-	const fineRadius = Math.max(cfg.separationRadius, cfg.attackRadius);
+	// separation (sep radius) and combat targeting (attack radius) — plus aura
+	// reach, but only in a fight where something actually has an aura, so the
+	// query stays as cheap as it ever was for everyone else.
+	const mcfg = COMBAT_CONFIG.modifiers;
+	const fineRadius = Math.max(
+		cfg.separationRadius,
+		cfg.attackRadius,
+		state.hasAura ? mcfg.auraRadius : 0,
+	);
 	const fineRadius2 = fineRadius * fineRadius;
+	const auraR2 = mcfg.auraRadius * mcfg.auraRadius;
+	const inOpening = t < mcfg.openingWindowMs;
 
 	const sepR = cfg.separationRadius;
 	const sepR2 = sepR * sepR;
@@ -192,6 +224,13 @@ export function tickSimulation(
 	const damageBuffer = new Map<number, number>();
 	const accX = new Float32Array(N);
 	const accY = new Float32Array(N);
+
+	// How much of each side is still standing, for `lastStand`. The counts come
+	// free out of phase 1's centroid pass.
+	const overwhelmCap = mcfg.overwhelmCap;
+	const lastStandThreshold = mcfg.lastStandThreshold;
+	const fracA = state.startCount.a > 0 ? cAc / state.startCount.a : 1;
+	const fracB = state.startCount.b > 0 ? cBc / state.startCount.b : 1;
 
 	for (let i = 0; i < N; i++) {
 		const u = units[i];
@@ -318,8 +357,13 @@ export function tickSimulation(
 
 		// ── sub-phase: neighbor loop ──
 		const nlStart = stats ? performance.now() : 0;
-		let nearestEnemyId = -1;
+		let nearestEnemy: SimUnit | null = null;
 		let nearestEnemyDist2 = Infinity;
+
+		const mods = u.mods;
+		// An aura bleeds a share of the unit's damage into every enemy in reach,
+		// rather than only the one it is swinging at.
+		const auraDmg = mods !== null && mods.aura > 0 ? u.dmg * mods.aura * dt : 0;
 
 		for (const neigh of neighbors) {
 			if (neigh.id === uid) continue;
@@ -340,10 +384,16 @@ export function tickSimulation(
 				ay -= dy * k;
 			}
 
+			if (sameSide) continue;
+
+			if (auraDmg > 0 && d2 < auraR2) {
+				damageBuffer.set(neigh.id, (damageBuffer.get(neigh.id) ?? 0) + auraDmg);
+			}
+
 			// Combat targeting: nearest enemy (within fine radius; gated by attackR2).
-			if (!sameSide && d2 < nearestEnemyDist2) {
+			if (d2 < nearestEnemyDist2) {
 				nearestEnemyDist2 = d2;
-				nearestEnemyId = neigh.id;
+				nearestEnemy = neigh;
 			}
 		}
 		if (stats) {
@@ -363,11 +413,44 @@ export function tickSimulation(
 		accX[i] = ax;
 		accY[i] = ay;
 
-		if (nearestEnemyId !== -1 && nearestEnemyDist2 < attackR2) {
-			const dmg = (u.dmg ?? defaultDmg) * dt;
+		if (nearestEnemy !== null && nearestEnemyDist2 < attackR2) {
+			let dmg = (u.dmg ?? defaultDmg) * dt;
+
+			if (mods !== null) {
+				// Every modifier is additive into one multiplier, so stacking two of
+				// them can't compound the way multiplying them would.
+				let mult = 1;
+				if (mods.berserk > 0) mult += mods.berserk * (1 - u.hp / u.maxHp);
+				if (mods.vanguard > 0 && inOpening) mult += mods.vanguard;
+				if (mods.overwhelm > 0 && eCount > 0) {
+					const advantage = sCount / eCount - 1;
+					if (advantage > 0) {
+						mult +=
+							mods.overwhelm *
+							(advantage < overwhelmCap ? advantage : overwhelmCap);
+					}
+				}
+				if (mods.executioner > 0 || mods.spectral > 0) {
+					const targetHp = nearestEnemy.hp / nearestEnemy.maxHp;
+					mult += mods.executioner * (1 - targetHp) + mods.spectral * targetHp;
+				}
+				if (mods.lastStand > 0) {
+					const frac = sameIsA ? fracA : fracB;
+					if (frac < lastStandThreshold) mult += mods.lastStand;
+				}
+				dmg *= mult;
+
+				// Lifesteal pays out on damage actually dealt, so a unit with nothing
+				// in reach heals for nothing.
+				if (mods.lifesteal > 0) {
+					const healed = u.hp + dmg * mods.lifesteal;
+					u.hp = healed > u.maxHp ? u.maxHp : healed;
+				}
+			}
+
 			damageBuffer.set(
-				nearestEnemyId,
-				(damageBuffer.get(nearestEnemyId) ?? 0) + dmg,
+				nearestEnemy.id,
+				(damageBuffer.get(nearestEnemy.id) ?? 0) + dmg,
 			);
 		}
 	}
@@ -450,7 +533,21 @@ export function tickSimulation(
 		const dmg = damageBuffer.get(u.id);
 		if (dmg) {
 			u.hp -= dmg;
-			if (u.hp <= 0) dead.push(u);
+			if (u.hp <= 0) {
+				// A revive spends itself here: the unit never enters `dead`, so it
+				// keeps its id, its position, and its place in the survivor count.
+				if (u.mods !== null && u.mods.revive > 0 && !u.revived) {
+					u.revived = true;
+					u.hp = u.maxHp * u.mods.revive;
+				} else {
+					dead.push(u);
+					continue;
+				}
+			}
+		}
+		if (u.mods !== null && u.mods.regen > 0 && u.hp < u.maxHp) {
+			const healed = u.hp + u.maxHp * u.mods.regen * dt;
+			u.hp = healed > u.maxHp ? u.maxHp : healed;
 		}
 	}
 

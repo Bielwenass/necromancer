@@ -72,7 +72,7 @@ export function DungeonCard({
 
 	// `projectLoot` reports the clear multiplier and each yield ratio alongside
 	// the figures, so the tooltip names the breakdown without re-deriving the
-	// loot-table base. Coins are rolled and banked but deliberately not quoted.
+	// loot-table base. A locked economy projects zero, and reads as absent.
 	const { clearMult, boneBonus, soulBonus, corpseBonus } = loot;
 	const clearMultDisplay = clearMult.toFixed(2);
 	const lt = def.lootTable;
@@ -124,20 +124,25 @@ export function DungeonCard({
 								boosted={boneBonus > 1.005}
 								title={`Bones per clear — base ${lt.bonesMin}–${lt.bonesMax}${bonusNote(clearMult, boneBonus)}`}
 							/>
-							<DungeonLootStat
-								icon={IconSoul}
-								value={perDrop ? `${soulPct} · ${perDrop}` : soulPct}
-								boosted={soulBonus > 1.005 || perDrop !== null}
-								title={`Soul chance per clear — base ${(lt.soulChance * 100).toFixed(0)}%${bonusNote(null, soulBonus)}${
-									perDrop ? ` · ${perDrop} souls per drop` : ""
-								}`}
-							/>
-							<DungeonLootStat
-								icon={IconCorpse}
-								value={`~${formatAmount(loot.corpses)}`}
-								boosted={corpseBonus > 1.005}
-								title={`Corpses per clear — ${dungeonEnemyCount(def)} enemies × ${(CORPSE_DROP_CHANCE * 100).toFixed(0)}% drop chance${bonusNote(null, corpseBonus)}`}
-							/>
+							{/* A gated economy projects zero and simply isn't quoted. */}
+							{loot.soulChance > 0 && (
+								<DungeonLootStat
+									icon={IconSoul}
+									value={perDrop ? `${soulPct} · ${perDrop}` : soulPct}
+									boosted={soulBonus > 1.005 || perDrop !== null}
+									title={`Soul chance per clear — base ${(lt.soulChance * 100).toFixed(0)}%${bonusNote(null, soulBonus)}${
+										perDrop ? ` · ${perDrop} souls per drop` : ""
+									}`}
+								/>
+							)}
+							{loot.corpses > 0 && (
+								<DungeonLootStat
+									icon={IconCorpse}
+									value={`~${formatAmount(loot.corpses)}`}
+									boosted={corpseBonus > 1.005}
+									title={`Corpses per clear — ${dungeonEnemyCount(def)} enemies × ${(CORPSE_DROP_CHANCE * 100).toFixed(0)}% drop chance${bonusNote(null, corpseBonus)}`}
+								/>
+							)}
 							{ds.clearCount > 0 && (
 								<>
 									<span className="text-coin">{ds.clearCount}× cleared</span>

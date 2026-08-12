@@ -12,7 +12,7 @@ export function DropOddsTable({ odds }: DropOddsTableProps) {
 	return (
 		<div className="mt-5">
 			<SectionLabel className="text-xs text-parchm tracking-[0.22em] flex justify-between mb-2">
-				Drop Odds
+				Relic Odds
 			</SectionLabel>
 
 			<div className="flex h-1.5 mb-2">

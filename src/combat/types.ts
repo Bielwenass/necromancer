@@ -1,11 +1,34 @@
-import type { EnemyDef } from "../game/types";
+import type { EnemyDef, UnitDerivedStats } from "../game/types";
 
 export type Side = "a" | "b";
 
 export type UnitStats = { hp: number; dmg: number; speed: number };
 
+/**
+ * The combat-only half of a unit type's derived stats, as the simulation reads
+ * it. Picked off `UnitDerivedStats` rather than restated, so adding a modifier
+ * there is a type error here until the sim handles it.
+ *
+ * Dungeon enemies never carry mods — only the player's side does.
+ */
+export type UnitMods = Pick<
+	UnitDerivedStats,
+	| "lifesteal"
+	| "regen"
+	| "berserk"
+	| "revive"
+	| "vanguard"
+	| "aura"
+	| "overwhelm"
+	| "executioner"
+	| "spectral"
+	| "lastStand"
+>;
+
+export type SideUnitDef = EnemyDef & { mods?: UnitMods };
+
 export type SideConfig = {
-	units: EnemyDef[];
+	units: SideUnitDef[];
 	spawnArea: { x: number; y: number; w: number; h: number };
 };
 
@@ -24,6 +47,10 @@ export type SimUnit = {
 	dmg: number;
 	speed: number;
 	side: Side;
+	/** Null for any unit with no modifier at all — the fast path. */
+	mods: UnitMods | null;
+	/** Set once a `revive` mod has brought this unit back. */
+	revived: boolean;
 };
 
 // Death flash particle

@@ -58,9 +58,9 @@ return withDerived(prev, { /* patch */ });
 ## State shape
 
 ```
-resources   bones, coins, souls, dust, corpses, banners
+resources   bones, souls, dust, corpses, banners
 units       reserve counts per type
-squads      Squad[] — composition, state, position, pendingLoot
+squads      Squad[] — composition, roster, state, position, pendingLoot
 dungeons    DungeonState[] — clearCount, unlocked
 relics      { inventory, equipped }
 upgrades    { purchased }
@@ -79,7 +79,7 @@ One Zustand store, composed in `game/store.ts` from five slice creators in `game
 | Slice | Owns |
 |---|---|
 | `combatSlice` | `combatEngines` map + `tick` (accumulator, autosave counter) |
-| `squadSlice` | dispatch, recall, create, delete, `resolveFight`, squad-id counter |
+| `squadSlice` | dispatch, recall, replenish, create, delete, `resolveFight`, squad-id counter |
 | `relicSlice` | equip, unequip, mark seen, sacrifice (single + bulk), gacha `pull` |
 | `progressionSlice` | upgrade purchase, workshop levels, summoning, dig |
 | `persistenceSlice` | `importSave`, `resetSave` |

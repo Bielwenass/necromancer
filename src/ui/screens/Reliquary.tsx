@@ -101,6 +101,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 				{selectedRelic ? (
 					<RelicDetail
 						relic={selectedRelic}
+						unlockedSlots={derived.unlockedSlots}
 						onSacrifice={() => {
 							if (confirmSacrifice) handleSacrifice();
 							else setConfirmSacrifice(true);

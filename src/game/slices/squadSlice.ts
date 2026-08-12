@@ -1,6 +1,6 @@
 import { DUNGEON_DEFS } from "../data/dungeons";
 import { resolveFightOutcome } from "../rules/fight";
-import { squadSize } from "../rules/units";
+import { addComposition, replenishDelta, squadSize } from "../rules/units";
 import type { UnitType } from "../types";
 import { applyUnitDelta, hasUnitsAvailable, withDerived } from "./helpers";
 import type { SliceCreator } from "./types";
@@ -27,6 +27,7 @@ function nextSquadId(): string {
 export interface SquadSlice {
 	dispatchSquad: (squadId: string, dungeonId: string) => void;
 	recallSquad: (squadId: string) => void;
+	replenishSquad: (squadId: string) => void;
 	createSquad: (
 		composition: Record<UnitType, number>,
 		name: string,
@@ -64,11 +65,18 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 		});
 	},
 
+	/**
+	 * Turn a squad around, or — for one already on its way home — mark the trip
+	 * as a recall so auto-deploy leaves it in the crypt on arrival. The loot a
+	 * returning squad carries survives that; only a squad pulled out mid-run
+	 * drops it, since it never finished the dungeon.
+	 */
 	recallSquad: (squadId) => {
 		set((prev) => ({
 			squads: prev.squads.map((s) => {
 				if (s.id !== squadId) return s;
-				if (s.state === "idle" || s.state === "returning") return s;
+				if (s.state === "idle") return s;
+				if (s.state === "returning") return { ...s, manualRecall: true };
 				return {
 					...s,
 					state: "returning" as const,
@@ -77,6 +85,38 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 				};
 			}),
 		}));
+	},
+
+	/**
+	 * Refill an idle squad from the reserves back up to the strength it was
+	 * raised at. Partial when the reserves are short — what is there is drafted.
+	 */
+	replenishSquad: (squadId) => {
+		set((prev) => {
+			const squad = prev.squads.find((s) => s.id === squadId);
+			// Units in the field are held by the squad, so drafting into one would
+			// mean two claims on the same skeleton.
+			if (squad?.state !== "idle") return prev;
+
+			const delta = replenishDelta(
+				squad,
+				prev.units,
+				prev.derived.maxSquadSize,
+			);
+			if (squadSize(delta) === 0) return prev;
+
+			return {
+				units: applyUnitDelta(prev.units, delta, -1),
+				squads: prev.squads.map((s) =>
+					s.id === squadId
+						? {
+								...s,
+								composition: addComposition(s.composition, delta),
+							}
+						: s,
+				),
+			};
+		});
 	},
 
 	createSquad: (composition, name) => {
@@ -96,6 +136,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 					id: squadId,
 					name,
 					composition: { ...composition },
+					roster: { ...composition },
 					targetDungeonId: null,
 					state: "idle" as const,
 					position: 0,
@@ -138,7 +179,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 				def,
 				dungeonState.clearCount,
 				{ winner, survivorsByType },
-				prev.derived.soulHarvestBonus,
+				prev.derived,
 			);
 
 			if (res.kind === "destroyed") {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DUNGEON_DEFS } from "../../../game/data/dungeons";
 import { randomSquadName } from "../../../game/data/squadNames";
 import { UNIT_COLORS } from "../../../game/data/units";
-import { squadSize } from "../../../game/rules/units";
+import { replenishDelta, squadSize } from "../../../game/rules/units";
 import { useGameStore } from "../../../game/store";
 import type { UnitType } from "../../../game/types";
 import { Modal } from "../common/Modal";
@@ -21,6 +21,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	const squads = useGameStore((s) => s.squads);
 	const createSquad = useGameStore((s) => s.createSquad);
 	const dispatchSquad = useGameStore((s) => s.dispatchSquad);
+	const replenishSquad = useGameStore((s) => s.replenishSquad);
 
 	const idleSquads = squads.filter((s) => s.state === "idle");
 	// The cap is on how many squads exist at all, whatever they're doing —
@@ -98,6 +99,10 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 						<div className="flex flex-col gap-[6px] mb-5">
 							{idleSquads.map((squad) => {
 								const totalSq = squadSize(squad.composition);
+								const rosterSq = squadSize(squad.roster);
+								const refillCount = squadSize(
+									replenishDelta(squad, units, maxSize),
+								);
 								const skLabel =
 									squad.composition.skeleton > 0
 										? `${squad.composition.skeleton}sk`
@@ -123,9 +128,27 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 												{squad.name}
 											</div>
 											<div className="mono text-[10px] text-muted mt-0.5">
-												×{totalSq} · {compStr}
+												<span
+													className={
+														totalSq < rosterSq ? "text-hp-warn" : undefined
+													}
+												>
+													×{totalSq}
+													{totalSq < rosterSq ? `/${rosterSq}` : ""}
+												</span>{" "}
+												· {compStr}
 											</div>
 										</div>
+										{refillCount > 0 && (
+											<button
+												type="button"
+												onClick={() => replenishSquad(squad.id)}
+												title="Draft from the reserves back up to full strength"
+												className="px-3 py-[6px] border border-rule-strong text-parchm cursor-pointer display text-[10px] tracking-[0.2em]"
+											>
+												REFILL ×{refillCount}
+											</button>
+										)}
 										<button
 											type="button"
 											onClick={() => handleSendIdle(squad.id)}

@@ -3,7 +3,6 @@ import type { Resources, Units } from "../types";
 /** What a fresh necromancer wakes up with. */
 export const STARTING_RESOURCES: Resources = {
 	bones: 100,
-	coins: 0,
 	souls: 0,
 	dust: 0,
 	corpses: 0,
@@ -40,3 +39,11 @@ export const DIG_BONE_YIELD = 1;
 
 /** Banners paid per clear, multiplied by the dungeon's tier. */
 export const BANNERS_PER_TIER = 1;
+
+/**
+ * Ceilings on the two enemy debuffs and on the Ritual pity discount. All three
+ * stack additively across relics, so without a cap a full debuff build would
+ * take a dungeon's defenders — or a pity counter — to nothing.
+ */
+export const MAX_ENEMY_PENALTY = 0.4;
+export const MAX_PITY_REDUCTION = 0.5;

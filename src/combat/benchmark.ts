@@ -17,11 +17,52 @@ import {
 	DEFENDER_SPAWN,
 } from "./dungeonCombat";
 import { CombatEngine } from "./engine";
-import type { SideConfig } from "./types";
+import type { SideConfig, UnitMods } from "./types";
 
 const SKELETON = UNIT_STAT_CONFIG.skeleton;
 
-function makeConfig(count: number, leftSide: boolean): SideConfig {
+const NO_MODS: UnitMods = {
+	lifesteal: 0,
+	regen: 0,
+	berserk: 0,
+	revive: 0,
+	vanguard: 0,
+	aura: 0,
+	overwhelm: 0,
+	executioner: 0,
+	spectral: 0,
+	lastStand: 0,
+};
+
+/**
+ * Two modifier loadouts worth measuring separately: everything that rides along
+ * inside the existing loops, and the one that widens the fine query.
+ */
+const MOD_LOADOUTS: { label: string; mods?: UnitMods }[] = [
+	{ label: "no modifiers" },
+	{
+		label: "in-loop modifiers",
+		mods: {
+			...NO_MODS,
+			lifesteal: 0.05,
+			regen: 0.02,
+			berserk: 0.3,
+			revive: 0.3,
+			vanguard: 0.3,
+			overwhelm: 0.2,
+			executioner: 0.3,
+			spectral: 0.2,
+			lastStand: 0.5,
+		},
+	},
+	{ label: "+ death aura", mods: { ...NO_MODS, aura: 0.1 } },
+];
+
+function makeConfig(
+	count: number,
+	leftSide: boolean,
+	mods?: UnitMods,
+): SideConfig {
 	return {
 		units: [
 			{
@@ -33,6 +74,7 @@ function makeConfig(count: number, leftSide: boolean): SideConfig {
 					speed: SKELETON.speed.base,
 				},
 				color: "white",
+				mods,
 			},
 		],
 		spawnArea: leftSide ? ATTACKER_SPAWN : DEFENDER_SPAWN,
@@ -61,9 +103,11 @@ interface RunResult {
 	avgQueriesPerUnit: number;
 }
 
-function runOnce(n: number, seed: number): RunResult {
+function runOnce(n: number, seed: number, mods?: UnitMods): RunResult {
 	const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed });
-	engine.setSide("a", makeConfig(n, true));
+	// Modifiers go on side A only — the player's side is the only one that ever
+	// carries them, so a symmetric loadout would overstate their cost.
+	engine.setSide("a", makeConfig(n, true, mods));
 	engine.setSide("b", makeConfig(n, false));
 	engine.start();
 
@@ -125,6 +169,19 @@ for (const n of SCENARIOS) {
 	const results: RunResult[] = [];
 	for (const seed of SEEDS) results.push(runOnce(n, seed));
 	summarize(results);
+}
+
+// What the relic modifiers cost. Everything but the aura rides along inside
+// loops that already run; the aura is the one that widens the fine query, and
+// it only does so in fights where a unit actually carries it.
+console.log("\n── modifier cost, 500v500 (avg over 3 seeds) ──");
+for (const { label, mods } of MOD_LOADOUTS) {
+	const runs = SEEDS.map((seed) => runOnce(500, seed, mods));
+	const perTick = runs.reduce((s, r) => s + r.perTickMs, 0) / runs.length;
+	const neighbors = runs.reduce((s, r) => s + r.avgNeighbors, 0) / runs.length;
+	console.log(
+		`  ${label.padEnd(20)} ${perTick.toFixed(3)}ms/tick   neighbors ${neighbors.toFixed(1)}/unit`,
+	);
 }
 
 console.log("\nDone.");

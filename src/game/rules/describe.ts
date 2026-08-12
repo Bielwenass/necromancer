@@ -1,4 +1,5 @@
 import { DUNGEON_DEFS } from "../data/dungeons";
+import { AFFIX_DEFS, SLOT_LABELS } from "../data/relics";
 import { UNIT_TYPES } from "../data/units";
 import {
 	type CryptKey,
@@ -6,6 +7,7 @@ import {
 	TRAVEL_SPEED_PER_LEVEL,
 } from "../data/workshop";
 import type {
+	AffixEffect,
 	DerivedFlagKey,
 	DungeonDef,
 	GlobalStatKey,
@@ -14,6 +16,7 @@ import type {
 	UpgradeEffect,
 	UpgradeNode,
 } from "../types";
+import { relicUpgradeMultiplier } from "./relics";
 
 /**
  * The player-facing sentence for a rule, generated from the rule itself.
@@ -47,7 +50,6 @@ const GLOBAL_LABELS: Record<
 > = {
 	bonesPassiveMult: { label: "passive bone income", pct: true },
 	boneYieldBonus: { label: "bone yield", pct: true },
-	coinYieldBonus: { label: "coin yield", pct: true },
 	soulsYieldBonus: { label: "soul yield", pct: true },
 	corpseYieldBonus: { label: "corpse yield", pct: true },
 	maxSquadSize: { label: "max squad size", pct: false },
@@ -56,6 +58,13 @@ const GLOBAL_LABELS: Record<
 	squadTravelSpeedBonus: { label: "travel & return speed", pct: true },
 	// A bonus here *reduces* the price, so it reads with the opposite sign.
 	summonCostBonus: { label: "skeleton summon cost", pct: true, invert: true },
+	bannerChanceBonus: { label: "chance of a bonus banner", pct: true },
+	clearMultBonus: { label: "repeat-clear payout", pct: true },
+	reanimateChance: { label: "chance a lost unit walks home", pct: true },
+	groupTacticsBonus: { label: "damage with all three unit types", pct: true },
+	enemyHpPenalty: { label: "enemy HP", pct: true, invert: true },
+	enemyDmgPenalty: { label: "enemy damage", pct: true, invert: true },
+	pityReduction: { label: "Ritual pity threshold", pct: true, invert: true },
 };
 
 const UNIT_STAT_LABELS: Record<UnitStatKey, string> = {
@@ -65,6 +74,16 @@ const UNIT_STAT_LABELS: Record<UnitStatKey, string> = {
 	dmgBonus: "damage",
 	speedFlat: "speed",
 	speedBonus: "speed",
+	lifesteal: "lifesteal",
+	regen: "HP regenerated per second",
+	berserk: "damage at zero HP",
+	revive: "HP on the one revival",
+	vanguard: "damage in the opening seconds",
+	aura: "damage per second to enemies in reach",
+	overwhelm: "damage per enemy outnumbered",
+	executioner: "damage against wounded targets",
+	spectral: "damage against unwounded targets",
+	lastStand: "damage once the squad is nearly wiped",
 };
 
 const UNIT_NAMES: Record<UnitType, string> = {
@@ -76,7 +95,10 @@ const UNIT_NAMES: Record<UnitType, string> = {
 const FLAG_LABELS: Record<DerivedFlagKey, string> = {
 	zombiesUnlocked: "Unlocks zombies",
 	wraithsUnlocked: "Unlocks wraiths",
+	corpsesUnlocked: "Clears start dropping corpses",
+	soulsUnlocked: "Clears start dropping souls",
 	autoDeploy: "Enables auto-deploy",
+	phylactery: "Grants a free banner Ritual pull on a timer",
 };
 
 function describeGlobal(
@@ -129,6 +151,11 @@ export function describeEffect(effect: UpgradeEffect): EffectLine {
 			};
 		case "flag":
 			return { text: FLAG_LABELS[effect.flag], unimplemented: false };
+		case "slot":
+			return {
+				text: `Opens relic slot ${SLOT_LABELS[effect.slot]}`,
+				unimplemented: false,
+			};
 		case "elsewhere":
 			return {
 				text: effect.note,
@@ -156,6 +183,59 @@ export function summarizeUpgradeEffects(node: UpgradeNode): string {
 	// The node's own `description` is qualitative colour, where it has one.
 	if (node.description) parts.push(sentence(node.description));
 	return `${parts.join(". ")}.`;
+}
+
+/**
+ * A rolled affix magnitude as a decimal, rounded the way `formatAffixValue`
+ * prints it so a tooltip line never contradicts the stat row above it.
+ */
+function asShownPercent(value: number): number {
+	return (Math.sign(value) * Math.round(Math.abs(value) * 100)) / 100;
+}
+
+/**
+ * Every mechanical line for one rolled affix, at the magnitude this relic
+ * carries. Mirrors `applyAffixEffect`: the roll is a percentage and each effect
+ * takes its own `scale` of it, which is what makes a trade-off affix read as
+ * two lines — the bonus and what pays for it.
+ */
+export function describeAffixEffects(
+	affixId: string,
+	value: number,
+	upgradeLevel = 0,
+): EffectLine[] {
+	const def = AFFIX_DEFS[affixId];
+	if (!def) return [];
+	const rolled = (value * relicUpgradeMultiplier(upgradeLevel)) / 100;
+	return def.effects.map((effect) => describeAffixEffect(effect, rolled));
+}
+
+function describeAffixEffect(effect: AffixEffect, rolled: number): EffectLine {
+	switch (effect.kind) {
+		case "global":
+			return {
+				text: describeGlobal(
+					effect.stat,
+					effect.op,
+					asShownPercent(rolled * (effect.scale ?? 1)),
+				),
+				unimplemented: false,
+			};
+		case "unit":
+			return {
+				text: describeUnitEffect(
+					effect.units,
+					effect.stat,
+					asShownPercent(rolled * (effect.scale ?? 1)),
+				),
+				unimplemented: false,
+			};
+		case "elsewhere":
+			return {
+				text: effect.note,
+				unimplemented: effect.where === "unimplemented",
+			};
+	}
 }
 
 /** What the player must do to open a dungeon. */

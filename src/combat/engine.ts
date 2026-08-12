@@ -4,6 +4,7 @@ import { mulberry32 } from "./prng";
 import { renderFrame } from "./renderer";
 import {
 	createSimState,
+	finalizeSpawn,
 	getTotalUnitCount,
 	getUnitCounts,
 	type PerfStats,
@@ -89,6 +90,7 @@ export class CombatEngine {
 			this.simState.units.push(...result.units);
 			this.nextId = result.nextId;
 		}
+		finalizeSpawn(this.simState);
 
 		this.running = true;
 	}

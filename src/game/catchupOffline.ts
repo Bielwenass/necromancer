@@ -15,6 +15,7 @@ import {
 	TICKS_PER_DAY,
 } from "./data/pacing";
 import { resolveFightOutcome } from "./rules/fight";
+import { accrueFreePulls } from "./rules/gacha";
 import { accruePassive, depositLoot, shouldAutoDeploy } from "./rules/loot";
 import { effectiveTravelTicks } from "./rules/travel";
 import { squadSize } from "./rules/units";
@@ -168,7 +169,10 @@ function runFight(
 	const seed = deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount);
 	const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed });
 	engine.setSide("a", buildAttackerConfig(squad.composition, state.derived));
-	engine.setSide("b", buildDefenderConfig(DUNGEON_DEFS[dungeon.id]));
+	engine.setSide(
+		"b",
+		buildDefenderConfig(DUNGEON_DEFS[dungeon.id], state.derived),
+	);
 	engine.start();
 
 	let safety = 0;
@@ -291,7 +295,7 @@ function processEvent(
 				DUNGEON_DEFS[dungeon.id],
 				dungeon.clearCount,
 				outcome,
-				state.derived.soulHarvestBonus,
+				state.derived,
 				lootRand,
 			);
 
@@ -376,6 +380,7 @@ function cloneForCatchup(state: GameState): GameState {
 		squads: state.squads.map((s) => ({
 			...s,
 			composition: { ...s.composition },
+			roster: { ...s.roster },
 			pendingLoot: s.pendingLoot ? { ...s.pendingLoot } : null,
 		})),
 		dungeons: state.dungeons.map((d) => ({ ...d })),
@@ -474,6 +479,13 @@ export async function simulateOffline(
 	}
 
 	finalizeSquads(w, cursor);
+
+	// Batched in one call — `accrueFreePulls` is exact over any span, so the
+	// whole window pays what the live tick would have paid tick by tick.
+	w.gacha = {
+		...w.gacha,
+		...accrueFreePulls(w.gacha, w.derived.phylactery, cursor),
+	};
 
 	w.meta.tickCount += cursor;
 	w.meta.dayCount = Math.floor(w.meta.tickCount / TICKS_PER_DAY);

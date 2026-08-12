@@ -36,9 +36,10 @@ export function rollCorpses(enemiesFelled: number, rand: () => number): number {
 }
 
 /**
- * `soulHarvestBonus` multiplies the dungeon's soul chance, which is what `n0`,
- * `n3b` and the `soulOnKill` affix all describe. The chance is clamped at 1 so
- * a heavily-stacked build can't roll past certainty.
+ * `soulHarvestBonus` multiplies the dungeon's soul chance — what the Soul
+ * Harvest and Soul Drain nodes and the `soulHarvest` affix all describe. The
+ * chance is clamped at 1 so a heavily-stacked build can't roll past certainty;
+ * past that point `soulsYieldBonus` is what keeps paying.
  */
 export function effectiveSoulChance(
 	base: number,
@@ -48,16 +49,23 @@ export function effectiveSoulChance(
 }
 
 /**
- * Repeat-clear payout multiplier. Bones and coins scale with how often a
- * dungeon has been cleared; corpses deliberately don't, since they come off the
- * kill count rather than the loot table.
+ * Repeat-clear payout multiplier. Bones scale with how often a dungeon has been
+ * cleared; corpses deliberately don't, since they come off the kill count rather
+ * than the loot table. `clearMultBonus` (the Tomb Robber affix) steepens the
+ * curve rather than shifting it, so it pays nothing on a dungeon's first clear.
  */
-export function clearMultiplier(clearCount: number): number {
-	return 1 + Math.sqrt(clearCount) * CLEAR_MULT_COEFF;
+export function clearMultiplier(
+	clearCount: number,
+	clearMultBonus = 0,
+): number {
+	return 1 + Math.sqrt(clearCount) * CLEAR_MULT_COEFF * (1 + clearMultBonus);
 }
 
 /**
  * What a clear drops, before the yield bonuses applied on deposit.
+ *
+ * Corpses and souls are gated: until the tree has opened each economy the roll
+ * is skipped outright, so an early necromancer banks bones and nothing else.
  *
  * `rand` defaults to `Math.random` for the live game; offline catchup passes a
  * seeded generator so a mid-window refresh reproduces identical results.
@@ -65,29 +73,29 @@ export function clearMultiplier(clearCount: number): number {
 export function generateLoot(
 	dungeonId: string,
 	clearCount: number,
-	soulHarvestBonus: number,
+	derived: Derived,
 	rand: () => number = Math.random,
 ): Partial<Resources> {
 	const def = DUNGEON_DEFS[dungeonId];
 	if (!def) return {};
 
-	const clearBonus = clearMultiplier(clearCount);
+	const clearBonus = clearMultiplier(clearCount, derived.clearMultBonus);
 	const lt = def.lootTable;
 
 	const bones = Math.round(
 		(lt.bonesMin + rand() * (lt.bonesMax - lt.bonesMin)) * clearBonus,
 	);
-	const coins = Math.round(
-		(lt.coinsMin + rand() * (lt.coinsMax - lt.coinsMin)) * clearBonus,
-	);
 	// Corpses come off the kill count, so `clearBonus` deliberately misses them.
-	const corpses = rollCorpses(dungeonEnemyCount(def), rand);
+	const corpses = derived.corpsesUnlocked
+		? rollCorpses(dungeonEnemyCount(def), rand)
+		: 0;
 	const souls =
-		rand() < effectiveSoulChance(lt.soulChance, soulHarvestBonus)
+		derived.soulsUnlocked &&
+		rand() < effectiveSoulChance(lt.soulChance, derived.soulHarvestBonus)
 			? SOULS_PER_DROP
 			: 0;
 
-	return { bones, coins, corpses, souls };
+	return { bones, corpses, souls };
 }
 
 /**
@@ -100,7 +108,6 @@ export function depositLoot(
 	derived: Derived,
 ): void {
 	resources.bones += (loot.bones ?? 0) * (1 + derived.boneYieldBonus);
-	resources.coins += (loot.coins ?? 0) * (1 + derived.coinYieldBonus);
 	resources.souls += (loot.souls ?? 0) * (1 + derived.soulsYieldBonus);
 	resources.corpses += (loot.corpses ?? 0) * (1 + derived.corpseYieldBonus);
 }
@@ -116,7 +123,6 @@ export function accruePassive(
 	ticks = 1,
 ): void {
 	resources.bones += derived.bonesPerTick * ticks;
-	resources.coins += derived.coinsPerTick * ticks;
 	resources.souls += derived.soulsPerTick * ticks;
 }
 
@@ -144,9 +150,7 @@ export function shouldAutoDeploy(
 export interface ProjectedLoot {
 	bonesMin: number;
 	bonesMax: number;
-	coinsMin: number;
-	coinsMax: number;
-	/** Chance a run drops souls at all, after `soulHarvestBonus`. 0–1. */
+	/** Chance a run drops souls at all, after `soulHarvestBonus`. 0 while locked. */
 	soulChance: number;
 	/** Souls banked when that roll hits, scaled by `soulsYieldBonus`. */
 	soulsPerDrop: number;
@@ -175,24 +179,23 @@ export function projectLoot(
 	clearCount: number,
 	derived: Derived,
 ): ProjectedLoot {
-	const clearMult = clearMultiplier(clearCount);
+	const clearMult = clearMultiplier(clearCount, derived.clearMultBonus);
 	const lt = def.lootTable;
 	const boneBonus = 1 + derived.boneYieldBonus;
 	const corpseBonus = 1 + derived.corpseYieldBonus;
-	const coinMult = clearMult * (1 + derived.coinYieldBonus);
-	const soulChance = effectiveSoulChance(
-		lt.soulChance,
-		derived.soulHarvestBonus,
-	);
+	// A locked economy projects as zero, matching what `generateLoot` will roll.
+	const soulChance = derived.soulsUnlocked
+		? effectiveSoulChance(lt.soulChance, derived.soulHarvestBonus)
+		: 0;
 
 	return {
 		bonesMin: lt.bonesMin * clearMult * boneBonus,
 		bonesMax: lt.bonesMax * clearMult * boneBonus,
-		coinsMin: lt.coinsMin * coinMult,
-		coinsMax: lt.coinsMax * coinMult,
 		soulChance,
-		soulsPerDrop: SOULS_PER_DROP + derived.soulsYieldBonus,
-		corpses: dungeonEnemyCount(def) * CORPSE_DROP_CHANCE * corpseBonus,
+		soulsPerDrop: SOULS_PER_DROP * (1 + derived.soulsYieldBonus),
+		corpses: derived.corpsesUnlocked
+			? dungeonEnemyCount(def) * CORPSE_DROP_CHANCE * corpseBonus
+			: 0,
 		clearMult,
 		boneBonus,
 		soulBonus: lt.soulChance > 0 ? soulChance / lt.soulChance : 1,

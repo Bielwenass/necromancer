@@ -1,3 +1,4 @@
+import { SLOT_LABELS } from "../../../game/data/relics";
 import type { SlotId, UnitType } from "../../../game/types";
 
 export interface SlotGroup {
@@ -10,38 +11,31 @@ export interface SlotGroup {
 	unitType?: UnitType;
 }
 
-/** The equipped-relic layout: which slots exist, grouped and labelled. */
+const slot = (id: SlotId) => ({ id, label: SLOT_LABELS[id] });
+
+/**
+ * The equipped-relic layout: which slots exist, grouped and labelled. Which of
+ * them are *open* is `derived.unlockedSlots` — the second slot of every group is
+ * bought from the necromancy branch.
+ */
 export const SLOT_GROUPS: SlotGroup[] = [
 	{
 		title: "The Crypt",
-		slots: [
-			{ id: "C1", label: "C-I" },
-			{ id: "C2", label: "C-II" },
-			{ id: "C3", label: "C-III" },
-		],
+		slots: [slot("C1"), slot("C2"), slot("C3")],
 	},
 	{
 		title: "Skeleton Summoning Circle",
 		unitType: "skeleton",
-		slots: [
-			{ id: "I1", label: "S-I" },
-			{ id: "I2", label: "S-II" },
-		],
+		slots: [slot("I1"), slot("I2")],
 	},
 	{
 		title: "Zombie Summoning Circle",
 		unitType: "zombie",
-		slots: [
-			{ id: "II1", label: "Z-I" },
-			{ id: "II2", label: "Z-II" },
-		],
+		slots: [slot("II1"), slot("II2")],
 	},
 	{
 		title: "Wraith Summoning Circle",
 		unitType: "wraith",
-		slots: [
-			{ id: "III1", label: "W-I" },
-			{ id: "III2", label: "W-II" },
-		],
+		slots: [slot("III1"), slot("III2")],
 	},
 ];

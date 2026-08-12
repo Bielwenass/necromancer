@@ -7,7 +7,7 @@ import {
 	RELIC_BASES,
 	RELIC_UPGRADE_STEP,
 } from "../data/relics";
-import type { Rarity, Relic, RelicSlotType, SlotId } from "../types";
+import type { Affix, Rarity, Relic, RelicSlotType, SlotId } from "../types";
 
 export { DUST_VALUES };
 
@@ -26,6 +26,15 @@ export function rarityRank(r: Rarity): number {
 	return RARITY_ORDER.indexOf(r);
 }
 
+/**
+ * Whether a relic of `rarity` is allowed to carry this affix. An affix with no
+ * `minRarity` is open to everything.
+ */
+export function affixAllowedAt(affixId: string, rarity: Rarity): boolean {
+	const min = AFFIX_DEFS[affixId]?.minRarity;
+	return min === undefined || rarityRank(rarity) >= rarityRank(min);
+}
+
 export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	const base = RELIC_BASES.find((b) => b.id === baseId);
 	if (!base) throw new Error(`Unknown relic base: ${baseId}`);
@@ -34,7 +43,11 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	let mainValue = rollValue(base.mainAffixRange, mainPos);
 
 	const minorCount = MINOR_COUNT[rarity];
-	const pool = [...base.minorAffixPool];
+	// A gated affix is never drawn here — a base grants its signature outright or
+	// not at all, so the two can't compete for the same slot.
+	const pool = base.minorAffixPool.filter(
+		(id) => AFFIX_DEFS[id]?.minRarity === undefined,
+	);
 	const minorAffixes = [];
 
 	for (let i = 0; i < minorCount && pool.length > 0; i++) {
@@ -49,6 +62,19 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 		} else {
 			minorAffixes.push({ id: affixId, value, rollPosition: pos });
 		}
+	}
+
+	// The base's signature power, if this relic rolled rare enough for it.
+	const sigId = base.signatureAffixId;
+	const sigDef = sigId ? AFFIX_DEFS[sigId] : undefined;
+	let uniqueAffix: Affix | undefined;
+	if (sigId && sigDef && affixAllowedAt(sigId, rarity)) {
+		const pos = rollPosition(rarity);
+		uniqueAffix = {
+			id: sigId,
+			value: rollValue(sigDef.range, pos),
+			rollPosition: pos,
+		};
 	}
 
 	const allPositions = [mainPos, ...minorAffixes.map((a) => a.rollPosition)];
@@ -66,11 +92,21 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 			rollPosition: mainPos,
 		},
 		minorAffixes,
+		uniqueAffix,
 		upgradeLevel: 0,
 		duplicateCount: 0,
 		quality,
 		isNew: true,
 	};
+}
+
+/** Every affix on a relic, signature included, in display order. */
+export function allAffixes(relic: Relic): Affix[] {
+	return [
+		relic.mainAffix,
+		...relic.minorAffixes,
+		...(relic.uniqueAffix ? [relic.uniqueAffix] : []),
+	];
 }
 
 /** Dust paid for sacrificing a batch of relics. */
@@ -101,19 +137,37 @@ export function getAffixLabel(affixId: string): string {
 	return AFFIX_DEFS[affixId]?.label ?? affixId;
 }
 
-function getAffixUnit(affixId: string): string {
-	return AFFIX_DEFS[affixId]?.unit ?? "";
+/** The affix's qualitative line, where its table entry carries one. */
+export function getAffixDescription(affixId: string): string | undefined {
+	return AFFIX_DEFS[affixId]?.description;
 }
 
+/**
+ * The rolled value as the card shows it. A trade-off affix reads as both halves
+ * — "+24% / −12%" — because one number would advertise only the upside.
+ */
 export function formatAffixValue(
 	affixId: string,
 	value: number,
 	upgradeLevel = 0,
 ): string {
-	const unit = getAffixUnit(affixId);
+	const def = AFFIX_DEFS[affixId];
+	const unit = def?.unit ?? "";
 	const boosted = value * relicUpgradeMultiplier(upgradeLevel);
-	if (unit === "%") {
-		return `+${Math.round(boosted)}%`;
-	}
-	return `+${Math.round(boosted)}`;
+	const one = (n: number) =>
+		// U+2212 MINUS SIGN, matching the effect descriptions.
+		`${n < 0 ? "−" : "+"}${Math.round(Math.abs(n))}${unit}`;
+
+	const scales = (def?.effects ?? []).map((e) =>
+		e.kind === "elsewhere" ? 1 : (e.scale ?? 1),
+	);
+	// `dreadCommand` scales by 100 to express a flat count; that is a unit
+	// conversion, not a second term, so a single effect always prints as one.
+	if (scales.length < 2) return one(boosted);
+	return scales.map((s) => one(boosted * s)).join(" / ");
+}
+
+/** True when an affix pays for its bonus out of another stat. */
+export function isTradeoffAffix(affixId: string): boolean {
+	return (AFFIX_DEFS[affixId]?.effects.length ?? 0) > 1;
 }

@@ -11,20 +11,30 @@ interface SquadRowProps {
 	remainingTicks: number | null;
 	/** Zebra striping index. */
 	index: number;
+	/** Units the reserves can give back to this squad — see replenishDelta. */
+	refillCount: number;
+	/** Whether auto-deploy would send this squad out again on arrival. */
+	willRedeploy: boolean;
 	onDisband: () => void;
 	onRecall: () => void;
+	onReplenish: () => void;
 }
 
-/** One legion in the right-hand list: avatar, name, state, and its action. */
+/** One legion in the right-hand list: avatar, name, state, and its actions. */
 export function SquadRow({
 	squad,
 	def,
 	remainingTicks,
 	index,
+	refillCount,
+	willRedeploy,
 	onDisband,
 	onRecall,
+	onReplenish,
 }: SquadRowProps) {
 	const total = squadSize(squad.composition);
+	const rosterTotal = squadSize(squad.roster);
+	const understrength = total < rosterTotal;
 	const glyph = SQUAD_STATE_GLYPH[squad.state];
 	const target = def?.name ?? "?";
 
@@ -47,7 +57,13 @@ export function SquadRow({
 					style={{ background: squadColor(squad) }}
 				/>
 				{total > 0 && (
-					<div className="mono absolute -bottom-[5px] -right-[5px] text-[10px] text-bone bg-bg-inset border border-rule px-0.5">
+					<div
+						title={
+							understrength ? `${rosterTotal} at full strength` : undefined
+						}
+						className={`mono absolute -bottom-[5px] -right-[5px] text-[10px] bg-bg-inset border border-rule px-0.5
+                        ${understrength ? "text-hp-warn" : "text-bone"}`}
+					>
 						×{total}
 					</div>
 				)}
@@ -59,24 +75,39 @@ export function SquadRow({
 					<div className="display text-sm text-bone !tracking-widest">
 						{squad.name}
 					</div>
-					{squad.state === "idle" && (
-						<button
-							type="button"
-							onClick={onDisband}
-							className="px-2 py-0.5 border border-rule-strong text-hp-crit mono text-[10px] tracking-[0.1em]"
-						>
-							DISBAND
-						</button>
-					)}
-					{squad.state !== "idle" && squad.state !== "returning" && (
-						<button
-							type="button"
-							onClick={onRecall}
-							className="px-2 py-0.5 border border-rule-strong text-dim mono text-[10px] tracking-[0.1em]"
-						>
-							RECALL
-						</button>
-					)}
+					<div className="flex items-center gap-1.5 shrink-0">
+						{squad.state === "idle" && refillCount > 0 && (
+							<button
+								type="button"
+								onClick={onReplenish}
+								title="Draft from the reserves back up to full strength"
+								className="px-2 py-0.5 border border-rule-strong text-parchm mono text-[10px] tracking-[0.1em]"
+							>
+								REFILL ×{refillCount}
+							</button>
+						)}
+						{squad.state === "idle" && (
+							<button
+								type="button"
+								onClick={onDisband}
+								className="px-2 py-0.5 border border-rule-strong text-hp-crit mono text-[10px] tracking-[0.1em]"
+							>
+								DISBAND
+							</button>
+						)}
+						{/* A returning squad is already on its way home, so recalling it
+						    only means "stay there" — pointless unless it would redeploy. */}
+						{squad.state !== "idle" &&
+							(squad.state !== "returning" || willRedeploy) && (
+								<button
+									type="button"
+									onClick={onRecall}
+									className="px-2 py-0.5 border border-rule-strong text-dim mono text-[10px] tracking-[0.1em]"
+								>
+									RECALL
+								</button>
+							)}
+					</div>
 				</div>
 
 				<div className="flex items-baseline justify-between">
