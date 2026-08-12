@@ -47,20 +47,20 @@ export function UpgradeRow({
 				/>
 			</div>
 			<div>
-				<div className="font-display text-sm tracking-[0.12em] text-bone">
+				<div className="font-display text-md tracking-wider text-bone">
 					{row.name}
 				</div>
-				<div className="text-xs text-muted mt-[3px] leading-snug">
+				<div className="text-sm text-muted mt-[3px] leading-snug">
 					{row.description}
 				</div>
 			</div>
 			<div className="text-right">
 				<div
-					className={`font-mono text-[10px] tracking-[0.16em] ${maxed ? "text-hp-good" : "text-ember"}`}
+					className={`font-mono text-xs tracking-widest ${maxed ? "text-hp-good" : "text-ember"}`}
 				>
 					{maxed ? "DONE" : `LV ${row.level}`}
 				</div>
-				<div className="font-mono text-[11px] text-parchm mt-0.5">
+				<div className="font-mono text-sm text-parchm mt-0.5">
 					{valueNumerical ? valueNumerical : row.valueFn(row.level)}
 				</div>
 			</div>

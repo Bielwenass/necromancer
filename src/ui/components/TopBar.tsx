@@ -77,7 +77,6 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 		<>
 			<div className="bar-top">
 				<div className="flex items-baseline gap-2.5 font-display tracking-[0.32em] text-sm text-parchm">
-					<div className="w-3.5 h-3.5 bg-parchm [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]" />
 					<span>NECROMANCER</span>
 				</div>
 
@@ -136,6 +135,15 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 							</div>
 						</div>
 					</div>
+					<div className="flex items-center gap-2 font-mono text-sm">
+						<IconCorpse size={20} />
+						<div>
+							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
+								Corpses
+							</div>
+							<div className="text-bone">{formatNumber(resources.corpses)}</div>
+						</div>
+					</div>
 					{resources.souls > 0 && (
 						<div className="flex items-center gap-2 font-mono text-sm">
 							<IconSoul size={20} />
@@ -161,27 +169,14 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 						</div>
 					)}
 					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconCorpse size={20} />
+						<IconBanner size={20} />
 						<div>
 							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
-								Corpses
+								Banners
 							</div>
-							<div className="text-bone">{formatNumber(resources.corpses)}</div>
+							<div className="text-bone">{formatNumber(resources.banners)}</div>
 						</div>
 					</div>
-					{resources.banners > 0 && (
-						<div className="flex items-center gap-2 font-mono text-sm">
-							<IconBanner size={20} />
-							<div>
-								<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
-									Banners
-								</div>
-								<div className="text-bone">
-									{formatNumber(resources.banners)}
-								</div>
-							</div>
-						</div>
-					)}
 				</div>
 			</div>
 

@@ -183,7 +183,7 @@ export function DungeonCard({
 					{activeSquad ? (
 						<div>
 							<div className="flex items-center justify-end gap-2.5 mb-[7px]">
-								<span className="display text-parchm !tracking-[0.16em]">
+								<span className="display text-parchm tracking-wider">
 									{activeSquad.name}
 								</span>
 								<span

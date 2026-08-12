@@ -67,19 +67,19 @@ export const GARDEN_PLOTS: GardenPlotDef[] = [
 	{
 		id: "bones",
 		name: "Ossuary Row",
-		baseYield: 1,
+		baseYield: 0.5,
 		baseCost: 600,
 		growth: 1.35,
 	},
-	{ id: "souls", name: "Wisp Hollow", baseYield: 4, baseCost: 3, growth: 1.45 },
-	{ id: "dust", name: "Ash Bed", baseYield: 3, baseCost: 5, growth: 1.4 },
 	{
 		id: "corpses",
 		name: "Carrion Field",
-		baseYield: 2,
+		baseYield: 1,
 		baseCost: 80,
 		growth: 1.35,
 	},
+	{ id: "dust", name: "Ash Bed", baseYield: 1.5, baseCost: 5, growth: 1.4 },
+	{ id: "souls", name: "Wisp Hollow", baseYield: 2, baseCost: 3, growth: 1.45 },
 ];
 
 const GARDEN_BY_ID: Record<GardenPlotId, GardenPlotDef> = Object.fromEntries(

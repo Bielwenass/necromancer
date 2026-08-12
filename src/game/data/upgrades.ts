@@ -320,7 +320,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Bone Surge",
 		tier: 1,
 		cost: 9,
-		description: "Passive bone generation +50%.",
+		description: "Passive bone generation +20%.",
 		flavor: "Patient tending, and the garden gives up its dead more freely.",
 		prerequisites: ["n0"],
 		unlocks: ["n2"],

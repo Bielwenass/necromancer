@@ -163,7 +163,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 				break;
 			case "n1a":
 				boneSurgeActive = true;
-				bonesPassiveMult *= 1.5;
+				bonesPassiveMult *= 1.2;
 				break;
 			case "n1b":
 				zombieDamageBonus += 0.15;

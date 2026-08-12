@@ -29,11 +29,11 @@ export function UpgradeRowCost({
 			{costLines(cost, res).map((cl) => (
 				<div
 					key={cl.key}
-					className={`flex items-center gap-1.5 justify-end font-mono text-[11px] ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
+					className={`flex items-center gap-1.5 justify-end font-mono text-xs ${cl.ok ? "text-parchm" : "text-hp-crit"}`}
 				>
 					<Icon
 						kind={cl.icon}
-						size={12}
+						size={14}
 						color={cl.ok ? cl.color : "var(--hp-crit)"}
 					/>
 					<span>{formatNumber(cl.amount)}</span>
