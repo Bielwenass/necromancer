@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { POOL_CONFIGS } from "../../game/gacha";
 import { useGameStore } from "../../game/store";
 import type { PoolId, Rarity, Relic } from "../../game/types";
-import { IconBone, IconCoin, IconSoul } from "../components/icons";
+import { IconBanner, IconCorpse, IconSoul } from "../components/icons";
 import { RelicGlyph } from "../components/RelicGlyph";
 import { formatNumber, rarityColor, rarityName } from "../theme";
 import { RevealOverlay } from "./RevealOverlay";
@@ -16,8 +16,8 @@ const POOL_META: Record<
 		accent: string;
 		/**
 		 * The accent at low alpha, washed over the panel and the ×10 button.
-		 * Alpha is tuned per accent, not shared — `bone` is a far lighter
-		 * colour and reads brighter at the same value.
+		 * Alpha is tuned per accent, not shared — a lighter accent reads
+		 * brighter at the same value.
 		 */
 		tint: string;
 		pityMax: number;
@@ -25,22 +25,22 @@ const POOL_META: Record<
 	}
 > = {
 	bone: {
-		name: "Bone Ritual",
+		name: "Banner Ritual",
 		blurb:
-			"Bone-meal scattered on the circle. Whatever the graveyard's tenants were buried holding surfaces with it.",
-		glyph: "hex",
-		accent: "var(--c-bone)",
-		tint: "rgba(232,220,192,0.06)",
+			"Standards taken off cleared ground, burned at the circle. What the fallen carried comes back up with the smoke.",
+		glyph: "spike",
+		accent: "var(--c-ember)",
+		tint: "rgba(214,122,48,0.07)",
 		pityMax: 0,
 		pityGuaranteed: null,
 	},
 	soul: {
-		name: "Obol Ritual",
+		name: "Carrion Ritual",
 		blurb:
-			"The ferryman's fare, paid many times over. The dead give up what they were buried wearing.",
-		glyph: "ring",
-		accent: "var(--c-coin)",
-		tint: "rgba(212,168,87,0.08)",
+			"Bodies laid out in a ring and left to it. The circle takes the flesh and hands back what was buried in it.",
+		glyph: "cross",
+		accent: "var(--sq-zombie)",
+		tint: "rgba(149,184,122,0.08)",
 		pityMax: 20,
 		pityGuaranteed: "rare",
 	},
@@ -72,12 +72,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 	const cost10 = config.cost10.amount;
 	const resource = config.cost1.resource;
 
-	const available =
-		resource === "bones"
-			? resources.bones
-			: resource === "coins"
-				? resources.coins
-				: resources.souls;
+	const available = resources[resource];
 
 	const canPull1 = available >= cost1;
 	const canPull10 = available >= cost10;
@@ -98,10 +93,10 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 	}, [lastPulledRelics, myPullPending]);
 
 	const ResourceIcon =
-		resource === "bones"
-			? IconBone
-			: resource === "coins"
-				? IconCoin
+		resource === "banners"
+			? IconBanner
+			: resource === "corpses"
+				? IconCorpse
 				: IconSoul;
 
 	return (

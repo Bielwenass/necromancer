@@ -11,7 +11,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "boneYield",
 		mainAffixRange: [15, 30],
-		minorAffixPool: ["boneYield", "coinYield", "corpseYield", "rarityWeight"],
+		minorAffixPool: ["boneYield", "corpseYield", "rarityWeight", "soulOnKill"],
 		glyph: "ring",
 		description:
 			"A halo of calcified marrow. Amplifies the passive bone trickle.",
@@ -21,11 +21,12 @@ export const RELIC_BASES: RelicBase[] = [
 		name: "Bone Censer",
 		slot: "crypt",
 		slotIds: ["C1", "C2", "C3"],
-		mainAffixId: "coinYield",
+		mainAffixId: "soulOnKill",
 		mainAffixRange: [10, 25],
-		minorAffixPool: ["coinYield", "boneYield", "corpseYield", "rarityWeight"],
+		minorAffixPool: ["soulOnKill", "boneYield", "corpseYield", "rarityWeight"],
 		glyph: "flame",
-		description: "Burning bones transmutes grief into gold.",
+		description:
+			"Burning bones raise a smoke the departing cannot cross. They linger, and are taken.",
 	},
 	{
 		id: "pale-sigil",
@@ -45,13 +46,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "boneYield",
 		mainAffixRange: [15, 35],
-		minorAffixPool: [
-			"boneYield",
-			"rarityWeight",
-			"corpseYield",
-			"soulOnKill",
-			"coinYield",
-		],
+		minorAffixPool: ["boneYield", "rarityWeight", "corpseYield", "soulOnKill"],
 		glyph: "hex",
 		description: "A hexagonal lantern that illuminates hidden loot.",
 	},
@@ -64,7 +59,7 @@ export const RELIC_BASES: RelicBase[] = [
 		mainAffixRange: [7, 30],
 		minorAffixPool: [
 			"squadSizeBonus",
-			"coinYield",
+			"corpseYield",
 			"boneYield",
 			"dispatchBonus",
 		],
@@ -78,7 +73,7 @@ export const RELIC_BASES: RelicBase[] = [
 		slotIds: ["C1", "C2", "C3"],
 		mainAffixId: "rarityWeight",
 		mainAffixRange: [3, 12],
-		minorAffixPool: ["rarityWeight", "coinYield", "corpseYield", "boneYield"],
+		minorAffixPool: ["rarityWeight", "corpseYield", "boneYield", "soulOnKill"],
 		glyph: "urn",
 		description: "A vessel that preserves what should be rare.",
 	},
@@ -109,7 +104,6 @@ export const RELIC_BASES: RelicBase[] = [
 		minorAffixPool: [
 			"corpseYield",
 			"squadTravelSpeed",
-			"coinYield",
 			"boneYield",
 			"rarityWeight",
 		],
@@ -397,12 +391,17 @@ export const AFFIX_DEFS: Record<
 		implemented: true,
 		description: "Increases bone income from all sources.",
 	},
+	/**
+	 * Retired along with coins themselves. No base rolls it any more, but the
+	 * def stays so relics already in a save still render a label and a value —
+	 * `applyAffix` keeps honouring it, on a resource nothing spends.
+	 */
 	coinYield: {
 		label: "Coin Yield",
 		unit: "%",
 		range: [5, 30],
-		implemented: true,
-		description: "Increases coin loot from dungeon clears.",
+		implemented: false,
+		description: "Retired — coins are no longer spent on anything.",
 	},
 	corpseYield: {
 		label: "Corpse Yield",

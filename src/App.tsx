@@ -63,7 +63,6 @@ export default function App() {
 					<div className="flex gap-6 mb-[14px]">
 						{[
 							{ label: "BONES", value: catchup.stats.bonesGained },
-							{ label: "COINS", value: catchup.stats.coinsGained },
 							{ label: "SOULS", value: catchup.stats.soulsGained },
 						].map(({ label, value }) => (
 							<div key={label} className="text-center min-w-[52px]">

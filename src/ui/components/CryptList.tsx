@@ -3,6 +3,7 @@ import { DUNGEON_DEFS } from "../../game/data/dungeons";
 import { canAffordCost } from "../../game/resources";
 import { useGameStore } from "../../game/store";
 import { summonCost } from "../../game/summoning";
+import { projectLoot } from "../../game/tick";
 import { effectiveTravelTicks } from "../../game/travel";
 import type { DungeonDef } from "../../game/types";
 import { formatCost, formatTime } from "../theme";
@@ -80,6 +81,7 @@ export function CryptList({ onTabChange }: CryptListProps) {
 										def,
 										derived.squadTravelSpeedBonus,
 									)}
+									loot={projectLoot(def, ds.clearCount, derived)}
 									onDispatch={(id) => setDispatchTarget(id)}
 								/>
 							);

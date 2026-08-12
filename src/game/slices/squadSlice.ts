@@ -1,6 +1,7 @@
 import { DUNGEON_DEFS } from "../data/dungeons";
 import { generateLoot } from "../tick";
 import type { UnitType } from "../types";
+import { compositionAfterFight, remnantAfterWipe } from "../units";
 import {
 	applyUnitDelta,
 	hasUnitsAvailable,
@@ -135,16 +136,37 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 			const def = DUNGEON_DEFS[dungeonId];
 			if (!dungeonState || !def) return prev;
 
-			// A wipe destroys the squad outright — its units are simply gone.
+			// A wipe destroys the squad — except for its undying, who reform on the
+			// spot and walk home empty-handed. With none of them the squad is simply
+			// gone, and nothing is left to carry loot or claim a banner.
 			if (winner !== "a") {
-				return { squads: prev.squads.filter((s) => s.id !== squadId) };
+				const remnant = remnantAfterWipe(squad.composition);
+				if (totalUnits(remnant) === 0) {
+					return { squads: prev.squads.filter((s) => s.id !== squadId) };
+				}
+				return {
+					squads: prev.squads.map((s) =>
+						s.id === squadId
+							? {
+									...s,
+									state: "returning" as const,
+									position: 1.0,
+									composition: remnant,
+									pendingLoot: null,
+									// Counts as a recall so auto-deploy doesn't march the
+									// remnant straight back into the fight that just killed
+									// everyone else.
+									manualRecall: true,
+								}
+							: s,
+					),
+				};
 			}
 
-			const composition = {
-				skeleton: survivorsByType.skeleton ?? 0,
-				zombie: survivorsByType.zombie ?? 0,
-				wraith: survivorsByType.wraith ?? 0,
-			};
+			const composition = compositionAfterFight(
+				squad.composition,
+				survivorsByType,
+			);
 			const pendingLoot = generateLoot(
 				dungeonId,
 				dungeonState.clearCount,

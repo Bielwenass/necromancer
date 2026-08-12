@@ -45,7 +45,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		tier: 2,
 		cost: 12,
 		description:
-			"Unlock zombies. Costs 5 bones + 1 corpse. HP 25, DMG 4, Speed 0.6.",
+			"Unlock zombies. Slow, but hard to kill. Cost corpses to summon.",
 		flavor: "Flesh still clinging to the bone is flesh still useful.",
 		prerequisites: ["s1a", "s1b"],
 		unlocks: ["s3a", "s3b"],
@@ -69,8 +69,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Bone Knight",
 		tier: 3,
 		cost: 24,
-		description:
-			"+20% skeleton damage. Skeletons have 10% chance to crit for double damage.",
+		description: "+20% skeleton damage.",
 		flavor: "Some femurs, properly ground, keep an edge like steel.",
 		prerequisites: ["s2"],
 		unlocks: ["s4b"],
@@ -95,8 +94,9 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		tier: 3,
 		cost: 32,
 		description:
-			"Unlock wraiths. Costs 20 bones + 1 soul. HP 6, DMG 8, Speed 1.5.",
-		flavor: "Not every soul consents to leave. Those are yours.",
+			"Unlock wraiths. Undying spirits, they reform after a battle, won or lost. Cost souls to summon.",
+		flavor:
+			"Not every soul consents to leave. Cut one apart and it only takes a moment to gather itself.",
 		prerequisites: ["s3a", "s3b"],
 		unlocks: ["s5a", "s5b"],
 		icon: "wraith",
@@ -332,8 +332,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Plague Field",
 		tier: 2,
 		cost: 14,
-		description:
-			"Zombies deal +15% damage. Dungeon HP pools reduced 5% on squad arrival.",
+		description: "Zombies deal +15% damage.",
 		flavor: "The rot arrives well before your zombies do.",
 		prerequisites: ["n0"],
 		unlocks: ["n2"],

@@ -42,6 +42,8 @@ boosted = value × (1 + upgradeLevel × 0.1) / 100
 
 Affix ids are `switch` cases. `AFFIX_DEFS` marks each affix `implemented: true | false`; an unimplemented affix still rolls and still displays, but has no effect. Currently unimplemented: `rarityWeight` (wants gacha wiring), `dispatchBonus`, `firstStrikeBonus`, `overwhelm`, `berserk`, `lastStand`, `undyingFlesh`, `spectralStrike` (all want combat wiring), and `boneYieldFromKills` (needs reworking to per-kill). `corpseYield` and `soulOnKill` are fully wired now: `corpseYieldBonus` multiplies corpses on loot deposit, and `soulOnKill` feeds `soulHarvestBonus`, which multiplies a dungeon's soul chance. `soulOnKill` is still a misnomer — it scales the drop roll, not per-kill souls.
 
+`coinYield` is **retired**, which is a different thing from unimplemented: it is still wired to `coinYieldBonus` and still boosts coin loot, but coins are a retired resource (see [systems.md](systems.md#resources)) so the boost buys nothing. No base rolls it any more; the def and the `switch` case survive only so relics already in a save keep rendering.
+
 ## Sacrifice
 
 Sacrifice returns dust by rarity (1 / 2 / 5 / 10 / 30) and removes the relic from any slot it occupies. It is the only way to dispose of a relic.

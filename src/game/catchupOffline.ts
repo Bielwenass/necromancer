@@ -7,9 +7,15 @@ import { CombatEngine } from "../combat/engine";
 import { mulberry32 } from "../combat/prng";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { checkUnlockConditions } from "./dungeons";
-import { dungeonEnemyCount, effectiveSoulChance, rollCorpses } from "./tick";
+import {
+	clearMultiplier,
+	dungeonEnemyCount,
+	effectiveSoulChance,
+	rollCorpses,
+} from "./tick";
 import { effectiveTravelTicks } from "./travel";
 import type { GameState, Resources, Squad } from "./types";
+import { compositionAfterFight, remnantAfterWipe } from "./units";
 
 // ── Constants ────────────────────────────────────────────────
 // Game-tick interval. Derived from your existing TICKS_PER_DAY=1200 over a
@@ -45,7 +51,6 @@ type WorkingSquad = Squad & {
 export interface CatchupStats {
 	eventsProcessed: number;
 	bonesGained: number;
-	coinsGained: number;
 	soulsGained: number;
 }
 
@@ -167,7 +172,7 @@ function generateLootSeeded(
 	const def = DUNGEON_DEFS[dungeonId];
 	if (!def) return {};
 	const lt = def.lootTable;
-	const clearBonus = 1 + Math.sqrt(clearCount + 1) * 0.07;
+	const clearBonus = clearMultiplier(clearCount);
 	const bones = Math.round(
 		(lt.bonesMin + rand() * (lt.bonesMax - lt.bonesMin)) * clearBonus,
 	);
@@ -319,20 +324,35 @@ function processEvent(
 
 			const outcome = resolveFight(state, squad, dungeon, cache);
 
-			// A wipe destroys the squad outright, mirroring `resolveFight` — it must
-			// not walk an empty squad home, which would leave debris in the Crypt.
-			// No further event references it: `processEvent` looks the squad up by
-			// id and bails when it is gone.
+			// A wipe leaves only the undying, mirroring `resolveFight`: they reform
+			// and walk home with nothing, and a squad without any is destroyed
+			// outright rather than walking an empty squad home, which would leave
+			// debris in the Crypt. No further event references a destroyed squad —
+			// `processEvent` looks the squad up by id and bails when it is gone.
 			if (outcome.winner !== "a") {
-				state.squads = state.squads.filter((s) => s.id !== squad.id);
-				return null;
+				const remnant = remnantAfterWipe(squad.composition);
+				if (totalUnits(remnant) === 0) {
+					state.squads = state.squads.filter((s) => s.id !== squad.id);
+					return null;
+				}
+				Object.assign(squad.composition, remnant);
+				squad.pendingLoot = null;
+				// Mirrors the online retreat: auto-deploy must not re-throw the
+				// remnant into the fight that just killed everyone else.
+				squad.manualRecall = true;
+				squad._phaseStart = cursor;
+				squad._phaseEnd = cursor + outcome.durationTicks;
+				return {
+					kind: "fightDone",
+					ticksUntil: cursor + outcome.durationTicks,
+					squadId: squad.id,
+				};
 			}
 
-			for (const k of Object.keys(squad.composition) as Array<
-				keyof typeof squad.composition
-			>) {
-				squad.composition[k] = outcome.survivors[k] ?? 0;
-			}
+			Object.assign(
+				squad.composition,
+				compositionAfterFight(squad.composition, outcome.survivors),
+			);
 			const lootRand = mulberry32(
 				deriveFightSeed(squad.id, dungeon.id, dungeon.clearCount) ^ 0xdeadbeef,
 			);
@@ -473,14 +493,12 @@ export async function simulateOffline(
 	const heap = new MinHeap<SquadEvent>((a, b) => a.ticksUntil - b.ticksUntil);
 
 	const initialBones = w.resources.bones;
-	const initialCoins = w.resources.coins;
 	const initialSouls = w.resources.souls;
 
 	function buildStats(eventsProcessed: number): CatchupStats {
 		return {
 			eventsProcessed,
 			bonesGained: Math.floor(w.resources.bones - initialBones),
-			coinsGained: Math.floor(w.resources.coins - initialCoins),
 			soulsGained: Math.floor(w.resources.souls - initialSouls),
 		};
 	}

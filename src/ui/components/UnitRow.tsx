@@ -1,6 +1,8 @@
 import type { UnitType } from "../../game/types";
+import { isUndying } from "../../game/units";
 
 export function UnitRow({
+	type,
 	label,
 	color,
 	count,
@@ -27,8 +29,17 @@ export function UnitRow({
 				className="w-2.5 h-2.5 rounded-full shrink-0"
 				style={{ background: color }}
 			/>
-			<span className="flex-1 text-sm text-bone">{label}</span>
-			<span className="mono text-[10px] text-muted min-w-[60px] text-right">
+			<span className="text-sm text-bone">{label}</span>
+			{isUndying(type) && (
+				<span
+					className="mono text-[9px] uppercase tracking-[0.16em] shrink-0"
+					style={{ color }}
+					title="Undying — reforms after the battle, won or lost."
+				>
+					Undying
+				</span>
+			)}
+			<span className="mono text-[10px] text-muted min-w-[60px] text-right flex-1">
 				{available} available
 			</span>
 			<div className="flex items-center gap-2">

@@ -14,7 +14,7 @@ export const UNIT_STAT_CONFIG = {
 	},
 	zombie: {
 		hp: { baseBones: 120, growth: 1.22, perLevel: 4, label: "HP", base: 24 },
-		dmg: { baseBones: 100, growth: 1.25, perLevel: 1, label: "DMG", base: 3 },
+		dmg: { baseBones: 100, growth: 1.25, perLevel: 0.5, label: "DMG", base: 3 },
 		speed: {
 			baseBones: 300,
 			growth: 1.3,
@@ -69,13 +69,6 @@ export const GARDEN_PLOTS: GardenPlotDef[] = [
 		name: "Ossuary Row",
 		baseYield: 1,
 		baseCost: 600,
-		growth: 1.35,
-	},
-	{
-		id: "coins",
-		name: "Pauper Trench",
-		baseYield: 1.5,
-		baseCost: 200,
 		growth: 1.35,
 	},
 	{ id: "souls", name: "Wisp Hollow", baseYield: 4, baseCost: 3, growth: 1.45 },

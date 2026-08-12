@@ -119,7 +119,6 @@ function cryptRows(crypt: WorkshopState["crypt"]): WRow[] {
 
 const PLOT_FLAVOR: Record<string, string> = {
 	bones: "Bone sown as seed corn: plant a little, reap a lot.",
-	coins: "Grave-coin buys a wider trench, and wider trenches pay.",
 	souls: "Nothing feeds soil like something that refuses to rest.",
 	dust: "Relics ground fine make a grey and generous earth.",
 	corpses: "Bury the flesh, harvest the frame beneath it.",

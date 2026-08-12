@@ -3,6 +3,9 @@ import { checkUnlockConditions } from "./dungeons";
 import { effectiveTravelTicks } from "./travel";
 import type { DungeonDef, GameState, Resources } from "./types";
 
+/** The `derived` projection, as read by everything that prices a run. */
+type Derived = GameState["derived"];
+
 const TICKS_PER_DAY = 1200; // 2 minutes per in-game day
 
 /**
@@ -41,6 +44,15 @@ export function effectiveSoulChance(
 	return Math.min(1, base * (1 + soulHarvestBonus));
 }
 
+/**
+ * Repeat-clear payout multiplier. Bones and coins scale with how often a
+ * dungeon has been cleared; corpses deliberately don't, since they come off the
+ * kill count rather than the loot table.
+ */
+export function clearMultiplier(clearCount: number): number {
+	return 1 + Math.sqrt(clearCount + 1) * 0.07;
+}
+
 export function generateLoot(
 	dungeonId: string,
 	clearCount: number,
@@ -49,7 +61,7 @@ export function generateLoot(
 	const def = DUNGEON_DEFS[dungeonId];
 	if (!def) return {};
 
-	const clearBonus = 1 + Math.sqrt(clearCount + 1) * 0.07;
+	const clearBonus = clearMultiplier(clearCount);
 	const lt = def.lootTable;
 
 	const bones = Math.round(
@@ -66,6 +78,54 @@ export function generateLoot(
 			: 0;
 
 	return { bones, coins, corpses, souls };
+}
+
+/**
+ * What a clear is actually worth after every player bonus. Display-only — the
+ * numbers here are the same ones `generateLoot` rolls and `gameTick` deposits,
+ * minus the per-roll rounding.
+ */
+export interface ProjectedLoot {
+	bonesMin: number;
+	bonesMax: number;
+	coinsMin: number;
+	coinsMax: number;
+	/** Chance a run drops souls at all, after `soulHarvestBonus`. 0–1. */
+	soulChance: number;
+	/** Souls banked when that roll hits — one, scaled by `soulsYieldBonus`. */
+	soulsPerDrop: number;
+	/** Expected corpses off a full clear: kills × drop chance × yield bonus. */
+	corpses: number;
+}
+
+/**
+ * Folds the repeat-clear bonus (applied to the roll) and the yield bonuses
+ * (applied on deposit) into a single projection of a run's payout, so the Crypt
+ * shows what a dispatch is worth to *this* necromancer rather than what the
+ * bare loot table says.
+ */
+export function projectLoot(
+	def: DungeonDef,
+	clearCount: number,
+	derived: Derived,
+): ProjectedLoot {
+	const clearBonus = clearMultiplier(clearCount);
+	const lt = def.lootTable;
+	const boneMult = clearBonus * (1 + derived.boneYieldBonus);
+	const coinMult = clearBonus * (1 + derived.coinYieldBonus);
+
+	return {
+		bonesMin: lt.bonesMin * boneMult,
+		bonesMax: lt.bonesMax * boneMult,
+		coinsMin: lt.coinsMin * coinMult,
+		coinsMax: lt.coinsMax * coinMult,
+		soulChance: effectiveSoulChance(lt.soulChance, derived.soulHarvestBonus),
+		soulsPerDrop: 1 + derived.soulsYieldBonus,
+		corpses:
+			dungeonEnemyCount(def) *
+			CORPSE_DROP_CHANCE *
+			(1 + derived.corpseYieldBonus),
+	};
 }
 
 export function gameTick(state: GameState): Partial<GameState> {

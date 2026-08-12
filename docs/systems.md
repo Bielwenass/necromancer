@@ -6,16 +6,18 @@ Numbers live in `src/game/data/` and `src/game/workshopUpgrades.ts`. This file d
 
 | Resource | Sources | Sinks |
 |---|---|---|
-| Bones | Garden plots (passive), dungeon loot, the dig button | Summons, workshop levels, Bone Ritual pulls, bone plot |
-| Coins | Dungeon loot | Obol Ritual pulls, coin plot |
+| Bones | Garden plots (passive), dungeon loot, the dig button | Summons, workshop levels, bone plot |
 | Souls | Dungeon loot (chance-based) | Forbidden Ritual pulls, wraith summons, soul plot |
-| Corpses | Per-kill drop chance in dungeons | Zombie summons, wraith workshop levels, corpse plot |
+| Corpses | Per-kill drop chance in dungeons | Zombie summons, wraith workshop levels, Carrion Ritual pulls, corpse plot |
 | Dust | Sacrificing relics | Wraith workshop levels, dust plot |
-| Banners | Clearing a dungeon (`tier` per clear, online and offline) | Upgrade-tree nodes |
+| Banners | Clearing a dungeon (`tier` per clear, online and offline) | Upgrade-tree nodes, Banner Ritual pulls |
+| Coins | Dungeon loot | **Retired — nothing spends them** |
+
+**Coins are soft-retired.** Dungeon loot tables still carry `coinsMin`/`coinsMax`, clears still roll them, and the deposit still banks them with `coinYieldBonus` applied — but no ritual, plot, or upgrade spends coins and no screen shows the balance. The `coins` field, its loot columns, and the retired `coinYield` affix are kept so old saves stay valid and a future sink can adopt them.
 
 Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / 10 × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it (`n1a`, `n5a`, `n6`, `n7`, `s7`). `coinsPerTick` and `soulsPerTick` are structurally present but always 0.
 
-`GARDEN_PLOTS` holds five plots. All of them grow **bones**; they differ in the resource that buys them — a plot's id *is* that resource (`garden.souls`), it is unlocked and upgraded for `baseCost × growth^level` of it, and `workshop.garden` is keyed the same way. Scarcer currencies buy a higher `baseYield`, which is what gives coins, souls, dust, and corpses a bones-side sink.
+`GARDEN_PLOTS` holds four plots. All of them grow **bones**; they differ in the resource that buys them — a plot's id *is* that resource (`garden.souls`), it is unlocked and upgraded for `baseCost × growth^level` of it, and `workshop.garden` is keyed the same way. Scarcer currencies buy a higher `baseYield`, which is what gives souls, dust, and corpses a bones-side sink.
 
 ## Units
 
@@ -25,11 +27,14 @@ Prices scale with army size: the next unit of a type costs `base × e^(k·√own
 
 A squad carries no HP between phases — only unit counts. Survivors from a fight become the squad's new composition, and a wipe destroys the squad outright.
 
+**Undying units** (`game/units.ts`) ignore both of those rules: they are restored to their pre-fight count whatever the outcome, so a fight can only ever cost them time. Wraiths are the only ones today. A wiped squad that held any survives as a wraith-only remnant that walks home with no loot, no banner, and `manualRecall` set so auto-deploy doesn't march it back into the fight that just killed everyone else; a wiped squad with none is destroyed as before. `compositionAfterFight` is the single place that decides this — both `resolveFight` and the offline catchup go through it.
+
 ## Squads
 
 ```
 idle ──dispatch──► traveling ──arrive──► fighting ──engine reports winner──► returning ──► idle
-                                                                        (or squad destroyed)
+                                                              (on a loss: destroyed, or the
+                                                               undying return empty-handed)
 ```
 
 - Travel: `position += 1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus)` per tick, and the mirror of that on the way back. `game/travel.ts` owns that formula (`travelTimeTicks / (1 + bonus)`) and is the single source the live tick, the offline catchup, and the Crypt timers all read — so ETAs and the "Ns travel" label show the upgraded duration, not the base one.
@@ -44,11 +49,13 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 
 Unlocks are a hand-written dependency chain in `checkUnlockConditions` (`game/dungeons.ts`) — mostly "clear the previous dungeon 3 times" or "clear both branches". `unlockCondition` on the def is display text only; the switch is the real gate, and the two must be kept in sync by hand.
 
-Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`. Clearing awards `tier` banners.
+Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount + 1) × 0.07`, from `clearMultiplier` (`tick.ts`), which the live roll, the catchup roll, and the UI all call. Clearing awards `tier` banners.
 
 **Corpses are not in the loot table.** They come off the kill count: every felled enemy rolls `CORPSE_DROP_CHANCE` (`tick.ts`) independently, so a dungeon's corpse yield is a function of its roster size, and `clearBonus` deliberately does not touch it. A win means side B is at zero, so the roll runs over the dungeon's whole roster (`dungeonEnemyCount`).
 
 Loot is deposited on arrival home with the yield bonuses applied — `boneYieldBonus`, `coinYieldBonus`, `soulsYieldBonus`, `corpseYieldBonus` — and `soulHarvestBonus` multiplies the dungeon's `soulChance` at generation time (`effectiveSoulChance`, clamped to 1).
+
+`projectLoot` (`tick.ts`) folds all of that — clear bonus, yield bonuses, soul harvest, corpse drop chance — into the payout a `DungeonCard` quotes, so the Crypt advertises what a run pays *this* necromancer rather than the bare loot table. It is display-only and must track `generateLoot` plus the deposit in `gameTick`.
 
 ## Workshop
 
@@ -60,7 +67,7 @@ Per-unit stat levels are priced by unit, not by a single shared formula (`unitSt
 
 ## Gacha
 
-Three pools in `POOL_CONFIGS` (`game/gacha.ts`), each with rarity weights, a x1/x10 cost, an optional pity rarity + interval, and an x10 floor guarantee. Pity counters live in `gacha.pityCounters` and persist. See [relics.md](relics.md) for what a pull produces.
+Three pools in `POOL_CONFIGS` (`game/gacha.ts`) — Banner (banners), Carrion (corpses), Forbidden (souls) — each with rarity weights, a x1/x10 cost, an optional pity rarity + interval, and an x10 floor guarantee. Pity counters live in `gacha.pityCounters` and persist, which is why the pool *ids* are still `bone`/`soul`/`forbidden` and no longer name the currency they charge. See [relics.md](relics.md) for what a pull produces.
 
 ## Offline catchup
 
@@ -70,7 +77,7 @@ It deliberately duplicates the live rules, so **any change to travel time, fight
 
 | Live | Catchup |
 |---|---|
-| `generateLoot` (`tick.ts`) | `generateLootSeeded` (both call `effectiveSoulChance` and `rollCorpses`) |
+| `generateLoot` (`tick.ts`) | `generateLootSeeded` (both call `clearMultiplier`, `effectiveSoulChance`, and `rollCorpses`) |
 | travel speed in `gameTick` | `computeTravelTime` (both call `effectiveTravelTicks`) |
 | auto-deploy branch in `gameTick` | `returnArrive` case in `processEvent` |
 | yield bonuses on loot deposit in `gameTick` | `returnArrive` case in `processEvent` |

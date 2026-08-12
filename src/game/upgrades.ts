@@ -238,7 +238,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 					break;
 				case "coinYield":
 					coinYieldBonus += boosted;
-					break;
+					break; // retired affix — still honoured on relics rolled before it went
 				case "soulYield":
 					soulsYieldBonus += boosted;
 					break;

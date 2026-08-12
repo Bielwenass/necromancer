@@ -1,16 +1,21 @@
 import { RELIC_BASES } from "./data/relics";
 import { rollRelic } from "./relics";
-import type { GameState, PoolId, Rarity, Relic } from "./types";
+import type { GameState, PoolId, Rarity, Relic, Resources } from "./types";
 
 interface PoolConfig {
 	odds: { rarity: Rarity; weight: number }[];
 	pityRarity: Rarity | null;
 	pityInterval: number;
 	x10Guarantee: Rarity | null;
-	cost1: { resource: "bones" | "coins" | "souls"; amount: number };
-	cost10: { resource: "bones" | "coins" | "souls"; amount: number };
+	cost1: { resource: keyof Resources; amount: number };
+	cost10: { resource: keyof Resources; amount: number };
 }
 
+/**
+ * Pool ids are historical — `bone` and `soul` no longer name the currency they
+ * charge (banners and corpses respectively). They stay as they are because
+ * `gacha.pityCounters` is keyed by them and is persisted.
+ */
 export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 	bone: {
 		odds: [
@@ -21,8 +26,8 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: null,
 		pityInterval: 0,
 		x10Guarantee: "uncommon",
-		cost1: { resource: "bones", amount: 200 },
-		cost10: { resource: "bones", amount: 1800 },
+		cost1: { resource: "banners", amount: 2 },
+		cost10: { resource: "banners", amount: 18 },
 	},
 	soul: {
 		odds: [
@@ -34,8 +39,8 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: "rare",
 		pityInterval: 20,
 		x10Guarantee: "rare",
-		cost1: { resource: "coins", amount: 1500 },
-		cost10: { resource: "coins", amount: 13500 },
+		cost1: { resource: "corpses", amount: 40 },
+		cost10: { resource: "corpses", amount: 360 },
 	},
 	forbidden: {
 		odds: [

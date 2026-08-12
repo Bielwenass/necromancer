@@ -1,6 +1,13 @@
-import { CORPSE_DROP_CHANCE, dungeonEnemyCount } from "../../game/tick";
+import type { ProjectedLoot } from "../../game/tick";
+import {
+	CORPSE_DROP_CHANCE,
+	clearMultiplier,
+	dungeonEnemyCount,
+} from "../../game/tick";
 import type { DungeonDef, DungeonState, Squad } from "../../game/types";
 import { formatSeconds, formatTime } from "../theme";
+import { DungeonLootStat } from "./DungeonLootStat";
+import { IconBone, IconCorpse, IconSoul } from "./icons";
 
 export function tierDecoration(tier: 1 | 2 | 3 | 4): {
 	color: string;
@@ -18,11 +25,37 @@ export function squadColor(squad: Squad): string {
 	return "var(--sq-skeleton)";
 }
 
+/** A payout figure: whole numbers past 10, one decimal below it. */
+function formatAmount(n: number): string {
+	if (n >= 10 || Number.isInteger(n)) return String(Math.round(n));
+	return n.toFixed(1);
+}
+
+/**
+ * The tail of a payout tooltip: `" · ×1.14 clears · +30% bonus"`, listing only
+ * the multipliers that actually apply. Pass `null` for `clearMult` on a payout
+ * repeat clears don't scale.
+ */
+function bonusNote(clearMult: number | null, bonusMult: number): string {
+	const parts: string[] = [];
+	if (clearMult !== null && clearMult > 1.005)
+		parts.push(`×${clearMult.toFixed(2)} clears`);
+	if (bonusMult > 1.005)
+		parts.push(`+${Math.round((bonusMult - 1) * 100)}% bonus`);
+	return parts.length > 0 ? ` · ${parts.join(" · ")}` : "";
+}
+
+/** How far a projection sits above its loot-table base; 1 when there's no base. */
+function ratio(projected: number, base: number): number {
+	return base > 0 ? projected / base : 1;
+}
+
 export function DungeonCard({
 	def,
 	ds,
 	squads,
 	travelTicks,
+	loot,
 	onDispatch,
 }: {
 	def: DungeonDef;
@@ -30,6 +63,8 @@ export function DungeonCard({
 	squads: Squad[];
 	/** Travel duration after upgrades — see effectiveTravelTicks. */
 	travelTicks: number;
+	/** Payout after clear and yield bonuses — see projectLoot. */
+	loot: ProjectedLoot;
 	onDispatch: (id: string) => void;
 }) {
 	const fightingSquad = squads.find(
@@ -57,9 +92,23 @@ export function DungeonCard({
 				? formatTime(Math.round(activeSquad.position * travelTicks))
 				: null;
 
-	const clearMult = 1 + Math.sqrt(ds.clearCount + 1) * 0.07;
+	const clearMult = clearMultiplier(ds.clearCount);
 	const clearMultDisplay = clearMult.toFixed(2);
 	const tierDec = tierDecoration(def.tier);
+
+	// Each projection is quoted back against the bare loot table so the card can
+	// name the breakdown on hover. The clear multiplier is divided out of the
+	// bone ratio: it applies to every dungeon from the first run, so only what's
+	// left — the player's own yield bonuses — counts as boosted. Coins are still
+	// rolled and banked, but the card no longer quotes them.
+	const lt = def.lootTable;
+	const baseCorpses = dungeonEnemyCount(def) * CORPSE_DROP_CHANCE;
+	const boneBonus = ratio(loot.bonesMax, lt.bonesMax) / clearMult;
+	const soulBonus = ratio(loot.soulChance, lt.soulChance);
+	const corpseBonus = ratio(loot.corpses, baseCorpses);
+	const soulPct = `${(loot.soulChance * 100).toFixed(0)}%`;
+	const perDrop =
+		loot.soulsPerDrop > 1.005 ? formatAmount(loot.soulsPerDrop) : null;
 
 	return (
 		<button
@@ -97,21 +146,28 @@ export function DungeonCard({
 							SEALED — {def.unlockCondition}
 						</div>
 					) : (
-						<div className="mono text-muted text-sm flex flex-wrap gap-x-5">
+						<div className="mono text-muted text-sm flex flex-wrap items-center gap-x-5 gap-y-1">
 							<span>{formatSeconds(travelTicks)}s travel</span>
-							<span>
-								{Math.floor(def.lootTable.bonesMin * clearMult)}–
-								{Math.floor(def.lootTable.bonesMax * clearMult)} bones
-							</span>
-							<span>
-								{Math.floor(def.lootTable.coinsMin * clearMult)}–
-								{Math.floor(def.lootTable.coinsMax * clearMult)} coins
-							</span>
-							<span>{(def.lootTable.soulChance * 100).toFixed(0)}% soul</span>
-							<span>
-								~{Math.round(dungeonEnemyCount(def) * CORPSE_DROP_CHANCE)}{" "}
-								corpses
-							</span>
+							<DungeonLootStat
+								icon={IconBone}
+								value={`${formatAmount(loot.bonesMin)}–${formatAmount(loot.bonesMax)}`}
+								boosted={boneBonus > 1.005}
+								title={`Bones per clear — base ${lt.bonesMin}–${lt.bonesMax}${bonusNote(clearMult, boneBonus)}`}
+							/>
+							<DungeonLootStat
+								icon={IconSoul}
+								value={perDrop ? `${soulPct} · ${perDrop}` : soulPct}
+								boosted={soulBonus > 1.005 || perDrop !== null}
+								title={`Soul chance per clear — base ${(lt.soulChance * 100).toFixed(0)}%${bonusNote(null, soulBonus)}${
+									perDrop ? ` · ${perDrop} souls per drop` : ""
+								}`}
+							/>
+							<DungeonLootStat
+								icon={IconCorpse}
+								value={`~${formatAmount(loot.corpses)}`}
+								boosted={corpseBonus > 1.005}
+								title={`Corpses per clear — ${dungeonEnemyCount(def)} enemies × ${(CORPSE_DROP_CHANCE * 100).toFixed(0)}% drop chance${bonusNote(null, corpseBonus)}`}
+							/>
 							{ds.clearCount > 0 && (
 								<>
 									<span className="text-coin">{ds.clearCount}× cleared</span>

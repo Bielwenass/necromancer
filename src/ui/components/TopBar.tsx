@@ -2,14 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { exportSave } from "../../game/save";
 import { useGameStore } from "../../game/store";
 import { formatNumber, formatRate } from "../theme";
-import {
-	IconBanner,
-	IconBone,
-	IconCoin,
-	IconCorpse,
-	IconDust,
-	IconSoul,
-} from "./icons";
+import { IconBanner, IconBone, IconCorpse, IconDust, IconSoul } from "./icons";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TopBarProps {
@@ -34,7 +27,6 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const bonesPerSec = derived.bonesPerTick * 10;
-	const coinsPerSec = derived.coinsPerTick * 10;
 	const dayStr = `DAY ${meta.dayCount}`;
 
 	// Close on Escape
@@ -140,20 +132,6 @@ export function TopBar({ phase: _phase }: TopBarProps) {
 								{formatNumber(resources.bones)}{" "}
 								<span className="text-[10px] text-muted">
 									{bonesPerSec > 0 ? formatRate(derived.bonesPerTick) : null}
-								</span>
-							</div>
-						</div>
-					</div>
-					<div className="flex items-center gap-2 font-mono text-sm">
-						<IconCoin size={20} />
-						<div>
-							<div className="text-muted text-[10px] tracking-[0.12em] uppercase">
-								Coin
-							</div>
-							<div className="text-bone">
-								{formatNumber(resources.coins)}{" "}
-								<span className="text-[10px] text-muted">
-									{coinsPerSec > 0 ? formatRate(derived.coinsPerTick) : null}
 								</span>
 							</div>
 						</div>

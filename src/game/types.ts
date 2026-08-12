@@ -118,12 +118,19 @@ export interface UpgradeNode {
 
 /**
  * A garden plot is identified by the resource that buys it. Banners are
- * excluded: they are earned by clearing dungeons, not farmed.
+ * excluded because they are earned by clearing dungeons, not farmed; coins
+ * because they are retired and no longer buy anything.
  */
-export type GardenPlotId = Exclude<keyof Resources, "banners">;
+export type GardenPlotId = Exclude<keyof Resources, "banners" | "coins">;
 
 export interface Resources {
 	bones: number;
+	/**
+	 * **Retired.** Dungeons still roll coins into `pendingLoot` and the deposit
+	 * still banks them, but nothing displays or spends them any more — no
+	 * ritual, no garden plot, no top-bar readout. The field and its loot-table
+	 * columns are kept so old saves stay valid and a future sink can adopt them.
+	 */
 	coins: number;
 	souls: number;
 	dust: number;

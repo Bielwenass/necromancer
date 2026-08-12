@@ -105,7 +105,6 @@ export function useGameLifecycle(): {
 			const emptyStats: CatchupStats = {
 				eventsProcessed: 0,
 				bonesGained: 0,
-				coinsGained: 0,
 				soulsGained: 0,
 			};
 			let lastStats: CatchupStats = emptyStats;
@@ -121,9 +120,7 @@ export function useGameLifecycle(): {
 								const hasActivity =
 									!!stats &&
 									stats.eventsProcessed > 0 &&
-									(stats.bonesGained > 0 ||
-										stats.coinsGained > 0 ||
-										stats.soulsGained > 0);
+									(stats.bonesGained > 0 || stats.soulsGained > 0);
 								if (hasActivity) {
 									overlayShown = true;
 									setCatchup({

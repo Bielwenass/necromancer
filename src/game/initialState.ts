@@ -20,7 +20,7 @@ function buildDefaults(): Omit<GameState, "derived"> {
 			zombie: { hp: 0, dmg: 0, speed: 0 },
 			wraith: { hp: 0, dmg: 0, speed: 0 },
 			crypt: { squadSize: 0, travelSpeed: 0 },
-			garden: { bones: 0, coins: 0, souls: 0, dust: 0, corpses: 0 },
+			garden: { bones: 0, souls: 0, dust: 0, corpses: 0 },
 		},
 		units: { skeletons: 10, zombies: 0, wraiths: 0 },
 		squads: [],
