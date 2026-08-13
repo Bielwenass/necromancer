@@ -47,8 +47,8 @@ export function InventoryFilters({
 	const filtered = filterSlot !== null || filterRarity !== null;
 
 	return (
-		<div className="flex flex-col gap-1.5 items-end">
-			<div className="flex gap-2 items-center">
+		<div className="flex flex-col gap-1.5 items-end max-md:items-start">
+			<div className="flex gap-2 items-center max-md:flex-wrap">
 				<span className="mono text-[11px] text-dim tracking-[0.14em] w-12 text-right">
 					TYPE
 				</span>
@@ -69,7 +69,7 @@ export function InventoryFilters({
 				})}
 			</div>
 
-			<div className="flex gap-2 items-center">
+			<div className="flex gap-2 items-center max-md:flex-wrap">
 				<span className="mono text-[11px] text-dim tracking-[0.14em] w-12 text-right">
 					RARITY
 				</span>

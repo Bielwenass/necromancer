@@ -13,7 +13,7 @@ export function UpgradeDetailPanel({
 	onBuy: (row: WorkshopRow) => void;
 }) {
 	return (
-		<div className="w-[360px] min-w-[360px] border-l border-[color:var(--rule)] bg-bg-panel px-5 py-6 overflow-y-auto flex flex-col gap-5">
+		<div className="w-[360px] min-w-[360px] border-l border-[color:var(--rule)] bg-bg-panel px-5 py-6 overflow-y-auto flex flex-col gap-5 max-md:hidden">
 			{row ? (
 				<UpgradeDetail row={row} resources={resources} onBuy={onBuy} />
 			) : (

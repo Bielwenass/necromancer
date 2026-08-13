@@ -30,6 +30,11 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	const [filterSlot, setFilterSlot] = useState<RelicSlotType | null>(null);
 	const [confirmSacrifice, setConfirmSacrifice] = useState(false);
 	const [confirmBulkSacrifice, setConfirmBulkSacrifice] = useState(false);
+	// Mobile-only: the three columns below become tabs, one visible at a time.
+	// Unused above the mobile breakpoint, where all three always render.
+	const [mobilePane, setMobilePane] = useState<
+		"equipped" | "detail" | "inventory"
+	>("inventory");
 
 	const selectedRelic =
 		inventory.find((r) => r.id === selectedRelicId) ??
@@ -52,7 +57,10 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	// EQUIP TO SLOT buttons in RelicDetail, which offer only valid slots.
 	const handleSlotClick = (slotId: SlotId) => {
 		const equippedId = equipped[slotId];
-		if (equippedId) setSelectedRelicId(equippedId);
+		if (equippedId) {
+			setSelectedRelicId(equippedId);
+			setMobilePane("detail");
+		}
 	};
 
 	const handleSelectRelic = (relicId: string) => {
@@ -61,6 +69,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 		} else {
 			setSelectedRelicId(relicId);
 			markRelicSeen(relicId);
+			setMobilePane("detail");
 		}
 	};
 
@@ -86,7 +95,35 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	};
 
 	return (
-		<Screen tab="reliquary" onTabChange={onTabChange} stageClassName="min-h-0">
+		<Screen
+			tab="reliquary"
+			onTabChange={onTabChange}
+			stageClassName="min-h-0 max-md:flex-col max-md:overflow-y-auto"
+		>
+			{/* Mobile-only sub-tabs — desktop always shows all three columns */}
+			<div className="hidden max-md:flex border-b border-rule shrink-0">
+				{(
+					[
+						{ id: "equipped", label: "Equipped" },
+						{ id: "detail", label: "Detail" },
+						{ id: "inventory", label: "Inventory" },
+					] as const
+				).map(({ id, label }) => (
+					<button
+						key={id}
+						type="button"
+						onClick={() => setMobilePane(id)}
+						className={`flex-1 py-2.5 font-display text-[11px] tracking-[0.18em] uppercase border-r border-rule last:border-r-0 ${
+							mobilePane === id
+								? "text-coin bg-[rgba(212,168,87,0.06)]"
+								: "text-muted"
+						}`}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
 			<EquippedSlots
 				inventory={inventory}
 				equipped={equipped}
@@ -94,10 +131,15 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 				selectedRelicId={selectedRelicId}
 				onSelectSlot={handleSlotClick}
 				onUnequip={unequipRelic}
+				className={mobilePane === "equipped" ? "" : "max-md:hidden"}
 			/>
 
 			{/* CENTER — Detail */}
-			<div className="w-[380px] border-r border-rule flex flex-col overflow-hidden bg-[linear-gradient(180deg,#15110b_0%,#0f0c08_100%)]">
+			<div
+				className={`w-[380px] border-r border-rule flex flex-col overflow-hidden bg-[linear-gradient(180deg,#15110b_0%,#0f0c08_100%)] max-md:w-full max-md:border-r-0 ${
+					mobilePane === "detail" ? "" : "max-md:hidden"
+				}`}
+			>
 				{selectedRelic ? (
 					<RelicDetail
 						relic={selectedRelic}
@@ -126,7 +168,11 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 			</div>
 
 			{/* RIGHT — Inventory */}
-			<div className="flex-1 px-6 py-[22px] flex flex-col gap-5 min-w-0 overflow-hidden">
+			<div
+				className={`flex-1 px-6 py-[22px] flex flex-col gap-5 min-w-0 overflow-hidden max-md:w-full max-md:px-4 ${
+					mobilePane === "inventory" ? "" : "max-md:hidden"
+				}`}
+			>
 				<div className="flex items-baseline justify-between">
 					<SectionLabel>Inventory</SectionLabel>
 					<div className="mono text-[10px] text-muted tracking-[0.1em]">

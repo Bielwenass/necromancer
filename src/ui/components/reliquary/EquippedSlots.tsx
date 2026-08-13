@@ -14,6 +14,8 @@ interface EquippedSlotsProps {
 	selectedRelicId: string | null;
 	onSelectSlot: (slotId: SlotId) => void;
 	onUnequip: (slotId: SlotId) => void;
+	/** Extra classes on the outer column — used to gate visibility on mobile. */
+	className?: string;
 }
 
 /** The left column: every relic slot, grouped by crypt and summoning circle. */
@@ -24,6 +26,7 @@ export function EquippedSlots({
 	selectedRelicId,
 	onSelectSlot,
 	onUnequip,
+	className,
 }: EquippedSlotsProps) {
 	const visibleGroups = SLOT_GROUPS.filter((group) => {
 		if (group.unitType === "zombie") return derived.zombiesUnlocked;
@@ -32,7 +35,9 @@ export function EquippedSlots({
 	});
 
 	return (
-		<div className="scr-ghost w-[560px] py-[22px] px-6 border-r border-rule flex flex-col gap-[18px] overflow-y-auto">
+		<div
+			className={`scr-ghost w-[560px] py-[22px] px-6 border-r border-rule flex flex-col gap-[18px] overflow-y-auto max-md:w-full max-md:border-r-0${className ? ` ${className}` : ""}`}
+		>
 			<SectionLabel>Equipped</SectionLabel>
 
 			{visibleGroups.map((group) => (
@@ -55,7 +60,7 @@ export function EquippedSlots({
 					)}
 
 					{/* Slot cards */}
-					<div className="flex gap-2.5">
+					<div className="flex gap-2.5 max-md:flex-wrap max-md:gap-2">
 						{group.slots.map((slot) => {
 							const relicId = equipped[slot.id];
 							const relic = relicId

@@ -1,3 +1,4 @@
+import { InfoTooltip } from "../common/InfoTooltip";
 import type { IconComponent } from "../icons/IconProps";
 
 /**
@@ -17,12 +18,12 @@ export function DungeonLootStat({
 	title: string;
 }) {
 	return (
-		<span
-			title={title}
-			className={`flex items-center gap-1.5 ${boosted ? "text-bone" : ""}`}
+		<InfoTooltip
+			tip={title}
+			className={`gap-1.5 ${boosted ? "text-bone" : ""}`}
 		>
 			<Icon size={16} />
 			{value}
-		</span>
+		</InfoTooltip>
 	);
 }

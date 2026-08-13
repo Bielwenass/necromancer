@@ -77,7 +77,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 
 	return (
 		<Modal label={`Dispatch legion to ${def.name}`} onClose={onClose}>
-			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh]">
+			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] max-md:w-[calc(100vw-32px)] max-md:max-h-[85vh] max-md:overflow-y-auto max-md:p-5">
 				{/* Header */}
 				<div className="mb-5">
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">

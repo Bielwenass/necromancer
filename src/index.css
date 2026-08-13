@@ -241,6 +241,42 @@
 	display: flex;
 }
 
+/* ── mobile shell: bars flow in-column instead of overlaying ──── */
+@media (max-width: 767.98px) {
+	.necro {
+		display: flex;
+		flex-direction: column;
+	}
+	.bar-top,
+	.bar-tabs {
+		position: static;
+		flex: 0 0 auto;
+	}
+	.bar-top {
+		height: auto;
+		min-height: 56px;
+		flex-wrap: wrap;
+		padding: 10px 14px;
+		gap: 8px 14px;
+	}
+	.stage {
+		position: relative;
+		top: auto;
+		bottom: auto;
+		left: auto;
+		right: auto;
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+	.bar-tabs .tab {
+		flex-direction: column;
+		gap: 3px;
+		font-size: 9px;
+		letter-spacing: 0.05em;
+		padding: 6px 2px;
+	}
+}
+
 /* corner tick — gives panels a "carved" feel */
 .cornered {
 	position: relative;

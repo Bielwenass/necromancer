@@ -64,7 +64,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 
 	return (
 		<div
-			className="flex-1 border-r border-[color:var(--rule)] py-8 px-7 flex flex-col relative bg-bg-deep"
+			className="flex-1 border-r border-[color:var(--rule)] py-8 px-7 flex flex-col relative bg-bg-deep max-md:w-full max-md:border-r-0 max-md:border-b max-md:py-6 max-md:px-5"
 			style={{
 				backgroundImage: `linear-gradient(180deg, ${meta.tint}, transparent 70%)`,
 			}}

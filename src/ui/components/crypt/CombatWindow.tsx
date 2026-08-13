@@ -4,6 +4,11 @@ import type { CombatEngine } from "../../../combat/engine";
 import { useGameStore } from "../../../game/store";
 import type { DungeonDef, Squad } from "../../../game/types";
 
+// Backing-store scale for a crisp render on high-DPI screens. The sim's
+// logical coordinate space (COMBAT_W × COMBAT_H) stays fixed — only the
+// canvas's physical pixel buffer and a matching ctx transform grow.
+const CANVAS_DPR = Math.min(window.devicePixelRatio || 1, 3);
+
 export function CombatWindow({
 	squad,
 	def: _def,
@@ -41,6 +46,7 @@ export function CombatWindow({
 			const ctx = canvas?.getContext("2d");
 
 			if (eng && ctx) {
+				ctx.setTransform(CANVAS_DPR, 0, 0, CANVAS_DPR, 0, 0);
 				const store = useGameStore.getState();
 				const isLive = store.combatEngines.has(squadId);
 
@@ -92,9 +98,9 @@ export function CombatWindow({
 	return (
 		<canvas
 			ref={canvasRef}
-			width={COMBAT_W}
-			height={COMBAT_H}
-			className="block w-full"
+			width={COMBAT_W * CANVAS_DPR}
+			height={COMBAT_H * CANVAS_DPR}
+			className="block w-full aspect-[2/1]"
 		/>
 	);
 }

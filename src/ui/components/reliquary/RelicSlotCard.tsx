@@ -21,7 +21,7 @@ export function RelicSlotCard({
 	// RelicDetail, so there is nothing to click here.
 	if (locked || !relic) {
 		return (
-			<div className="w-[130px] aspect-[320/460] bg-bg-inset border border-dashed border-rule flex flex-col items-center justify-center relative">
+			<div className="w-[130px] aspect-[320/460] bg-bg-inset border border-dashed border-rule flex flex-col items-center justify-center relative max-md:w-[104px]">
 				<div className="mono absolute top-2 left-[10px] text-xs text-dim tracking-[0.1em]">
 					{slotLabel}
 				</div>
@@ -33,7 +33,7 @@ export function RelicSlotCard({
 	}
 
 	return (
-		<div className="w-[130px] relative">
+		<div className="w-[130px] relative max-md:w-[104px]">
 			<RelicCard
 				relic={relic}
 				variant="inventory"

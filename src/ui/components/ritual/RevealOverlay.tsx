@@ -34,7 +34,7 @@ export function RevealOverlay({
 			onClose={allRevealed ? onClose : undefined}
 			backdropClassName="bg-[rgba(0,0,0,0.85)]"
 			zClassName="z-[200]"
-			className="flex-col"
+			className="flex-col max-md:overflow-y-auto max-md:justify-start max-md:py-8"
 		>
 			{/* Ray burst */}
 			<svg
@@ -58,7 +58,7 @@ export function RevealOverlay({
 
 			<div className="flex gap-[14px] flex-wrap justify-center max-w-[1600px] z-[1]">
 				{relics.map((relic, i) => (
-					<div key={relic.id} className="w-[280px]">
+					<div key={relic.id} className="w-[280px] max-md:w-[240px]">
 						<RelicCard
 							relic={relic}
 							variant="pull"

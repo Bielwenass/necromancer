@@ -45,7 +45,7 @@ export function UnitCountStepper({
 					type="button"
 					onClick={() => onAdjust(-1)}
 					disabled={!canDecrease}
-					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center"
+					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center max-md:!w-9 max-md:!h-9"
 					style={{
 						color: canDecrease ? "var(--ink-bone)" : "var(--ink-faint)",
 					}}
@@ -59,7 +59,7 @@ export function UnitCountStepper({
 					type="button"
 					onClick={() => onAdjust(1)}
 					disabled={!canIncrease}
-					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center"
+					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center max-md:!w-9 max-md:!h-9"
 					style={{
 						color: canIncrease ? "var(--ink-bone)" : "var(--ink-faint)",
 					}}
@@ -70,7 +70,7 @@ export function UnitCountStepper({
 					type="button"
 					onClick={() => onAdjust(available - count)}
 					disabled={!canIncrease}
-					className="!w-12 !h-6 !border !border-rule-strong !text-sm flex items-center justify-center"
+					className="!w-12 !h-6 !border !border-rule-strong !text-sm flex items-center justify-center max-md:!w-14 max-md:!h-9"
 					style={{
 						color: canIncrease ? "var(--ink-bone)" : "var(--ink-faint)",
 					}}

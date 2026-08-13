@@ -75,6 +75,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 			tab="crypt"
 			onTabChange={onTabChange}
 			className="text-base"
+			stageClassName="max-md:flex-col max-md:overflow-y-auto"
 			overlay={
 				dispatchTarget && (
 					<DispatchModal
@@ -85,7 +86,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 			}
 		>
 			{/* ── Dungeon list ───────────────────────────────── */}
-			<div className="flex-1 overflow-y-auto min-h-0">
+			<div className="flex-1 overflow-y-auto min-h-0 max-md:order-2 max-md:flex-none max-md:overflow-visible">
 				{visibleDungeons.map((def) => {
 					const ds = dungeons.find((d) => d.id === def.id);
 					if (!ds) return null;
@@ -107,7 +108,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 			</div>
 
 			{/* ── Right sidebar ──────────────────────────────── */}
-			<div className="w-[380px] bg-bg-panel border-l border-rule flex flex-col">
+			<div className="w-[380px] bg-bg-panel border-l border-rule flex flex-col max-md:order-1 max-md:w-full max-md:border-l-0 max-md:border-t">
 				<UnitReserves
 					units={units}
 					squads={squads}
@@ -141,7 +142,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 						</span>
 					</div>
 
-					<div className="flex-1 overflow-y-auto">
+					<div className="flex-1 overflow-y-auto max-md:flex-none max-md:overflow-visible">
 						{squads.length === 0 && (
 							<EmptyState
 								className="p-7 text-center"

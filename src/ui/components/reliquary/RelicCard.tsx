@@ -82,6 +82,14 @@ export function RelicCard({
 	const [hovered, setHovered] = useState(false);
 	// Which affix row the cursor is on, if any — drives the description tooltip.
 	const [tipAffixId, setTipAffixId] = useState<string | null>(null);
+	// The mouse-tracked tilt/idle-drift effects are desktop-only: on a touch
+	// device they'd either never fire or risk a "stuck" pose from a synthetic
+	// mouseenter/mousemove/mouseleave sequence some mobile browsers fire on tap.
+	const [canHover] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+	);
 	// Tri-state. When `revealing` is false we skip the animation entirely and
 	// land directly in 'revealed' — the card just appears face-up.
 	const [phase, setPhase] = useState<Phase>(revealing ? "hidden" : "revealed");
@@ -195,7 +203,8 @@ export function RelicCard({
 
 	// Idle drift only when fully revealed and not hovered.
 	useEffect(() => {
-		if (!tweaks.idleDrift || hovered || phase !== "revealed") return;
+		if (!canHover || !tweaks.idleDrift || hovered || phase !== "revealed")
+			return;
 		const t0 = performance.now();
 		const tick = (now: number) => {
 			const t = (now - t0) / 1000;
@@ -204,10 +213,10 @@ export function RelicCard({
 		};
 		rafRef.current = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafRef.current);
-	}, [tweaks.idleDrift, hovered, phase, setPose]);
+	}, [canHover, tweaks.idleDrift, hovered, phase, setPose]);
 
 	const onMove = (e: React.MouseEvent) => {
-		if (phase !== "revealed") return;
+		if (!canHover || phase !== "revealed") return;
 		const el = cardRef.current;
 		if (!el) return;
 		const r = el.getBoundingClientRect();
@@ -236,7 +245,7 @@ export function RelicCard({
 			data-variant={variant}
 			data-selected={selected ? "1" : "0"}
 			data-phase={phase}
-			onMouseEnter={() => phase === "revealed" && setHovered(true)}
+			onMouseEnter={() => canHover && phase === "revealed" && setHovered(true)}
 			onMouseMove={onMove}
 			onMouseLeave={onLeave}
 			onClick={onClick}
@@ -427,12 +436,18 @@ export function RelicCard({
 								)}
 								<ul className="rc-stats">
 									{stats.map((s) => (
+										// biome-ignore lint/a11y/useKeyWithClickEvents: supplementary tap-toggle on a row that isn't independently focusable; the card's own select/equip button stays keyboard-accessible.
 										<li
 											key={s.k}
 											onMouseEnter={() =>
-												phase === "revealed" && setTipAffixId(s.id)
+												canHover && phase === "revealed" && setTipAffixId(s.id)
 											}
 											onMouseLeave={() => setTipAffixId(null)}
+											onClick={(e) => {
+												e.stopPropagation();
+												if (phase !== "revealed") return;
+												setTipAffixId((id) => (id === s.id ? null : s.id));
+											}}
 										>
 											<span className="rc-stat-k">{s.k}</span>
 											<span className="rc-stat-dot" />

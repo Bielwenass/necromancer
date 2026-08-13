@@ -84,10 +84,10 @@ export function DungeonCard({
 		<button
 			type="button"
 			onClick={() => !locked && onDispatch(def.id)}
-			className={`relative block w-full text-left h-[140px] shrink-0 border-b border-rule overflow-hidden
+			className={`relative block w-full text-left h-[140px] shrink-0 border-b border-rule overflow-hidden max-md:h-auto
         ${locked ? "opacity-[0.55] cursor-default" : "cursor-pointer"}`}
 		>
-			<div className="relative px-8 h-full flex items-center gap-7">
+			<div className="relative px-8 h-full flex items-center gap-7 max-md:h-auto max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-5 max-md:py-4">
 				{/* Tier badge — border/text color are dynamic */}
 				<div
 					className="shrink-0 size-[60px] px-3 py-1.5 flex flex-col items-center"
@@ -154,10 +154,10 @@ export function DungeonCard({
 				</div>
 
 				{/* Squad status */}
-				<div className="shrink-0 min-w-[200px] text-right">
+				<div className="shrink-0 min-w-[200px] text-right max-md:min-w-0 max-md:w-full max-md:text-left">
 					{activeSquad ? (
 						<div>
-							<div className="flex items-center justify-end gap-2.5 mb-[7px]">
+							<div className="flex items-center justify-end gap-2.5 mb-[7px] max-md:justify-start">
 								<span className="display text-parchm tracking-wider">
 									{activeSquad.name}
 								</span>

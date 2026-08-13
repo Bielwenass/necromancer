@@ -27,10 +27,10 @@ export function UpgradeRow({
 		<button
 			type="button"
 			id={`wrow-${row.id}`}
-			className={`grid grid-cols-[48px_1fr_90px_90px] items-center gap-4 py-4 w-full text-left transition-colors duration-100 border-b border-[color:var(--rule)] ${
+			className={`grid grid-cols-[48px_1fr_90px_90px] max-md:grid-cols-[40px_1fr_64px_64px] items-center gap-4 max-md:gap-2 py-4 w-full text-left transition-colors duration-100 border-b border-[color:var(--rule)] ${
 				pinned
-					? "bg-bg-hover border-l-2 border-l-ember pl-[30px] pr-8"
-					: "px-8 hover:bg-bg-hover"
+					? "bg-bg-hover border-l-2 border-l-ember pl-[30px] pr-8 max-md:pl-4 max-md:pr-4"
+					: "px-8 hover:bg-bg-hover max-md:px-4"
 			}`}
 			onClick={() => onPin(row.id)}
 			onContextMenu={(e) => {

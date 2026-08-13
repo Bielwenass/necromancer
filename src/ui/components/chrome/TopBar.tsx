@@ -120,13 +120,13 @@ export function TopBar() {
 					<span className="text-dim">T:{meta.tickCount}</span>
 				</div>
 
-				<div className="ml-auto flex gap-[22px] items-center">
+				<div className="ml-auto flex gap-[22px] items-center max-md:ml-0 max-md:order-3 max-md:w-full max-md:gap-4 max-md:overflow-x-auto">
 					{resources.bones < 10_000 && (
 						<button
 							type="button"
 							onClick={digBone}
 							title="Dig a bone"
-							className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center"
+							className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center max-md:shrink-0"
 						>
 							DIG
 							<IconBone size={14} />
@@ -152,7 +152,7 @@ export function TopBar() {
 					backdropClassName="bg-[rgba(0,0,0,0.72)]"
 					zClassName="z-[200]"
 				>
-					<div className="bg-bg-panel border border-rule-strong px-9 py-8 min-w-[340px] max-w-[400px]">
+					<div className="bg-bg-panel border border-rule-strong px-9 py-8 min-w-[340px] max-w-[400px] max-md:min-w-0 max-md:w-[calc(100vw-32px)] max-md:px-6 max-md:py-6">
 						{/* Header */}
 						<div className="flex items-center justify-between mb-7">
 							<SectionLabel className="text-sm text-parchm tracking-[0.28em]">

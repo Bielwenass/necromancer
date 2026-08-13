@@ -13,8 +13,8 @@ export function WorkshopSideNav({
 	anyDot: Record<string, boolean>;
 }) {
 	return (
-		<div className="w-[280px] min-w-[280px] border-r border-[color:var(--rule)] bg-bg-panel flex flex-col overflow-y-auto">
-			<div className="pt-4 px-5 pb-3 border-b border-[color:var(--rule)]">
+		<div className="w-[280px] min-w-[280px] border-r border-[color:var(--rule)] bg-bg-panel flex flex-col overflow-y-auto max-md:w-full max-md:min-w-0 max-md:flex-row max-md:border-r-0 max-md:border-b max-md:overflow-x-auto max-md:overflow-y-visible">
+			<div className="pt-4 px-5 pb-3 border-b border-[color:var(--rule)] max-md:hidden">
 				<div className="font-display text-[10px] tracking-[0.24em] uppercase text-dim">
 					Crypt Workshop
 				</div>
@@ -24,11 +24,14 @@ export function WorkshopSideNav({
 					type="button"
 					key={s.id}
 					className={
-						"flex items-center gap-3.5 pt-3.5 pb-3.5 pr-5 border-b border-[color:var(--rule)] text-left w-full transition-colors duration-[120ms] " +
+						"flex items-center gap-3.5 pt-3.5 pb-3.5 pr-5 border-b border-[color:var(--rule)] text-left w-full transition-colors duration-[120ms] max-md:w-auto max-md:flex-none max-md:whitespace-nowrap max-md:border-b-0 max-md:border-r max-md:h-14 max-md:py-0 max-md:pr-4 " +
 						(s.id === activeId
 							? "bg-[rgba(214,122,48,0.07)] border-l-2 border-l-ember pl-5"
 							: "pl-[22px] hover:bg-bg-hover ") +
-						(!s.unlocked ? " opacity-50 cursor-not-allowed" : " cursor-pointer")
+						(!s.unlocked
+							? " opacity-50 cursor-not-allowed"
+							: " cursor-pointer") +
+						" max-md:pl-4"
 					}
 					onClick={() => s.unlocked && onSelect(s.id)}
 				>
@@ -45,7 +48,7 @@ export function WorkshopSideNav({
 							}
 						/>
 					</div>
-					<div className="font-display text-xs tracking-[0.2em] uppercase flex-1 text-parchm">
+					<div className="font-display text-xs tracking-[0.2em] uppercase flex-1 text-parchm max-md:flex-none max-md:text-[10px] max-md:tracking-[0.12em]">
 						{s.name}
 					</div>
 					{anyDot[s.id] && (

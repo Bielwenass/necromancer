@@ -8,8 +8,12 @@ interface RitualProps {
 
 export function Ritual({ onTabChange }: RitualProps) {
 	return (
-		<Screen tab="ritual" onTabChange={onTabChange}>
-			<div className="flex-1 flex">
+		<Screen
+			tab="ritual"
+			onTabChange={onTabChange}
+			stageClassName="max-md:overflow-y-auto"
+		>
+			<div className="flex-1 flex max-md:flex-col">
 				<RitualPanel poolId="banner" />
 				<RitualPanel poolId="carrion" />
 				<RitualPanel poolId="forbidden" />

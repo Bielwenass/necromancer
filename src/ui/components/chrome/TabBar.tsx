@@ -42,8 +42,10 @@ export function TabBar({ active, onTabChange }: TabBarProps) {
 							size={24}
 							color={isActive ? "var(--c-coin)" : "var(--ink-muted)"}
 						/>
-						<span className="text-lg">{t.label}</span>
-						<span className="key">{t.k}</span>
+						<span className="text-lg max-md:text-[9px] max-md:tracking-normal">
+							{t.label}
+						</span>
+						<span className="key max-md:hidden">{t.k}</span>
 					</button>
 				);
 			})}
