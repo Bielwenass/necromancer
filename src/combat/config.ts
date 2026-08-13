@@ -71,20 +71,20 @@ export const COMBAT_CONFIG = {
 		// a performance knob too: bigger = more neighbors per query = slower.
 		// Range: 5–15.  Should be >= separationRadius or units can't reach enemies
 		// they're being pushed away from.
-		attackRadius: 8,
+		attackRadius: 6,
 
 		// ── Kinematics ─────────────────────────────────────────────
 		// Max acceleration magnitude (px/s²-ish in engine units). Controls how
 		// sharply units can change direction — turn responsiveness.
 		// Range: 50–300.  Higher = snappier, more agile. Lower = ponderous,
 		// wider turning arcs (can look more "weighty" for big units).
-		maxAccel: 100,
+		maxAccel: 80,
 
 		// Multiplier on a unit's `speed` stat to get max velocity. speed=1 with
 		// scale=20 → 20 px/s. This is the master movement-speed dial.
 		// Range: 10–60.  Tune so a fight lasts a satisfying number of seconds at
 		// combatSpeedMultiplier=1. Higher = faster, more frantic battles.
-		speedScale: 20,
+		speedScale: 15,
 
 		// Floor on the distance used in the separation falloff, which goes as
 		// 1/d and would blow up at contact. Range: 0.25–1.  Lower = harsher
