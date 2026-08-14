@@ -48,6 +48,19 @@ export const COMBAT_CONFIG = {
 		// advance as a group.
 		seekWeight: 100.0,
 
+		// Share of `seekWeight` a unit keeps once an enemy is inside `attackRadius`.
+		// A unit in melee that still seeks at full weight drives into a target the
+		// positional pass pushes straight back out, every tick — the standoff that
+		// reads as jitter. Range: 0–0.3. Above ~0.3 the buzz returns; at 0 a front
+		// line holds and the ranks behind press into it.
+		engagedSeekScale: 0.1,
+
+		// Velocity drag (1/s) applied while engaged, so a unit arriving at full
+		// speed sheds it instead of overshooting into the crush. The only drag term
+		// in the model — nothing damps a free-moving unit. Range: 4–16. Too high
+		// and contact feels sticky, too low and units skate through each other.
+		engagedDamping: 8,
+
 		// ── Combat ─────────────────────────────────────────────────
 		// Melee reach (px). Also a performance knob, via the fine-query radius.
 		// Range: 5–15, and >= `separationRadius` or units can't reach the enemies
@@ -128,6 +141,12 @@ export const COMBAT_CONFIG = {
 		// Fraction of an overlap each unit is pushed out per pass; 0.5 splits the
 		// correction evenly. Range: 0.25–0.5. Higher = stiffer but more jitter.
 		correction: 0.5,
+
+		// Share of a contact's closing normal velocity absorbed on resolution, so
+		// the pair stops driving into a push that would otherwise be undone next
+		// tick. Range: 0–1. 0 restores the pure positional pass and its buzz; 1 is
+		// a fully inelastic stop and makes crowds feel glued.
+		velocityAbsorb: 0.5,
 
 		// Below this squared distance two units count as coincident and are left
 		// alone, since the push direction would be meaningless.

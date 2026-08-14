@@ -35,6 +35,16 @@ Two things are folded in *outside* the engine, in `dungeonCombat.ts`, because bo
 - **Group Tactics** multiplies attacker damage when the composition fields all three unit types.
 - **Enemy debuffs** (`enemyHpPenalty`, `enemyDmgPenalty`) scale the defender roster. `buildDefenderConfig` rebuilds the roster rather than passing `def.enemies` through — that array belongs to the dungeon table and must never be scaled in place.
 
+## Contact
+
+Steering and collision resolution meet at melee range, and the handoff between them is deliberate.
+
+A unit counts as **engaged** the moment an enemy is inside `attackRadius` — the same test that gates a swing. An engaged unit drops to `engagedSeekScale` of its seek weight and gains a `engagedDamping` drag on its velocity. Seek is the one steering term large enough to saturate the accel clamp on its own, so leaving it at full weight in melee means every front-line unit drives into a target that phase 3 pushes straight back out, at equal magnitude, every tick. That standoff is what jitter *is*: measured before the gate, 47% of an engaged unit's per-tick displacement came from the positional pass rather than its own velocity.
+
+Phase 3 closes the loop by absorbing `velocityAbsorb` of a contact's **closing normal velocity** along with the positional push. A position-only correction leaves the integrator still aimed inward, so the same overlap re-forms next tick; taking the closing component out means a contact settles instead of buzzing. Each pair is visited from both ends, so each unit sheds its own share.
+
+Together these leave an engaged unit's unmodelled (collision-driven) motion at roughly 1–3% of its total, down from about half. That matters to the renderer as much as to the sim: `CombatWindow` extrapolates between game ticks from velocity alone, so any displacement phase 3 applies behind velocity's back is motion the extrapolation cannot predict and must snap to.
+
 ## Modifiers
 
 Beyond the stat line, a unit type carries up to ten **combat modifiers** — the second half of `UnitDerivedStats`, granted by relic affixes. `unitMods()` collects them per type and returns `null` when a type has none, which is the common case and the one the hot loop is written for: `SimUnit.mods` is `null` and every modifier check is skipped. Enemies never carry them.

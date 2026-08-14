@@ -161,6 +161,8 @@ export function tickSimulation(
 	const alignWeight = cfg.alignmentWeight;
 	const cohWeight = cfg.cohesionWeight;
 	const seekWeight = cfg.seekWeight;
+	const engagedSeek = cfg.engagedSeekScale;
+	const engagedDamping = cfg.engagedDamping;
 	const attackR2 = cfg.attackRadius * cfg.attackRadius;
 	const swingInterval = cfg.attackIntervalMs / 1000;
 	const maxAccel = cfg.maxAccel;
@@ -353,14 +355,19 @@ export function tickSimulation(
 				haveSeek = true;
 			}
 		}
+		// Held aside rather than folded in: seek is the one term big enough to
+		// saturate the accel clamp, and a unit already in melee must not keep
+		// driving forward — the neighbor loop below decides whether it applies.
+		let seekAx = 0,
+			seekAy = 0;
 		if (haveSeek) {
 			const dx = seekTx - ux;
 			const dy = seekTy - uy;
 			const d2 = dx * dx + dy * dy;
 			if (d2 > 0) {
 				const invD = 1 / Math.sqrt(d2);
-				ax += dx * invD * seekWeight;
-				ay += dy * invD * seekWeight;
+				seekAx = dx * invD * seekWeight;
+				seekAy = dy * invD * seekWeight;
 			}
 		}
 
@@ -421,6 +428,19 @@ export function tickSimulation(
 			stats.neighborLoopMs += performance.now() - nlStart;
 			stats.neighborsVisited += neighbors.length;
 			stats.unitsProcessed++;
+		}
+
+		// Engaged = an enemy is inside melee reach, the same test that gates a
+		// swing. Such a unit stops driving forward and brakes instead: seek would
+		// otherwise push it into a target the positional pass shoves straight back
+		// out, and that standoff is what reads as jitter.
+		const engaged = nearestEnemy !== null && nearestEnemyDist2 < attackR2;
+		if (engaged) {
+			ax += seekAx * engagedSeek - uvx * engagedDamping;
+			ay += seekAy * engagedSeek - uvy * engagedDamping;
+		} else {
+			ax += seekAx;
+			ay += seekAy;
 		}
 
 		// Clamp acceleration.
@@ -547,9 +567,23 @@ export function tickSimulation(
 			const d2 = dx * dx + dy * dy;
 			if (d2 >= collRadius2 || d2 < coll.minSeparation2) continue;
 			const d = Math.sqrt(d2);
-			const push = ((collRadius - d) * coll.correction) / d;
+			const invD = 1 / d;
+			const push = (collRadius - d) * coll.correction * invD;
 			u.x += dx * push;
 			u.y += dy * push;
+
+			// Absorb the closing half of the pair's normal velocity. Without this
+			// the push is undone by an integrator that still points the two into
+			// each other, and the contact buzzes at the tick rate forever. Each
+			// pair is visited from both ends, so each unit sheds its own share.
+			const nx = dx * invD;
+			const ny = dy * invD;
+			const closing = (u.vx - n.vx) * nx + (u.vy - n.vy) * ny;
+			if (closing < 0) {
+				const k = closing * coll.velocityAbsorb;
+				u.vx -= k * nx;
+				u.vy -= k * ny;
+			}
 		}
 		if (u.x < 0) u.x = 0;
 		else if (u.x > width) u.x = width;
