@@ -1,3 +1,4 @@
+import { isUnitUnlocked } from "../../../game/rules/units";
 import type { GameState, Relic, SlotId } from "../../../game/types";
 import { UNIT_COLORS } from "../../theme";
 import { SectionLabel } from "../common/SectionLabel";
@@ -28,11 +29,9 @@ export function EquippedSlots({
 	onUnequip,
 	className,
 }: EquippedSlotsProps) {
-	const visibleGroups = SLOT_GROUPS.filter((group) => {
-		if (group.unitType === "zombie") return derived.zombiesUnlocked;
-		if (group.unitType === "wraith") return derived.wraithsUnlocked;
-		return true;
-	});
+	const visibleGroups = SLOT_GROUPS.filter(
+		(group) => !group.unitType || isUnitUnlocked(group.unitType, derived),
+	);
 
 	return (
 		<div

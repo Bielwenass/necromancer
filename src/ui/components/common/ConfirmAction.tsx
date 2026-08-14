@@ -1,9 +1,9 @@
 import type React from "react";
 
 /**
- * The crit-red treatment every destructive confirm shares. Kept as a constant
- * so the colour is spelled once — call sites that can't use `ConfirmAction`
- * (the settings reset, which has its own layout) still import this.
+ * The crit-red treatment every destructive confirm shares, so the colour is
+ * spelled once. Call sites that can't use `ConfirmAction` — the settings reset,
+ * which has its own layout — still import this.
  */
 export const DANGER_BUTTON =
 	"border-hp-crit text-hp-crit bg-[rgba(196,90,62,0.08)]";

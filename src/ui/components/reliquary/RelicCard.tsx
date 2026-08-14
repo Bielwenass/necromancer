@@ -82,9 +82,8 @@ export function RelicCard({
 	const [hovered, setHovered] = useState(false);
 	// Which affix row the cursor is on, if any — drives the description tooltip.
 	const [tipAffixId, setTipAffixId] = useState<string | null>(null);
-	// The mouse-tracked tilt/idle-drift effects are desktop-only: on a touch
-	// device they'd either never fire or risk a "stuck" pose from a synthetic
-	// mouseenter/mousemove/mouseleave sequence some mobile browsers fire on tap.
+	// Tilt and idle drift are desktop-only: on touch they'd either never fire or
+	// stick, off the synthetic mouse events some mobile browsers send on tap.
 	const [canHover] = useState(
 		() =>
 			typeof window !== "undefined" &&
@@ -111,13 +110,11 @@ export function RelicCard({
 	const name = base?.name ?? relic.baseId;
 	const flavor = base?.description ? `"${base.description}"` : "";
 	const slotKey = base?.slot ?? "crypt";
-	const setLabel = base?.set ? ` · ${base?.set}` : "";
 	const slotLabel = `${slotKey.charAt(0).toUpperCase()}${slotKey.slice(1)}`;
 	const sigil = RARITY_SIGIL[relic.rarity];
 	const serial = `REL-${relic.id.replace(/\D/g, "").slice(0, 4).padStart(4, "0")}`;
-	// `allAffixes` already reads main → minors → signature. The signature is
-	// marked, since it is the reason a legendary of this base is worth chasing
-	// over a better-rolled common one.
+	// `allAffixes` reads main → minors → signature. The signature is marked: it
+	// is why a legendary of this base beats a better-rolled common one.
 	const stats = allAffixes(relic).map((affix) => ({
 		id: affix.id,
 		value: affix.value,
@@ -142,7 +139,7 @@ export function RelicCard({
 			el.style.setProperty("--my", `${((py + 0.5) * 100).toFixed(2)}%`);
 			el.style.setProperty("--bar-x", `${(px * 60).toFixed(1)}%`);
 			el.style.setProperty("--bar-y", `${(py * 60).toFixed(1)}%`);
-			const fromDeg = (px + 0.5) * 360 + (py + 0.5) * 90;
+			const fromDeg = (px + 0.5) * 270 + (py + 0.5) * 90;
 			const sat =
 				0.22 + Math.min(0.06, Math.abs(px) * 0.12 + Math.abs(py) * 0.08);
 			el.style.setProperty(
@@ -262,12 +259,12 @@ export function RelicCard({
 			/>
 
 			{/* mid-flip light burst */}
-			<div
+			{/* <div
 				className="rc-flash"
 				style={{
 					background: `radial-gradient(closest-side, #b8b8b8ac, ${R.color} 35%, transparent 75%)`,
 				}}
-			/>
+			/> */}
 
 			<div
 				ref={cardRef}
@@ -308,53 +305,49 @@ export function RelicCard({
 						<div className="rc-noise" style={{ opacity: tweaks.noise }} />
 
 						{/* frame decoration */}
-						<CardFrame cornerOpacity={0.5}>
-							<g transform="translate(160 16)" opacity="0.55">
+						<CardFrame cornerOpacity={0.65}>
+							<g transform="translate(160 18)" opacity="0.65">
 								<line
-									x1="-40"
+									x1="-50"
 									y1="0"
-									x2="-8"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.6"
-								/>
-								<line
-									x1="8"
-									y1="0"
-									x2="40"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.6"
-								/>
-								<circle
-									cx="0"
-									cy="0"
-									r="2.2"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="0.8"
-								/>
-								<circle cx="0" cy="0" r="0.6" fill="currentColor" />
-							</g>
-							<g transform="translate(160 444)" opacity="0.45">
-								<line
-									x1="-30"
-									y1="0"
-									x2="-6"
+									x2="-10"
 									y2="0"
 									stroke="currentColor"
 									strokeWidth="0.5"
 								/>
 								<line
-									x1="6"
+									x1="10"
 									y1="0"
-									x2="30"
+									x2="50"
 									y2="0"
 									stroke="currentColor"
 									strokeWidth="0.5"
 								/>
 								<path
 									d="M -6 -3 L 0 0 L 6 -3 L 0 3 Z"
+									fill="currentColor"
+									fillOpacity="0.7"
+								/>
+							</g>
+							<g transform="translate(160 442)" opacity="0.65">
+								<line
+									x1="-50"
+									y1="0"
+									x2="-10"
+									y2="0"
+									stroke="currentColor"
+									strokeWidth="0.5"
+								/>
+								<line
+									x1="10"
+									y1="0"
+									x2="50"
+									y2="0"
+									stroke="currentColor"
+									strokeWidth="0.5"
+								/>
+								<path
+									d="M 6 3 L 0 0 L -6 3 L 0 -3 Z"
 									fill="currentColor"
 									fillOpacity="0.7"
 								/>
@@ -369,7 +362,6 @@ export function RelicCard({
 								<div className="rc-head-l">
 									<span className="rc-glyph">{R.glyph}</span>
 									<span className="rc-type">{slotLabel}</span>
-									{isLarge && <span className="rc-type">{setLabel}</span>}
 								</div>
 								{isLarge && <span className="rc-rarity-tag">{R.label}</span>}
 							</header>
@@ -428,7 +420,7 @@ export function RelicCard({
 									<div className="rc-stat-tip">
 										<ul className="rc-tip-lines">
 											{tipLines.map((line) => (
-												<li key={line.text}>{line.text}</li>
+												<li key={line}>{line}</li>
 											))}
 										</ul>
 										{tipFlavor && <p className="rc-tip-flavor">{tipFlavor}</p>}

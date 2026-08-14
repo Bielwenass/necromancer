@@ -9,25 +9,24 @@ import type { UpgradeNode } from "../types";
  * **Necromancy** is what you reap and what you bind — the corpse and soul
  * economies, passive income, relic slots, the Ritual.
  *
- * Two rules keep the ordering honest, and both are worth preserving:
+ * Two rules keep the ordering honest:
  *
  * 1. **An amplifier never precedes its enabler.** A node that scales corpses,
  *    souls, or a unit type sits downstream of the node that opens it, in the
  *    same branch, so nothing can be bought while it is worth zero.
  * 2. **A cross-branch dependency is priced, not prerequisited.** `sections.ts`
  *    hides a node whose prerequisites are unmet, which reads as progressive
- *    reveal inside a branch and as a missing node across two. So Zombie Rites
- *    charges corpses rather than requiring Grave Harvest: the node stays
- *    visible and its price says exactly what is missing.
+ *    reveal inside a branch and as a missing node across two. Zombie Rites
+ *    charges corpses rather than requiring Grave Harvest, so the node stays
+ *    visible and its price says what is missing.
  *
  * Costs climb roughly threefold per tier — a tier-1 node is a few clears, a
- * capstone is a campaign. Banners are the spine; the nodes that reach for
- * another branch's economy charge that economy's resource on top.
+ * capstone is a campaign. Banners are the spine; a node reaching for another
+ * branch's economy charges that economy's resource on top.
  *
- * `pctOfSelf` is deliberately unused here. `recomputeDerived` folds upgrades
- * before workshop levels and iterates `purchased` in purchase order, so a share
- * of a running total would depend on both — it belongs to relics, which are
- * folded last.
+ * `pctOfSelf` is unused here: `recomputeDerived` folds upgrades before workshop
+ * levels and iterates `purchased` in purchase order, so a share of a running
+ * total would depend on both. It belongs to relics, which are folded last.
  */
 export const UPGRADE_NODES: UpgradeNode[] = [
 	// ══ SUMMONING ═══════════════════════════════════════════════════
@@ -77,7 +76,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Zombie Rites",
 		tier: 2,
-		cost: { banners: 40, corpses: 25 },
+		cost: { banners: 42, corpses: 25 },
 		effects: [{ kind: "flag", flag: "zombiesUnlocked" }],
 		description: "Slow, and hard to put back down. Summoned with corpses.",
 		flavor: "Flesh still clinging to the bone is flesh you have not yet spent.",
@@ -89,7 +88,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Second Circle",
 		tier: 2,
-		cost: { banners: 60 },
+		cost: { banners: 63 },
 		effects: [{ kind: "global", stat: "maxSquads", op: "add", value: 1 }],
 		flavor:
 			"A second ring, a second warband, and no more of your attention than the first asked for.",
@@ -101,7 +100,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Grave-Fat",
 		tier: 3,
-		cost: { banners: 120 },
+		cost: { banners: 132 },
 		effects: [
 			{ kind: "unit", units: ["zombie"], stat: "hpBonus", value: 0.25 },
 			{ kind: "unit", units: ["zombie"], stat: "dmgBonus", value: 0.1 },
@@ -115,7 +114,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Mass Graves",
 		tier: 3,
-		cost: { banners: 150 },
+		cost: { banners: 165 },
 		effects: [{ kind: "global", stat: "maxSquadSize", op: "add", value: 5 }],
 		flavor: "Every pauper's pit for a day's ride, emptied on one breath.",
 		prerequisites: ["s5"],
@@ -126,14 +125,16 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Brittle Host",
 		tier: 3,
-		cost: { banners: 180 },
+		cost: { banners: 198 },
+		// Purely positive, unlike the relic affix of the same shape: a tree node is
+		// bought once and never taken off, so a permanent drawback is a trap rather
+		// than a choice. Glass cannon belongs on a relic that can be unequipped.
 		effects: [
-			{ kind: "unit", units: ["skeleton"], stat: "dmgBonus", value: 0.4 },
-			{ kind: "unit", units: ["skeleton"], stat: "hpBonus", value: -0.25 },
+			{ kind: "unit", units: ["skeleton"], stat: "dmgBonus", value: 0.3 },
 		],
 		description: "Inscribed for good — there is no unlearning it.",
 		flavor:
-			"Ground thin at the shaft and honed at the edge. They will not survive the second engagement. They are not meant to reach it.",
+			"Ground thin at the shaft and honed at the edge. Every stroke lands like the last one they will ever throw.",
 		prerequisites: ["s3"],
 		icon: "aggro",
 	},
@@ -142,7 +143,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Wraith Rites",
 		tier: 3,
-		cost: { banners: 200, souls: 5 },
+		cost: { banners: 220, souls: 5 },
 		effects: [{ kind: "flag", flag: "wraithsUnlocked" }],
 		description:
 			"Undying: they reform after a battle, won or lost. Summoned with souls.",
@@ -156,7 +157,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Reanimation",
 		tier: 4,
-		cost: { banners: 430 },
+		cost: { banners: 451 },
 		effects: [
 			{ kind: "global", stat: "reanimateChance", op: "add", value: 0.15 },
 		],
@@ -170,7 +171,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Untethered",
 		tier: 4,
-		cost: { banners: 400 },
+		cost: { banners: 420 },
 		effects: [
 			{ kind: "unit", units: ["wraith"], stat: "dmgBonus", value: 0.2 },
 			{ kind: "unit", units: ["wraith"], stat: "speedBonus", value: 0.15 },
@@ -185,7 +186,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Endless March",
 		tier: 5,
-		cost: { banners: 1100 },
+		cost: { banners: 1320 },
 		effects: [
 			{ kind: "global", stat: "maxSquads", op: "add", value: 1 },
 			{ kind: "global", stat: "maxSquadSize", op: "add", value: 8 },
@@ -199,7 +200,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "summoning",
 		name: "Crypt Lord",
 		tier: 6,
-		cost: { banners: 2500 },
+		cost: { banners: 3750 },
 		effects: [
 			{ kind: "global", stat: "maxSquadSize", op: "add", value: 15 },
 			{
@@ -270,22 +271,17 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Reckless Advance",
 		tier: 2,
-		cost: { banners: 45 },
+		cost: { banners: 48 },
+		// See `s8`: trade-offs live on relics, where they can be taken off.
 		effects: [
 			{
 				kind: "unit",
 				units: ["skeleton", "zombie", "wraith"],
 				stat: "dmgBonus",
-				value: 0.25,
-			},
-			{
-				kind: "unit",
-				units: ["skeleton", "zombie", "wraith"],
-				stat: "hpBonus",
-				value: -0.12,
+				value: 0.18,
 			},
 		],
-		description: "A standing order, and there is no rescinding it.",
+		description: "A standing order.",
 		flavor: "Bone is cheap. The hour spent waiting on a safer opening is not.",
 		prerequisites: ["c3"],
 		icon: "aggro",
@@ -295,7 +291,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Spoils of War",
 		tier: 2,
-		cost: { banners: 55 },
+		cost: { banners: 57 },
 		effects: [
 			{ kind: "global", stat: "bannerChanceBonus", op: "add", value: 0.25 },
 		],
@@ -309,7 +305,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Tomb Cartography",
 		tier: 3,
-		cost: { banners: 140 },
+		cost: { banners: 154 },
 		effects: [
 			{ kind: "global", stat: "clearMultBonus", op: "add", value: 0.5 },
 		],
@@ -325,7 +321,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Sharpened Rites",
 		tier: 3,
-		cost: { banners: 130 },
+		cost: { banners: 143 },
 		effects: [
 			{
 				kind: "unit",
@@ -344,7 +340,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Group Tactics",
 		tier: 4,
-		cost: { banners: 380 },
+		cost: { banners: 399 },
 		effects: [
 			{ kind: "global", stat: "groupTacticsBonus", op: "add", value: 0.2 },
 		],
@@ -359,7 +355,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Third Circle",
 		tier: 4,
-		cost: { banners: 450 },
+		cost: { banners: 472 },
 		effects: [{ kind: "global", stat: "maxSquads", op: "add", value: 1 }],
 		flavor:
 			"Three valleys emptied at once, and none of them warned the others.",
@@ -371,7 +367,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Terror Tactics",
 		tier: 4,
-		cost: { banners: 480 },
+		cost: { banners: 504 },
 		effects: [
 			{ kind: "global", stat: "enemyHpPenalty", op: "add", value: 0.1 },
 			{ kind: "global", stat: "enemyDmgPenalty", op: "add", value: 0.15 },
@@ -386,7 +382,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "War Cry",
 		tier: 5,
-		cost: { banners: 1150 },
+		cost: { banners: 1380 },
 		effects: [
 			{
 				kind: "unit",
@@ -410,7 +406,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "command",
 		name: "Necrotic Command",
 		tier: 6,
-		cost: { banners: 2500 },
+		cost: { banners: 3750 },
 		effects: [
 			{
 				kind: "unit",
@@ -462,7 +458,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Bound Bone",
 		tier: 2,
-		cost: { banners: 35 },
+		cost: { banners: 36 },
 		effects: [{ kind: "slot", slot: "I2" }],
 		flavor: "A second anchor scratched into the rim of the skeleton circle.",
 		prerequisites: ["n1"],
@@ -473,7 +469,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Charnel Yield",
 		tier: 2,
-		cost: { banners: 50 },
+		cost: { banners: 52 },
 		effects: [
 			{ kind: "global", stat: "corpseYieldBonus", op: "add", value: 0.25 },
 			{ kind: "global", stat: "boneYieldBonus", op: "add", value: 0.2 },
@@ -487,7 +483,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Soul Snare",
 		tier: 2,
-		cost: { banners: 70 },
+		cost: { banners: 74 },
 		effects: [{ kind: "flag", flag: "soulsUnlocked" }],
 		flavor:
 			"A wire of cold intent strung across the tomb mouth. What leaves a body on its way out does not get past it.",
@@ -499,7 +495,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Reliquary Niche",
 		tier: 3,
-		cost: { banners: 125 },
+		cost: { banners: 138 },
 		effects: [{ kind: "slot", slot: "C2" }],
 		flavor:
 			"You cut a second alcove into the crypt wall. Something is already in it.",
@@ -511,7 +507,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Soul Harvest",
 		tier: 3,
-		cost: { banners: 115 },
+		cost: { banners: 127 },
 		effects: [
 			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.6 },
 		],
@@ -525,7 +521,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Rotting Vessel",
 		tier: 3,
-		cost: { banners: 150, corpses: 15 },
+		cost: { banners: 165, corpses: 15 },
 		effects: [{ kind: "slot", slot: "II2" }],
 		flavor:
 			"The zombie circle will hold a second charm, provided you seal it in wax first.",
@@ -537,7 +533,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Soul Drain",
 		tier: 4,
-		cost: { banners: 400 },
+		cost: { banners: 420 },
 		effects: [
 			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.4 },
 			{ kind: "global", stat: "soulsYieldBonus", op: "add", value: 0.3 },
@@ -551,7 +547,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Veiled Circle",
 		tier: 4,
-		cost: { banners: 420, souls: 4 },
+		cost: { banners: 441, souls: 4 },
 		effects: [{ kind: "slot", slot: "III2" }],
 		flavor:
 			"A wraith will not hold still for one binding, let alone two. You insist.",
@@ -563,7 +559,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Phylactery",
 		tier: 4,
-		cost: { banners: 480 },
+		cost: { banners: 504 },
 		effects: [{ kind: "flag", flag: "phylactery" }],
 		description: "Charges bank up to a cap while you are away.",
 		flavor: "The vessel fills itself again by dawn and asks you for nothing.",
@@ -575,7 +571,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Ossuary Vault",
 		tier: 5,
-		cost: { banners: 1000 },
+		cost: { banners: 1200 },
 		effects: [{ kind: "slot", slot: "C3" }],
 		flavor:
 			"Far enough under the crypt that whatever you shelve there stays shelved.",
@@ -587,7 +583,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Dark Pact",
 		tier: 5,
-		cost: { banners: 1150 },
+		cost: { banners: 1380 },
 		effects: [{ kind: "global", stat: "pityReduction", op: "add", value: 0.3 }],
 		description: "Every Ritual pool reaches its guarantee sooner.",
 		flavor:
@@ -600,7 +596,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		branch: "necromancy",
 		name: "Apotheosis",
 		tier: 6,
-		cost: { banners: 2700 },
+		cost: { banners: 4050 },
 		effects: [
 			{ kind: "global", stat: "bonesPassiveMult", op: "mult", value: 2 },
 			{ kind: "global", stat: "boneYieldBonus", op: "add", value: 0.25 },
@@ -612,5 +608,39 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		prerequisites: ["n12", "n13"],
 		icon: "apoth",
 		capstone: true,
+	},
+
+	// ═══════════════════════════════════════════════════════════════
+	// THE ENDLESS RITE — the one node with no last purchase
+	// ═══════════════════════════════════════════════════════════════
+	// The board above is finite and a long run outlasts it, leaving banners to
+	// pile up unspent — so the tree ends in a rite that can always be performed
+	// once more, for a little more, at a steadily steeper price.
+	{
+		id: "x1",
+		branch: "necromancy",
+		name: "The Endless Rite",
+		tier: 6,
+		cost: { banners: 1200 },
+		repeatGrowth: 1.35,
+		effects: [
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "hpBonus",
+				value: 0.06,
+			},
+			{
+				kind: "unit",
+				units: ["skeleton", "zombie", "wraith"],
+				stat: "dmgBonus",
+				value: 0.06,
+			},
+		],
+		description: "It can always be performed once more.",
+		flavor:
+			"There is no final verse. There is only the next one, and the price of saying it.",
+		prerequisites: ["n14"],
+		icon: "apoth",
 	},
 ];

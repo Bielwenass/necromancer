@@ -9,13 +9,16 @@ Guidance for Claude Code working in this repository.
 ```bash
 bun run dev          # Vite dev server
 bun run build        # tsc (typecheck, noEmit) && vite build
+bun test             # the suite — `bun test parity` etc. to narrow it
 bun lint             # biome check --write — format + lint + organize imports
 bunx tsc --noEmit    # typecheck alone — fastest feedback loop
 bunx tsx src/combat/benchmark.ts   # headless combat perf breakdown
-bunx tsx src/game/parityCheck.ts   # online/offline simulation parity assertions
+bunx tsx src/game/balanceCheck.ts  # per-dungeon WIN/AUTO thresholds; add a tier number to narrow it
 ```
 
-There is no test runner. Biome and `tsc` are the automated gates; `parityCheck.ts` is the one behavioural check, and it must pass after any change to the tick, catchup, loot, or fight rules.
+`bun test`, Biome and `tsc` are the automated gates. Tests are `*.test.ts` beside the code they cover, with shared fixtures in `src/game/testing/`; `parity.test.ts` is the online/offline guard and must pass after any change to the tick, catchup, loot, or fight rules.
+
+`balanceCheck.ts` is a designer tool rather than a gate, but it must pass after any change to `data/dungeons.ts`, `data/units.ts`, or the combat model — it drives real fights, so pass it a tier (`balanceCheck.ts 2`) while iterating and run it whole before finishing.
 
 ## Workflow
 
@@ -26,9 +29,11 @@ There is no test runner. Biome and `tsc` are the automated gates; `parityCheck.t
 - When a rule doesn't fit, use a narrow `// biome-ignore lint/<rule>: <reason>` rather than weakening `biome.json`.
 - `strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` are on — hence `void x` and `_`-prefixed params where a binding is intentionally kept.
 
+**Prefer a general system to a special case.** A member of a set the code already knows about — a resource, a unit type, a rarity, an affix — is handled by the table or the loop over that set, with a neutral value where it differs, not by a branch of its own. Likewise, derive a value from a signal already carried (`kind`, a stat key, a table entry) rather than passing a second field alongside it that can disagree with the first.
+
 ### Comments and docs
 
-**Comments describe what the code does now** — concise and informative. Never narrate history ("used to be…", "replaced the old…", "this fixed a bug where…"); if the current behaviour needs justifying, state the invariant, not the story. Same rule applies to this file and `docs/`.
+**Comments describe what the code does now** — short and to the point. A comment earns its place by explaining a non-obvious effect, connection, or reason; if the code already says it, delete it. Never narrate history ("used to be…", "replaced the old…", "this fixed a bug where…") — a comment is not a changelog. If the current behaviour needs justifying, state the invariant, not the story. Same rule applies to this file and `docs/`.
 
 - Update CLAUDE.md in the same change whenever a convention here drifts from the code.
 - **`docs/`** (`architecture.md`, `combat.md`, `systems.md`, `relics.md`) covers rules, invariants, and file roles. Keep it short — prune while you're there.
@@ -40,7 +45,7 @@ An idle/incremental game: four React tabs over a fixed-timestep simulation, pers
 
 ### Layering (the one hard rule)
 
-`src/game/**` and `src/combat/**` contain **no React imports**. Rendering lives in `src/ui/**` and `App.tsx`. Logic reads nothing from the UI; the UI reads state through `useGameStore` selectors and calls store actions. This boundary is what makes the simulation runnable headlessly (offline catchup, benchmark, parity check all depend on it).
+`src/game/**` and `src/combat/**` contain **no React imports**. Rendering lives in `src/ui/**` and `App.tsx`. Logic reads nothing from the UI; the UI reads state through `useGameStore` selectors and calls store actions. This boundary is what makes the simulation runnable headlessly (offline catchup, benchmark, and the test suite all depend on it).
 
 Inside `src/game/`:
 
@@ -48,6 +53,7 @@ Inside `src/game/`:
 data/      balance numbers only — imports nothing but ./types
 rules/     pure functions over that data — no store, no React
 slices/    store actions
+testing/   fixtures shared by the test files
 *.ts       state, tick, persistence, lifecycle
 ```
 
@@ -55,19 +61,27 @@ slices/    store actions
 
 `data/`: `pacing.ts` (every clock), `economy.ts`, `units.ts` (stat curves, summon prices, unit colours), `workshop.ts`, `dungeons.ts`, `upgrades.ts`, `relics.ts`, `gacha.ts`, `squadNames.ts`.
 
-`rules/`: `derived.ts`, `loot.ts`, `fight.ts`, `travel.ts`, `units.ts`, `summoning.ts`, `workshop.ts`, `relics.ts`, `gacha.ts`, `unlocks.ts`, `resources.ts`, `describe.ts`.
+`rules/`: `derived.ts`, `loot.ts`, `fight.ts`, `travel.ts`, `units.ts`, `squads.ts`, `seeds.ts`, `summoning.ts`, `workshop.ts`, `relics.ts`, `gacha.ts`, `unlocks.ts`, `resources.ts`, `describe.ts`.
 
 ### The tick pipeline
 
 `useGameLifecycle` is the only driver. Each 100ms interval it:
 
 1. `store.tick(TICK_MS)` — an accumulator drains exact steps, calling `gameTick(state)`.
-2. Instantiates a `CombatEngine` for any squad that just entered `fighting`.
-3. Advances every live engine in `ENGINE_DT` steps and calls `resolveFight` on a winner.
+2. `stepLiveFights` advances every live engine by one tick of sim time and `resolveFight` applies any winner.
+3. `beginLiveFights` instantiates a `CombatEngine` for any squad that just entered `fighting` — **after** step 2, so a new engine's first step falls on the next tick. That is what makes a watched fight last exactly as many ticks as the headless run reports.
 
-`gameTick` (`src/game/tick.ts`) is pure: `GameState → Partial<GameState>`. It never mutates and never touches the engine.
+`gameTick` (`src/game/tick.ts`) is a pacer, not the simulation: it clones and calls `advance` for one tick. Both live fight helpers live in `src/game/liveFights.ts`, React-free so the parity tests drive the real path rather than a copy.
 
-All clock constants live in `data/pacing.ts` and nowhere else: `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, `MAX_HEADLESS_TICKS`. Never write these as bare literals.
+### `advance` is the simulation, and both paths call it
+
+`advance(draft, toTick, fights)` (`src/game/advance.ts`) is the whole squad state machine — travel deadlines, arrival, fight resolution, loot deposit, the auto-deploy two-pass, the unlock sweep, tick and day counts. The live tick calls it for one tick; offline catchup calls it for the span to the next `nextDeadline`. **A transition written anywhere else is a bug**; that duplication is exactly what `parity.test.ts` exists to catch.
+
+It mutates the draft it is handed (`cloneForAdvance`) and never `derived`. It must never read `Date.now()` or `Math.random()` — `lastTickAt` is stamped by `combatSlice.tick`, and every roll is seeded from persisted state via `rules/seeds.ts`.
+
+A squad's phase is `phaseStartTick`/`phaseEndTick` in absolute ticks, never a fraction, so "which squads transition at tick T" has one answer. Two invariants hold it together: **every new deadline is strictly in the future** (`travelLegTicks` floors at 1, `durationTicks` at 1), so one pass settles a tick; and **a `fighting` squad carries no `phaseEndTick`**, so no state can say "decided but not applied" and a save taken mid-fight is safe.
+
+All clock constants live in `data/pacing.ts` and nowhere else: `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, `MAX_FIGHT_MS`, `MAX_HEADLESS_TICKS` (derived from `MAX_FIGHT_MS`). Never write these as bare literals.
 
 ### `derived` is the central abstraction
 
@@ -79,13 +93,15 @@ Nothing recomputes it on a timer. Any action touching upgrades, workshop, or equ
 return withDerived(prev, { /* patch */ });
 ```
 
-Skipping it yields stale stats that silently correct on the next unrelated action. Adding a stat means four edits: the `derived` type in `types.ts`, the matching `GlobalStatKey`/`UnitStatKey`/`DerivedFlagKey` union, its seed + return in `recomputeDerived`, and the consumer. A `global` stat also needs a label in `GLOBAL_LABELS` (`rules/describe.ts`).
+Skipping it yields stale stats that silently correct on the next unrelated action. Adding a stat means three edits: the `derived` type in `types.ts`, the matching `GlobalStatKey`/`UnitStatKey`/`DerivedFlagKey` union, and its seed in `recomputeDerived` — the accumulators are spread into the result, so nothing has to be transcribed. A `global` stat also needs a label in `GLOBAL_LABELS` (`rules/describe.ts`).
 
 `recomputeDerived` folds three sources **in order** — upgrade nodes, workshop levels, relics. The order is load-bearing: `pctOfSelf` takes a share of the running total, so relics must see a settled base.
 
 ### Combat is authoritative and lives outside game state
 
-`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim that *decides* dungeon outcomes. Engines live in `store.combatEngines`, a runtime-only `Map` (never saved, cleared on catchup). `resolveFight` converts survivor counts into squad composition, loot, and banners.
+`CombatEngine` (`src/combat/engine.ts`) is a boids-style particle sim that *decides* dungeon outcomes. Engines live in `store.combatEngines`, a runtime-only `Map` (never saved, cleared on catchup). `resolveFight` hands the verdict to `applyFightResolution`, which converts survivor counts into squad composition, loot, and banners.
+
+`tick(deltaMs)` always advances in whole `ENGINE_DT` steps and carries the remainder, so the same seed gives the same fight whatever the driver — the live loop feeds a non-multiple (100ms), while `balanceCheck` and `benchmark` feed exact steps and never accumulate a carry. Never hand-roll an `ENGINE_DT` loop in a caller; that is what used to make watched and headless fights differ.
 
 `CombatWindow.tsx` renders an engine and replays it locally for looping visuals once the fight is off the live map. It must never feed back into game state.
 
@@ -93,27 +109,25 @@ Skipping it yields stale stats that silently correct on the next unrelated actio
 
 Relic-granted **combat modifiers** (`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`, `executioner`, `spectral`, `lastStand`) are the back half of `UnitDerivedStats`; `UnitMods` picks them off that type so the two can't drift. `SimUnit.mods` is `null` for any unit carrying none — the fast path — and enemies never carry any. Anything knowable before the first tick (Group Tactics, the enemy debuffs) belongs in `dungeonCombat.ts`, not the loop. The benchmark measures the modifier cost at 500v500; keep `auraRadius` honest, since it is the one that widens the fine query.
 
-### Offline catchup shares its rules, not its sequencing
+### Offline catchup shares its logic; only its pacing differs
 
-`catchupOffline.ts` re-simulates up to `MAX_OFFLINE_MS` by jumping between squad events on a min-heap instead of stepping ticks, resolving fights headlessly with a cached, seeded engine.
+`catchupOffline.ts` re-simulates up to `MAX_OFFLINE_MS` by calling `advance` for the span to each `nextDeadline` instead of stepping ticks. It has no state machine of its own.
 
-Both paths call the same `rules/` functions: `generateLoot` (catchup passes a seeded `rand`), `depositLoot`, `accruePassive`, `effectiveTravelTicks`, `shouldAutoDeploy`, `resolveFightOutcome`, `checkUnlockConditions`, `accrueFreePulls`.
+Anything paid across a span must be **exact over that span** — one call for N ticks landing where N calls for one do. `accruePassive` is linear, `accrueFreePulls` is written for it (and `rules/gacha.test.ts` asserts the equality directly), and `checkUnlockConditions` turns only on clear counts, which change only at the events themselves. A new per-tick payout that is *not* span-exact breaks catchup silently, so give it a deadline instead.
 
-A rule the catchup has to **batch** must be exact over any span — one call for N ticks landing where N calls for one do. `accrueFreePulls` is written that way and `parityCheck` asserts the equality directly.
+The one legitimate asymmetry is **who decides a fight is over**, and it is the whole of the `FightDriver` interface. Offline (`HeadlessFights`) runs the battle on arrival and knows its end tick; live the answer arrives from the engine the player is watching. This is forced, not chosen: a 100v100 fight is ~1s of blocking JS and a 250v250 ~4s, so the live path cannot resolve one up front. Both then call the same `applyFightResolution`.
 
-**A new rule touching travel, loot, fight resolution, or auto-deploy goes in `rules/` and is called from both sides.** Only sequencing may differ; `parityCheck.ts` verifies the two agree.
+Three intentional deviations in the catchup path, all to preserve: it mutates its own clone (`cloneForAdvance`) for speed; it resolves fights headlessly; and `HeadlessFights` caches per `dungeonId|composition`, deliberately omitting the `clearCount` the seed carries — bounded to lossless wins, where only the duration is borrowed. Without it a farmed dungeon re-simulates every clear and an 8h window costs minutes. `simulateOffline({ fightCache: false })` turns it off, which is how the parity tests get an exact path.
 
-Two intentional deviations in `catchupOffline.ts`, both to preserve: it mutates its own clone (`cloneForCatchup`) for speed, and it uses seeded `mulberry32` so a mid-window refresh reproduces identical results.
+`parity.test.ts` asserts **whole-state equality** between the two paths across a fight window — not a tolerance, because every seed is derived from persisted state. It also checks the split property (offline window then live window equals one straight run) and that a window ending mid-fight banks nothing early.
 
 ### Data tables are declarative — effects included
 
 `data/*.ts` are pure data and their string ids are the contract with logic. Effects are declared in the table, not switched on by id:
 
-- **Upgrade nodes** carry `effects: UpgradeEffect[]`. Kinds: `global` (a scalar in `derived`, via `add`/`mult`/`pctOfSelf`), `unit` (one stat across listed unit types), `flag` (a boolean in `derived`), `slot` (opens a relic slot), `elsewhere` (combat owns it, or it isn't built). A node with no effect is a type error. `cost` is a `Partial<Resources>`, not a banner count.
+- **Upgrade nodes** carry `effects: UpgradeEffect[]`. Kinds: `global` (a scalar in `derived`, via `add`/`mult`/`pctOfSelf`), `unit` (one stat across listed unit types), `flag` (a boolean in `derived`), `slot` (opens a relic slot). A node with no effect is a type error. `cost` is a `Partial<Resources>`, not a banner count.
 - **Relic affixes** carry `effects: AffixEffect[]` in `AFFIX_DEFS`, magnitude coming off the roll. More than one entry makes a trade-off affix: every effect reads the same roll, and a negative `scale` turns part of it into a cost. A `minRarity` gates the affix out of every minor pool — the only route to one is a base naming it as `signatureAffixId`.
-- **Dungeon unlocks** carry `unlock: UnlockRule` (`always`/`clears`/`allOfTier`), evaluated by `checkUnlockConditions`.
-
-An `elsewhere` effect carries `where: "unimplemented"` unless it is genuinely read somewhere, plus a `note` describing the intent.
+- **Dungeon unlocks** carry `unlockCondition`, evaluated by `checkUnlockConditions`.
 
 **All player-facing effect text is generated** by `rules/describe.ts` (`describeUpgradeEffects`, `describeAffixEffects`, `describeUnlock`, `describeCryptTrack`, `describeCryptLevel`). A node's `description` is optional qualitative colour — never restate a magnitude there.
 
@@ -141,20 +155,18 @@ Actions are reducers: `set(prev => …)` returning a partial, immutable spread c
 
 **Split anything past ~200–300 lines**, unless it is genuinely one indivisible slice.
 
-**`src/ui/components/` is organised by feature, one folder per screen** — `crypt/`, `reliquary/`, `ritual/`, `workshop/` — each holding that screen's components plus the pure helpers only it uses (`workshop/sections.ts`, `workshop/cost.ts`, `crypt/squadDisplay.ts`, `ritual/pools.ts`).
+**`src/ui/components/` is organised by feature, one folder per screen**, plus the pure helpers only it uses.
 
 Two cross-cutting folders:
 
 - **`common/`** — shared primitives: `Screen` (the `TopBar`/`.stage`/`TabBar` frame), `Modal`, `ConfirmAction` (also exports `DANGER_BUTTON`), `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`. **Look here before hand-rolling a dialog, confirm, meter, or eyebrow.**
 - **`chrome/`** — app frame: `TopBar`, `TabBar` (sole owner of `TabId`, `TABS`, and `TAB_KEYS`), `ResourceReadout`, `CatchupOverlay`.
 
-Shared helpers at `src/ui/`: `theme.ts` (`rarityColor`, `UNIT_COLORS`), `format.ts` (number/time formatters).
+Shared helpers at `src/ui/`: `theme.ts` (`rarityColor`, `UNIT_COLORS`, `UNIT_LABELS`), `format.ts` (number/time formatters), `resources.ts` (`resourceMeta` — the icon, colour and label for a resource key, and `RESOURCE_KEYS` to iterate them). Per-unit-type icons are `UNIT_ICONS` in `components/icons`.
 
 `src/ui/screens/` holds exactly four thin screens — store selectors, local UI state, layout composition. `Workshop.tsx` (~75 lines) is the shape to aim for. Default to presentational components taking data and callbacks as props; reaching for `useGameStore` inside a component is reserved for self-contained ones that would otherwise thread props through several layers (`TopBar`, `DispatchModal`, `RitualPanel`, `CombatWindow`).
 
 **Unit colours come from `game/data/units.ts`**, re-exported as `UNIT_COLORS` — never a raw hex. The combat canvas can't read CSS variables, so the lookup is the only thing keeping canvas and DOM in agreement.
-
-**Raster art lives in `src/ui/assets/<feature>/` and is imported**, so Vite hashes and verifies it (`src/vite-env.d.ts` supplies module types). Author art as white line work on transparency, grayscale+alpha, tinted at render time by masking a solid fill with the PNG's alpha (`RitualArt` is the example) — don't commit pre-coloured variants.
 
 ## Styling
 
@@ -174,15 +186,8 @@ Webfonts load from `<link>` tags in `index.html`; `index.css` must not re-`@impo
 
 **Token divergence:** Tailwind's `rule` (`#1a1a1a`) and `rule-strong` (`#8a795b`) do **not** match `--rule`/`--rule-strong` (translucent warm hairlines), so `border-rule` and `border: 1px solid var(--rule)` render differently. Use `border-[color:var(--rule-strong)]` when an edit must preserve exact appearance; aligning them is a deliberate visual decision.
 
-**Converting a `<div>` to a `<button>` needs `w-full`.** Form controls resolve `width: auto` as shrink-to-fit even at `display: block`, so the container collapses around its content — and a child at `width: 100%` makes it circular. Add `w-full` (and `text-left`) unless the element is a flex/grid *item*.
-
-Screens are keyboard-routed from `App.tsx` (keys `1`–`4`), derived from each tab's `k` field in `TabBar`.
-
 ## Known rough edges
 
 Not intentional design:
 
 - Relic `upgradeLevel` and `duplicateCount` are read (affix boost, `×n` badge, fusion pips) but never written — there is no fusion or dedupe path, so that UI is inert.
-- No relic sets. No base sets `set:`, so `RelicBase.set` and the card's set label never render.
-
-Nothing is declared `elsewhere: "unimplemented"` today — grep `"unimplemented"` before assuming otherwise.

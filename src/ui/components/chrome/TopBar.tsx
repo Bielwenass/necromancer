@@ -1,12 +1,23 @@
 import { useRef, useState } from "react";
 import { exportSave } from "../../../game/save";
 import { useGameStore } from "../../../game/store";
+import type { DerivedFlagKey, Resources } from "../../../game/types";
 import { formatRate } from "../../format";
+import { RESOURCE_KEYS, resourceMeta } from "../../resources";
 import { DANGER_BUTTON } from "../common/ConfirmAction";
 import { Modal } from "../common/Modal";
 import { SectionLabel } from "../common/SectionLabel";
-import { IconBanner, IconBone, IconCorpse, IconDust, IconSoul } from "../icons";
+import { IconBone } from "../icons";
 import { ResourceReadout } from "./ResourceReadout";
+
+/** Shown whatever the balance — the two currencies the game opens with. */
+const ALWAYS_SHOWN = new Set<keyof Resources>(["bones", "banners"]);
+
+/** A gated economy also appears once its gate opens, before the first drop. */
+const ECONOMY_FLAG: Partial<Record<keyof Resources, DerivedFlagKey>> = {
+	corpses: "corpsesUnlocked",
+	souls: "soulsUnlocked",
+};
 
 const btnBase =
 	"block w-full py-2.5 px-4 border border-[color:var(--rule-strong)] text-parchm font-display text-[11px] tracking-[0.18em] bg-transparent cursor-pointer text-left uppercase transition-colors duration-150 hover:bg-bg-hover";
@@ -27,26 +38,16 @@ export function TopBar() {
 
 	const dayStr = `DAY ${meta.dayCount}`;
 
-	// Corpses, souls and dust stay hidden until the player has any, so the bar
-	// doesn't advertise economies the tree hasn't opened yet.
-	const readouts = [
-		{
-			label: "Bones",
-			value: resources.bones,
-			Icon: IconBone,
-			note: derived.bonesPerTick > 0 ? formatRate(derived.bonesPerTick) : null,
-		},
-		...(derived.corpsesUnlocked || resources.corpses > 0
-			? [{ label: "Corpses", value: resources.corpses, Icon: IconCorpse }]
-			: []),
-		...(resources.souls > 0
-			? [{ label: "Souls", value: resources.souls, Icon: IconSoul }]
-			: []),
-		...(resources.dust > 0
-			? [{ label: "Dust", value: resources.dust, Icon: IconDust }]
-			: []),
-		{ label: "Banners", value: resources.banners, Icon: IconBanner },
-	];
+	// An economy the tree hasn't opened stays off the bar until the player holds
+	// some of it, so the bar never advertises what can't be earned yet.
+	const readouts = RESOURCE_KEYS.filter((key) => {
+		const flag = ECONOMY_FLAG[key];
+		return (
+			ALWAYS_SHOWN.has(key) ||
+			resources[key] > 0 ||
+			(flag ? derived[flag] : false)
+		);
+	});
 
 	const closeSettings = () => {
 		setShowSettings(false);
@@ -132,15 +133,22 @@ export function TopBar() {
 							<IconBone size={14} />
 						</button>
 					)}
-					{readouts.map(({ label, value, Icon, note }) => (
-						<ResourceReadout
-							key={label}
-							label={label}
-							value={value}
-							Icon={Icon}
-							note={note}
-						/>
-					))}
+					{readouts.map((key) => {
+						const { label, icon } = resourceMeta(key);
+						return (
+							<ResourceReadout
+								key={key}
+								label={label}
+								value={resources[key]}
+								Icon={icon}
+								note={
+									key === "bones" && derived.bonesPerTick > 0
+										? formatRate(derived.bonesPerTick)
+										: null
+								}
+							/>
+						);
+					})}
 				</div>
 			</div>
 

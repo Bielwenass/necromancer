@@ -35,13 +35,18 @@ export const RARITY_ORDER = [
 	"legendary",
 ] as const;
 
-/** How many minor affixes a relic of each rarity rolls. */
+/**
+ * Minor affixes a relic of each rarity rolls on top of its main affix. A base's
+ * signature displaces a minor rather than adding a row, so three affixes is the
+ * ceiling at every rarity. A drawn minor matching the base's main affix folds
+ * into it, so a relic can show fewer rows and hit harder on one stat.
+ */
 export const MINOR_COUNT: Record<Rarity, number> = {
 	common: 0,
 	uncommon: 1,
-	rare: 2,
-	epic: 3,
-	legendary: 3,
+	rare: 1,
+	epic: 2,
+	legendary: 2,
 };
 
 /**
@@ -294,7 +299,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"zombieDamage",
 			"zombieHp",
 			"berserk",
-			"frenziedRot",
+			"rotbound",
 			"undyingFlesh",
 		],
 		signatureAffixId: "bloodfeast",
@@ -349,7 +354,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"berserk",
 			"zombieDamage",
 			"zombieHp",
-			"frenziedRot",
+			"rotbound",
 			"undyingFlesh",
 		],
 		glyph: "tongue",
@@ -446,6 +451,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"executioner",
 			"hollowVessel",
 		],
+		signatureAffixId: "secondDeath",
 		glyph: "veil",
 		description:
 			"A widow's cloth, soaked in grief. It softens the blows aimed at the dead.",
@@ -560,10 +566,16 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 	},
 
 	// ── Trade-offs — one roll, paid for out of another stat ────────
+	// A fight's outcome tracks damage × HP, so trading one for the other evenly
+	// is power-neutral however large the roll. These roll several times a pure
+	// affix's ceiling against a shallow scale instead, making one a clear gain;
+	// the cost lands where the product doesn't show, as a squad that still wins
+	// but bleeds units doing it — which is what pushes a dungeon back out of
+	// reach of running unattended.
 	recklessRites: {
 		label: "Reckless Rites",
 		unit: "%",
-		range: [10, 30],
+		range: [30, 70],
 		effects: [
 			{
 				kind: "unit",
@@ -574,7 +586,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 				kind: "unit",
 				units: ["skeleton", "zombie", "wraith"],
 				stat: "hpBonus",
-				scale: -0.5,
+				scale: -0.3,
 			},
 		],
 		description: "Every unit hits harder and breaks sooner.",
@@ -582,7 +594,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 	gravebound: {
 		label: "Gravebound",
 		unit: "%",
-		range: [10, 30],
+		range: [30, 80],
 		effects: [
 			{
 				kind: "unit",
@@ -593,7 +605,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 				kind: "unit",
 				units: ["skeleton", "zombie", "wraith"],
 				stat: "speedBonus",
-				scale: -0.5,
+				scale: -0.35,
 			},
 		],
 		description: "The grave holds your dead together, and holds them back.",
@@ -601,30 +613,31 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 	brittleEdge: {
 		label: "Brittle Edge",
 		unit: "%",
-		range: [15, 40],
+		range: [40, 90],
 		effects: [
 			{ kind: "unit", units: ["skeleton"], stat: "dmgBonus" },
-			{ kind: "unit", units: ["skeleton"], stat: "hpBonus", scale: -0.6 },
+			{ kind: "unit", units: ["skeleton"], stat: "hpBonus", scale: -0.3 },
 		],
 		description: "Bone honed to an edge that cuts once and splinters.",
 	},
-	frenziedRot: {
-		label: "Frenzied Rot",
+	rotbound: {
+		label: "Rotbound",
 		unit: "%",
-		range: [10, 30],
+		range: [50, 110],
 		effects: [
-			{ kind: "unit", units: ["zombie"], stat: "speedBonus" },
-			{ kind: "unit", units: ["zombie"], stat: "hpBonus", scale: -0.5 },
+			{ kind: "unit", units: ["zombie"], stat: "hpBonus" },
+			{ kind: "unit", units: ["zombie"], stat: "dmgBonus", scale: -0.3 },
 		],
-		description: "The rot drives them faster than their flesh can bear.",
+		description:
+			"Bloated past all reason. Nothing gets through, and nothing hurries.",
 	},
 	hollowVessel: {
 		label: "Hollow Vessel",
 		unit: "%",
-		range: [15, 40],
+		range: [40, 90],
 		effects: [
 			{ kind: "unit", units: ["wraith"], stat: "dmgBonus" },
-			{ kind: "unit", units: ["wraith"], stat: "speedBonus", scale: -0.5 },
+			{ kind: "unit", units: ["wraith"], stat: "speedBonus", scale: -0.4 },
 		],
 		description: "A wraith poured into one place strikes harder, and drifts.",
 	},
@@ -794,6 +807,18 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		effects: [{ kind: "unit", units: ["skeleton"], stat: "revive" }],
 		description:
 			"The first time a skeleton falls in a battle, it gets back up at this much HP.",
+	},
+	secondDeath: {
+		label: "Second Death",
+		unit: "%",
+		range: [60, 100],
+		minRarity: "legendary",
+		effects: [{ kind: "unit", units: ["wraith"], stat: "revive" }],
+		// Rolls far higher than `lichBond` because it is worth less per point:
+		// wraiths already reform between battles, so all of its value is staying
+		// on the field long enough to screen.
+		description:
+			"The first time a wraith is unmade in a battle, it gathers again at this much HP.",
 	},
 	dreadCommand: {
 		label: "Dread Command",

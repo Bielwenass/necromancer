@@ -56,6 +56,32 @@ export function unitStatCost(
 	}
 }
 
+/** What a unit stat track reads at `level`. See `UNIT_STAT_CONFIG`. */
+export function statAtLevel(
+	cfg: { base: number; statGrowth: number },
+	level: number,
+): number {
+	return cfg.base * cfg.statGrowth ** level;
+}
+
+/**
+ * Squad size bought so far. This is the one track whose gain stays
+ * sub-exponential, and deliberately: a squad's contribution to a fight is very
+ * nearly the *square* of its size — `balanceCheck` measures power ∝ squad^1.96
+ * at tier 2 and ^1.86 at tier 3, drifting down as crowding keeps rear ranks out
+ * of contact. A geometric gain on top of that would swamp every other purchase,
+ * so each level adds a whole unit and the size of that step grows slowly, which
+ * keeps a compounding price honest against a near-quadratic return.
+ */
+export function squadSizeFromLevel(level: number): number {
+	const { perLevelBase, levelsPerStep } = CRYPT_CONFIG.squadSize;
+	let total = 0;
+	for (let l = 0; l < level; l++) {
+		total += perLevelBase + Math.floor(l / levelsPerStep);
+	}
+	return total;
+}
+
 export function cryptCost(key: CryptKey, level: number): Partial<Resources> {
 	const cfg = CRYPT_CONFIG[key];
 	return { bones: Math.floor(cfg.baseBones * cfg.growth ** level) };

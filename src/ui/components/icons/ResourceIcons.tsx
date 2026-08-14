@@ -17,23 +17,6 @@ export const IconBone = ({ size = 14, color = "var(--c-bone)" }: IconProps) => (
 	</svg>
 );
 
-export const IconCoin = ({ size = 14, color = "var(--c-coin)" }: IconProps) => (
-	<svg
-		aria-hidden="true"
-		width={size}
-		height={size}
-		viewBox="0 0 24 24"
-		fill="none"
-	>
-		<path
-			fillRule="evenodd"
-			d="M12 2.6a9.4 9.4 0 1 0 0 18.8 9.4 9.4 0 1 0 0-18.8zm0 2.5a6.9 6.9 0 1 1 0 13.8 6.9 6.9 0 1 1 0-13.8z"
-			fill={color}
-		/>
-		<path d="M12 7.3l3.1 4.7-3.1 4.7-3.1-4.7z" fill={color} />
-	</svg>
-);
-
 export const IconSoul = ({ size = 14, color = "var(--c-soul)" }: IconProps) => (
 	<svg
 		aria-hidden="true"

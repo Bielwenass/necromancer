@@ -2,15 +2,21 @@ import type { GameState } from "./types";
 
 const SAVE_KEY = "necromancer_save_v1";
 /**
- * Bumped when a save's *meaning* changes, not just its shape. Both bumps so far
- * were upgrade-tree reworks that reused node ids for different effects — an
- * older save would silently grant the wrong upgrades rather than fail. A
- * mismatch makes `loadGame` return null and the game starts fresh.
+ * Bumped when a save's *meaning* changes, not just its shape — reusing an
+ * upgrade node id for a different effect, or retuning what a stored roll is
+ * worth, would otherwise silently grant the wrong thing. A mismatch makes
+ * `loadGame` return null and the game start fresh, which is what keeps hydration
+ * free of migration code.
  */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 6;
 
-/** Slices written to disk. `derived` is deliberately absent — it is recomputed. */
-const PERSISTED_KEYS = [
+/**
+ * Slices written to disk; `derived` is absent because it is recomputed.
+ * Exported so a path installing a whole simulated state — offline catchup —
+ * copies exactly what persistence considers state, rather than a hand-listed
+ * subset that drifts the next time a slice is added.
+ */
+export const PERSISTED_KEYS = [
 	"resources",
 	"workshop",
 	"units",
@@ -26,9 +32,8 @@ export type SavedState = Omit<GameState, "derived">;
 
 /**
  * Set once the app has committed to replacing the save and reloading (import or
- * reset). Those write localStorage and then wait ~1s for the reload while the
- * simulation keeps running, so without this an autosave or a finishing offline
- * catchup would overwrite the bytes just written. One-way by design.
+ * reset). Those wait ~1s for the reload while the simulation keeps running, so
+ * without this an autosave would overwrite the bytes just written. One-way.
  */
 let persistenceSuspended = false;
 
@@ -78,7 +83,7 @@ export function exportSave(): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `Necromancer Save ${saveFileStamp()}.json`;
+	a.download = `Necromancer Export ${saveFileStamp()}.json`;
 	document.body.appendChild(a);
 	a.click();
 	document.body.removeChild(a);

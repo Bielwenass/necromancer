@@ -22,9 +22,7 @@ interface ModalProps {
 /**
  * The shared overlay shell: a tinted full-screen backdrop with dialog
  * semantics, backdrop-click dismissal, and Escape wired to the same handler.
- *
- * Escape is bound on `window` rather than the element, so it fires wherever
- * focus happens to be.
+ * Escape is bound on `window`, so it fires wherever focus happens to be.
  */
 export function Modal({
 	label,

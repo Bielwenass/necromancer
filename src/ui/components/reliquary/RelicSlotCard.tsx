@@ -17,8 +17,6 @@ export function RelicSlotCard({
 	onSelect: () => void;
 	onUnequip: () => void;
 }) {
-	// An empty or locked slot is display-only: relics are equipped from
-	// RelicDetail, so there is nothing to click here.
 	if (locked || !relic) {
 		return (
 			<div className="w-[130px] aspect-[320/460] bg-bg-inset border border-dashed border-rule flex flex-col items-center justify-center relative max-md:w-[104px]">
@@ -40,9 +38,6 @@ export function RelicSlotCard({
 				selected={selected}
 				onClick={onSelect}
 			/>
-			<div className="mono absolute top-[6px] left-2 text-[7px] text-dim tracking-[0.1em] z-10 pointer-events-none">
-				{slotLabel}
-			</div>
 			{selected && (
 				<button
 					type="button"

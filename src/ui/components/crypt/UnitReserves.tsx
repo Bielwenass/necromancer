@@ -1,9 +1,10 @@
 import { canAffordCost } from "../../../game/rules/resources";
 import { summonCost } from "../../../game/rules/summoning";
+import { isUnitUnlocked, UNIT_TYPES } from "../../../game/rules/units";
 import type { GameState, Squad, Units, UnitType } from "../../../game/types";
 import { formatCost } from "../../format";
 import { UNIT_COLORS } from "../../theme";
-import { IconSkeleton, IconWraith, IconZombie } from "../icons";
+import { UNIT_ICONS } from "../icons";
 import { UnitReserveRow } from "./UnitReserveRow";
 
 interface UnitReservesProps {
@@ -26,15 +27,7 @@ export function UnitReserves({
 	// itself against live state rather than a fixed table.
 	const summonState = { units, squads, derived };
 
-	const rows: { type: UnitType; count: number; icon: typeof IconSkeleton }[] = [
-		{ type: "skeleton", count: units.skeletons, icon: IconSkeleton },
-		...(derived.zombiesUnlocked
-			? [{ type: "zombie" as const, count: units.zombies, icon: IconZombie }]
-			: []),
-		...(derived.wraithsUnlocked
-			? [{ type: "wraith" as const, count: units.wraiths, icon: IconWraith }]
-			: []),
-	];
+	const rows = UNIT_TYPES.filter((type) => isUnitUnlocked(type, derived));
 
 	return (
 		<div className="px-4 py-3 border-b border-rule bg-bg-panel-2">
@@ -42,12 +35,12 @@ export function UnitReserves({
 				UNIT RESERVES
 			</div>
 			<div className="flex flex-col gap-2">
-				{rows.map(({ type, count, icon }) => (
+				{rows.map((type) => (
 					<UnitReserveRow
 						key={type}
 						type={type}
-						count={count}
-						icon={icon}
+						count={units[type]}
+						icon={UNIT_ICONS[type]}
 						color={UNIT_COLORS[type]}
 						canSummon={(v) =>
 							canAffordCost(summonCost(type, v, summonState), resources)

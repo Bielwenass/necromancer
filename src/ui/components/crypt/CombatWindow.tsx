@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { COMBAT_CONFIG } from "../../../combat/config";
 import { COMBAT_H, COMBAT_W } from "../../../combat/dungeonCombat";
 import type { CombatEngine } from "../../../combat/engine";
 import { useGameStore } from "../../../game/store";
@@ -81,7 +82,7 @@ export function CombatWindow({
 						eng.start();
 						lastTsRef.current = 0;
 						restartTimeoutRef.current = null;
-					}, 1500);
+					}, COMBAT_CONFIG.rendering.replayRestartDelayMs);
 				}
 			}
 

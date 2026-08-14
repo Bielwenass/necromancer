@@ -42,29 +42,9 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	const mainPos = rollPosition(rarity);
 	let mainValue = rollValue(base.mainAffixRange, mainPos);
 
-	const minorCount = MINOR_COUNT[rarity];
-	// A gated affix is never drawn here — a base grants its signature outright or
-	// not at all, so the two can't compete for the same slot.
-	const pool = base.minorAffixPool.filter(
-		(id) => AFFIX_DEFS[id]?.minRarity === undefined,
-	);
-	const minorAffixes = [];
-
-	for (let i = 0; i < minorCount && pool.length > 0; i++) {
-		const idx = Math.floor(Math.random() * pool.length);
-		const affixId = pool.splice(idx, 1)[0];
-		const affixDef = AFFIX_DEFS[affixId];
-		if (!affixDef) continue;
-		const pos = rollPosition(rarity);
-		const value = rollValue(affixDef.range, pos);
-		if (base.mainAffixId === affixId) {
-			mainValue += value;
-		} else {
-			minorAffixes.push({ id: affixId, value, rollPosition: pos });
-		}
-	}
-
-	// The base's signature power, if this relic rolled rare enough for it.
+	// The base's signature power, if this relic rolled rare enough for it. Rolled
+	// before the minors because it takes one of their slots rather than adding a
+	// row — three affixes is the ceiling, so a signature costs a minor.
 	const sigId = base.signatureAffixId;
 	const sigDef = sigId ? AFFIX_DEFS[sigId] : undefined;
 	let uniqueAffix: Affix | undefined;
@@ -77,7 +57,37 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 		};
 	}
 
-	const allPositions = [mainPos, ...minorAffixes.map((a) => a.rollPosition)];
+	const minorCount = Math.max(0, MINOR_COUNT[rarity] - (uniqueAffix ? 1 : 0));
+	// A gated affix is never drawn here — a base grants its signature outright or
+	// not at all, so the two can't compete for the same slot.
+	const pool = base.minorAffixPool.filter(
+		(id) =>
+			id !== base.signatureAffixId && AFFIX_DEFS[id]?.minRarity === undefined,
+	);
+	const minorAffixes = [];
+
+	for (let i = 0; i < minorCount && pool.length > 0; i++) {
+		const idx = Math.floor(Math.random() * pool.length);
+		const affixId = pool.splice(idx, 1)[0];
+		const affixDef = AFFIX_DEFS[affixId];
+		if (!affixDef) continue;
+		const pos = rollPosition(rarity);
+		const value = rollValue(affixDef.range, pos);
+		// Drawing the base's own main affix concentrates the roll instead of
+		// taking a row: fewer, bigger numbers, and a value that may legitimately
+		// exceed `mainAffixRange`. That spike is the point.
+		if (base.mainAffixId === affixId) {
+			mainValue += value;
+		} else {
+			minorAffixes.push({ id: affixId, value, rollPosition: pos });
+		}
+	}
+
+	const allPositions = [
+		mainPos,
+		...minorAffixes.map((a) => a.rollPosition),
+		...(uniqueAffix ? [uniqueAffix.rollPosition] : []),
+	];
 	const quality = Math.round(
 		(allPositions.reduce((s, p) => s + p, 0) / allPositions.length) * 100,
 	);
@@ -142,10 +152,7 @@ export function getAffixDescription(affixId: string): string | undefined {
 	return AFFIX_DEFS[affixId]?.description;
 }
 
-/**
- * The rolled value as the card shows it. A trade-off affix reads as both halves
- * — "+24% / −12%" — because one number would advertise only the upside.
- */
+/** The rolled value as the card shows it. A trade-off affix reads as both halves "+24% / −12%" */
 export function formatAffixValue(
 	affixId: string,
 	value: number,
@@ -158,16 +165,9 @@ export function formatAffixValue(
 		// U+2212 MINUS SIGN, matching the effect descriptions.
 		`${n < 0 ? "−" : "+"}${Math.round(Math.abs(n))}${unit}`;
 
-	const scales = (def?.effects ?? []).map((e) =>
-		e.kind === "elsewhere" ? 1 : (e.scale ?? 1),
-	);
+	const scales = (def?.effects ?? []).map((e) => e.scale ?? 1);
 	// `dreadCommand` scales by 100 to express a flat count; that is a unit
 	// conversion, not a second term, so a single effect always prints as one.
 	if (scales.length < 2) return one(boosted);
 	return scales.map((s) => one(boosted * s)).join(" / ");
-}
-
-/** True when an affix pays for its bonus out of another stat. */
-export function isTradeoffAffix(affixId: string): boolean {
-	return (AFFIX_DEFS[affixId]?.effects.length ?? 0) > 1;
 }

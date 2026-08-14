@@ -1,18 +1,13 @@
 /**
- * Every clock in the game in one place.
- *
- * The offline catchup reproduces the live simulation exactly, so a divergence
- * between two copies of one of these is not a cosmetic bug: it pays
- * the player differently online and offline.
+ * Every clock in the game in one place. Offline catchup reproduces the live
+ * simulation exactly, so two copies of one of these drifting apart would pay the
+ * player differently online and offline.
  */
 
-/** Length of one simulation tick. The store's accumulator drains exact steps of this. */
+/** One simulation tick. The store's accumulator drains exact steps of this. */
 export const TICK_MS = 100;
 
-/**
- * Derived from `TICK_MS`. Every per-tick rate the UI shows per second goes through
- * this, as does the garden's bones/sec to bones/tick conversion.
- */
+/** Every per-second rate the UI shows goes through this. */
 export const TICKS_PER_SECOND = 1000 / TICK_MS;
 
 /** Fixed timestep the combat engine is advanced by, live and headless alike. */
@@ -34,7 +29,12 @@ export const MAX_OFFLINE_MS = 8 * 60 * 60 * 1000;
 export const CATCHUP_THRESHOLD_MS = 2000;
 
 /**
- * Safety cap on a single headless fight (~5 minutes of sim time). A fight that
- * hits this is treated as decided so catchup can't hang on a stalemate.
+ * How long a single fight may run before the engine decides it, in sim time. A
+ * game rule rather than a safety valve: the engine calls it for whichever side
+ * has the larger share of its muster still standing, so a squad winning on
+ * points is paid rather than wiped.
  */
-export const MAX_HEADLESS_TICKS = 20000;
+export const MAX_FIGHT_MS = 10 * 60 * 1000;
+
+/** The same cap in engine steps, for loops that drive a fight themselves. */
+export const MAX_HEADLESS_TICKS = MAX_FIGHT_MS / ENGINE_DT;

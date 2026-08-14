@@ -1,12 +1,20 @@
 import { useState } from "react";
 import { DUNGEON_DEFS } from "../../../game/data/dungeons";
 import { randomSquadName } from "../../../game/data/squadNames";
-import { UNIT_COLORS } from "../../../game/data/units";
-import { replenishDelta, squadSize } from "../../../game/rules/units";
+import { dungeonOccupancy } from "../../../game/rules/squads";
+import {
+	emptyComposition,
+	isUnitUnlocked,
+	replenishDelta,
+	squadSize,
+	UNIT_TYPES,
+} from "../../../game/rules/units";
 import { useGameStore } from "../../../game/store";
 import type { UnitType } from "../../../game/types";
+import { UNIT_COLORS, UNIT_LABELS } from "../../theme";
 import { Modal } from "../common/Modal";
 import { EnemyPreview } from "./EnemyPreview";
+import { compositionLabel } from "./squadDisplay";
 import { UnitCountStepper } from "./UnitCountStepper";
 
 interface DispatchModalProps {
@@ -27,32 +35,27 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	// The cap is on how many squads exist at all, whatever they're doing —
 	// so it only ever blocks creating a new one, never dispatching an idle one.
 	const atCapacity = squads.length >= derived.maxSquads;
+	// A squad may have taken the dungeon between opening this modal and clicking.
+	// The store guard is the backstop; this keeps the buttons honest.
+	const held = dungeonOccupancy(squads).has(dungeonId);
 
-	const [composition, setComposition] = useState<Record<UnitType, number>>({
-		skeleton: 0,
-		zombie: 0,
-		wraith: 0,
-	});
+	const [composition, setComposition] =
+		useState<Record<UnitType, number>>(emptyComposition);
 	const [squadName, setSquadName] = useState(randomSquadName);
 
 	if (!def) return null;
 
 	const totalUnits = squadSize(composition);
 	const maxSize = derived.maxSquadSize;
-	const canCreate = totalUnits > 0 && totalUnits <= maxSize && !atCapacity;
+	const canCreate =
+		totalUnits > 0 && totalUnits <= maxSize && !atCapacity && !held;
 
 	const adjust = (type: UnitType, delta: number) => {
 		setComposition((prev) => {
-			const available =
-				type === "skeleton"
-					? units.skeletons
-					: type === "zombie"
-						? units.zombies
-						: units.wraiths;
 			const newVal = Math.max(
 				0,
 				Math.min(
-					available,
+					units[type],
 					prev[type] + delta,
 					maxSize - totalUnits + prev[type],
 				),
@@ -86,6 +89,11 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 					<div className="display text-2xl text-bone !tracking-[0.12em] mt-[6px]">
 						{def.name}
 					</div>
+					{held && (
+						<div className="mono text-[10px] text-hp-crit tracking-[0.18em] mt-2">
+							ANOTHER LEGION HOLDS THIS TOMB
+						</div>
+					)}
 				</div>
 
 				<EnemyPreview enemies={def.enemies} />
@@ -103,21 +111,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 								const refillCount = squadSize(
 									replenishDelta(squad, units, maxSize),
 								);
-								const skLabel =
-									squad.composition.skeleton > 0
-										? `${squad.composition.skeleton}sk`
-										: "";
-								const zmLabel =
-									squad.composition.zombie > 0
-										? `${squad.composition.zombie}zm`
-										: "";
-								const wrLabel =
-									squad.composition.wraith > 0
-										? `${squad.composition.wraith}wr`
-										: "";
-								const compStr = [skLabel, zmLabel, wrLabel]
-									.filter(Boolean)
-									.join(" ");
+								const compStr = compositionLabel(squad.composition);
 								return (
 									<div
 										key={squad.id}
@@ -152,7 +146,12 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 										<button
 											type="button"
 											onClick={() => handleSendIdle(squad.id)}
-											className="px-4 py-[6px] border border-coin bg-coin/5 text-coin cursor-pointer display text-[10px] tracking-[0.2em]"
+											disabled={held}
+											className={`px-4 py-[6px] border display text-[10px] tracking-[0.2em] ${
+												held
+													? "border-rule text-dim cursor-not-allowed"
+													: "border-coin bg-coin/5 text-coin cursor-pointer"
+											}`}
 										>
 											SEND ⇢
 										</button>
@@ -201,39 +200,20 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 							{totalUnits}/{maxSize} UNITS
 						</span>
 					</div>
-					<UnitCountStepper
-						type="skeleton"
-						label="Skeleton"
-						color={UNIT_COLORS.skeleton}
-						count={composition.skeleton}
-						available={units.skeletons}
-						onAdjust={(d) => adjust("skeleton", d)}
-						maxSize={maxSize}
-						total={totalUnits}
-					/>
-					{derived.zombiesUnlocked && (
-						<UnitCountStepper
-							type="zombie"
-							label="Zombie"
-							color={UNIT_COLORS.zombie}
-							count={composition.zombie}
-							available={units.zombies}
-							onAdjust={(d) => adjust("zombie", d)}
-							maxSize={maxSize}
-							total={totalUnits}
-						/>
-					)}
-					{derived.wraithsUnlocked && (
-						<UnitCountStepper
-							type="wraith"
-							label="Wraith"
-							color={UNIT_COLORS.wraith}
-							count={composition.wraith}
-							available={units.wraiths}
-							onAdjust={(d) => adjust("wraith", d)}
-							maxSize={maxSize}
-							total={totalUnits}
-						/>
+					{UNIT_TYPES.filter((type) => isUnitUnlocked(type, derived)).map(
+						(type) => (
+							<UnitCountStepper
+								key={type}
+								type={type}
+								label={UNIT_LABELS[type]}
+								color={UNIT_COLORS[type]}
+								count={composition[type]}
+								available={units[type]}
+								onAdjust={(d) => adjust(type, d)}
+								maxSize={maxSize}
+								total={totalUnits}
+							/>
+						),
 					)}
 				</div>
 

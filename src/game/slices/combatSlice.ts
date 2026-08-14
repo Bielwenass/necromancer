@@ -1,6 +1,5 @@
 import type { CombatEngine } from "../../combat/engine";
 import { TICK_MS, TICKS_PER_AUTOSAVE } from "../data/pacing";
-import { recomputeDerived } from "../rules/derived";
 import { saveGame } from "../save";
 import { gameTick } from "../tick";
 import type { SliceCreator } from "./types";
@@ -47,18 +46,16 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => {
 			while (tickAccumulator >= TICK_MS) {
 				tickAccumulator -= TICK_MS;
 				const delta = gameTick(get());
-
-				set((prev) => {
-					const next = { ...prev, ...delta };
-					if (delta.relics || delta.upgrades) {
-						next.derived = recomputeDerived(next);
-					}
-					return next;
-				});
+				set((prev) => ({ ...prev, ...delta }));
 				ticked = true;
 			}
 
 			if (!ticked) return;
+			// Stamped here rather than in `gameTick` — it is the wall clock offline
+			// catchup measures its window against, so the simulation itself must
+			// stay free of it.
+			set((prev) => ({ meta: { ...prev.meta, lastTickAt: Date.now() } }));
+
 			saveCounter++;
 			if (saveCounter >= TICKS_PER_AUTOSAVE) {
 				saveCounter = 0;

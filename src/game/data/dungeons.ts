@@ -1,8 +1,39 @@
 import type { DungeonDef } from "../types";
 
+/**
+ * The dungeon ladder.
+ *
+ * **Difficulty** is `total enemy HP × total enemy DPS` — what a melee attrition
+ * fight turns on, and nearly the same expression on the player's side
+ * (`squad^1.9 × dmg × hp`, the exponent measured in `balanceCheck` section 8).
+ * It steps **×1.8 per dungeon within a tier** and **×16 at each tier boundary**,
+ * ~5×10⁶ across the whole ladder — what the workshop's geometric curves can
+ * deliver, see `UNIT_STAT_CONFIG`.
+ *
+ * Nominal power is an input rather than the answer, because roster shape moves
+ * the thresholds too: a crowd of weak enemies is ground down with fewer losses
+ * than the same HP × DPS in heavier bodies, so chaff rooms are scaled up and
+ * elite rooms down to land where the ladder wants them.
+ *
+ * HP and DPS grow together. Growing damage faster is not an option: a single
+ * enemy blow must stay well under a player unit's HP or the dungeon can never
+ * run unattended whatever the squad size, and `balanceCheck` asserts that bound.
+ *
+ * **Each tier is also a menu**, steering every currency with a lever that
+ * already exists rather than a per-resource multiplier in the loot table:
+ *
+ * - **corpses** — one roll per felled enemy, so roster shape *is* the dial.
+ * - **bones** — `lootTable.bonesMin/Max`.
+ * - **souls** — `lootTable.soulChance`.
+ * - **banners** — a flat `tier` per clear, so only a shorter round trip earns
+ *   them faster. `travelTimeTicks` is the dial, deliberately not monotone with
+ *   difficulty.
+ *
+ * Per tier the four rooms are, in order: bones, corpses, banners, souls.
+ */
 export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 	// ═══════════════════════════════════════════════════════════════
-	// TIER 1 — Skirmish scale. Squad caps ~5–30. Day 1 of progression.
+	// TIER 1 — Skirmish scale. A handful of units. The first hour.
 	// ═══════════════════════════════════════════════════════════════
 
 	"paupers-tomb": {
@@ -14,50 +45,49 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 				name: "wretch",
 				amount: 5,
 				color: "#8B6B5D",
-				stats: { hp: 8, dmg: 4, speed: 0.8 },
+				stats: { hp: 32, dmg: 4, speed: 0.8 },
 			},
 		],
 		lootTable: {
-			bonesMin: 15,
-			bonesMax: 30,
-			soulChance: 0.03,
+			bonesMin: 22,
+			bonesMax: 45,
+			soulChance: 0.02,
 		},
 		travelTimeTicks: 60,
-		unlock: { kind: "always" },
-		kind: "skull",
+		unlockCondition: [],
 	},
 
+	// Chaff: thirteen biters and a few wretches. Nothing here is dangerous
+	// alone, and the kill count is what makes it the tier's corpse mine.
 	"wolf-den": {
 		id: "wolf-den",
 		name: "Wolf Den",
 		tier: 1,
 		enemies: [
 			{
-				name: "wretch",
-				amount: 7,
-				color: "#8B6B5D",
-				stats: { hp: 8, dmg: 4, speed: 0.8 },
+				name: "biter",
+				amount: 13,
+				color: "#5A4A3A",
+				stats: { hp: 15, dmg: 2, speed: 1.4 },
 			},
 			{
-				name: "biter",
-				amount: 12,
-				color: "#5A4A3A",
-				stats: { hp: 5, dmg: 3, speed: 1.4 },
+				name: "wretch",
+				amount: 5,
+				color: "#8B6B5D",
+				stats: { hp: 29, dmg: 3, speed: 0.8 },
 			},
 		],
 		lootTable: {
-			bonesMin: 25,
-			bonesMax: 45,
-			soulChance: 0.04,
+			bonesMin: 21,
+			bonesMax: 39,
+			soulChance: 0.02,
 		},
-		travelTimeTicks: 100,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "paupers-tomb", count: 3 }],
-		},
-		kind: "ruin",
+		travelTimeTicks: 90,
+		unlockCondition: [{ dungeonId: "paupers-tomb", count: 3 }],
 	},
 
+	// The counterweight to Wolf Den: half the bodies, each worth fearing, and
+	// the tier's richest bone haul.
 	"abandoned-chapel": {
 		id: "abandoned-chapel",
 		name: "Abandoned Chapel",
@@ -65,28 +95,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "cultist",
-				amount: 12,
+				amount: 8,
 				color: "#7A4C3C",
-				stats: { hp: 8, dmg: 3, speed: 0.9 },
+				stats: { hp: 36, dmg: 5, speed: 0.9 },
 			},
 			{
 				name: "zealot",
-				amount: 5,
+				amount: 3,
 				color: "#A86850",
-				stats: { hp: 6, dmg: 5, speed: 1.1 },
+				stats: { hp: 55, dmg: 7, speed: 1.1 },
 			},
 		],
 		lootTable: {
-			bonesMin: 15,
-			bonesMax: 25,
-			soulChance: 0.04,
+			bonesMin: 60,
+			bonesMax: 105,
+			soulChance: 0.03,
 		},
-		travelTimeTicks: 150,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "wolf-den", count: 3 }],
-		},
-		kind: "ruin",
+		travelTimeTicks: 140,
+		unlockCondition: [{ dungeonId: "wolf-den", count: 3 }],
 	},
 
 	"hollow-keep": {
@@ -96,37 +122,38 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "wretch",
-				amount: 20,
+				amount: 12,
 				color: "#8B6B5D",
-				stats: { hp: 8, dmg: 4, speed: 0.8 },
+				stats: { hp: 20, dmg: 3, speed: 0.8 },
 			},
 			{
 				name: "alpha",
-				amount: 10,
+				amount: 6,
 				color: "#5C4A30",
-				stats: { hp: 14, dmg: 5, speed: 1.0 },
+				stats: { hp: 36, dmg: 4, speed: 1.0 },
 			},
 			{
 				name: "keep-captain",
 				amount: 1,
 				color: "#D14848",
-				stats: { hp: 60, dmg: 12, speed: 0.8 },
+				stats: { hp: 142, dmg: 9, speed: 0.8 },
 			},
 		],
 		lootTable: {
-			bonesMin: 50,
-			bonesMax: 90,
-			soulChance: 0.08,
+			bonesMin: 45,
+			bonesMax: 82,
+			soulChance: 0.1,
 		},
-		travelTimeTicks: 220,
-		unlock: { kind: "allOfTier", tier: 1, except: ["hollow-keep"], count: 1 },
-		kind: "tower",
+		travelTimeTicks: 180,
+		unlockCondition: [{ dungeonId: "abandoned-chapel", count: 3 }],
 	},
 
 	// ═══════════════════════════════════════════════════════════════
-	// TIER 2 — Front lines. Squad caps ~40–100. Day 2.
+	// TIER 2 — Company scale. Squads of ~30–70. The first day.
 	// ═══════════════════════════════════════════════════════════════
 
+	// The short march. Same banners per clear as anything else in the tier,
+	// and by far the most of them per hour.
 	"watchers-spire": {
 		id: "watchers-spire",
 		name: "Watcher's Spire",
@@ -134,28 +161,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "guard",
-				amount: 35,
+				amount: 26,
 				color: "#607890",
-				stats: { hp: 20, dmg: 8, speed: 0.9 },
+				stats: { hp: 60, dmg: 7, speed: 0.9 },
 			},
 			{
 				name: "warden",
-				amount: 15,
+				amount: 9,
 				color: "#9ABCD8",
-				stats: { hp: 30, dmg: 12, speed: 1.0 },
+				stats: { hp: 96, dmg: 10, speed: 1.0 },
 			},
 		],
 		lootTable: {
-			bonesMin: 90,
-			bonesMax: 140,
-			soulChance: 0.08,
+			bonesMin: 120,
+			bonesMax: 210,
+			soulChance: 0.04,
 		},
-		travelTimeTicks: 320,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "hollow-keep", count: 1 }],
-		},
-		kind: "tower",
+		travelTimeTicks: 240,
+		unlockCondition: [{ dungeonId: "hollow-keep", count: 1 }],
 	},
 
 	"sunken-chapel": {
@@ -165,28 +188,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "drowned",
-				amount: 40,
+				amount: 48,
 				color: "#4F6B7A",
-				stats: { hp: 25, dmg: 6, speed: 0.7 },
+				stats: { hp: 63, dmg: 6, speed: 0.7 },
 			},
 			{
 				name: "plague-zealot",
-				amount: 14,
+				amount: 12,
 				color: "#6B8B5D",
-				stats: { hp: 22, dmg: 10, speed: 0.9 },
+				stats: { hp: 96, dmg: 13, speed: 0.9 },
 			},
 		],
 		lootTable: {
-			bonesMin: 80,
-			bonesMax: 130,
-			soulChance: 0.09,
+			bonesMin: 135,
+			bonesMax: 225,
+			soulChance: 0.05,
 		},
 		travelTimeTicks: 400,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "watchers-spire", count: 3 }],
-		},
-		kind: "ruin",
+		unlockCondition: [{ dungeonId: "watchers-spire", count: 3 }],
 	},
 
 	"black-marsh": {
@@ -196,28 +215,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "fen-stalker",
-				amount: 32,
+				amount: 26,
 				color: "#3D5040",
-				stats: { hp: 18, dmg: 10, speed: 1.2 },
+				stats: { hp: 79, dmg: 12, speed: 1.2 },
 			},
 			{
 				name: "marsh-alpha",
-				amount: 18,
+				amount: 14,
 				color: "#5A6B3D",
-				stats: { hp: 35, dmg: 12, speed: 1.0 },
+				stats: { hp: 167, dmg: 13, speed: 1.0 },
 			},
 		],
 		lootTable: {
-			bonesMin: 110,
-			bonesMax: 170,
-			soulChance: 0.1,
+			bonesMin: 195,
+			bonesMax: 315,
+			soulChance: 0.16,
 		},
-		travelTimeTicks: 460,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "watchers-spire", count: 3 }],
-		},
-		kind: "skull",
+		travelTimeTicks: 440,
+		unlockCondition: [{ dungeonId: "watchers-spire", count: 3 }],
 	},
 
 	"whisper-wells": {
@@ -227,41 +242,37 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "guard",
-				amount: 50,
+				amount: 34,
 				color: "#607890",
-				stats: { hp: 20, dmg: 8, speed: 0.9 },
+				stats: { hp: 70, dmg: 9, speed: 0.9 },
 			},
 			{
 				name: "warden",
-				amount: 25,
+				amount: 22,
 				color: "#9ABCD8",
-				stats: { hp: 30, dmg: 12, speed: 1.0 },
+				stats: { hp: 108, dmg: 13, speed: 1.0 },
 			},
 			{
 				name: "well-captain",
-				amount: 2,
+				amount: 1,
 				color: "#D14848",
-				stats: { hp: 180, dmg: 28, speed: 0.9 },
+				stats: { hp: 1400, dmg: 14, speed: 0.9 },
 			},
 		],
 		lootTable: {
-			bonesMin: 160,
-			bonesMax: 260,
-			soulChance: 0.14,
+			bonesMin: 420,
+			bonesMax: 690,
+			soulChance: 0.07,
 		},
-		travelTimeTicks: 540,
-		unlock: {
-			kind: "clears",
-			requires: [
-				{ dungeonId: "sunken-chapel", count: 1 },
-				{ dungeonId: "black-marsh", count: 1 },
-			],
-		},
-		kind: "ruin",
+		travelTimeTicks: 520,
+		unlockCondition: [
+			{ dungeonId: "sunken-chapel", count: 1 },
+			{ dungeonId: "black-marsh", count: 1 },
+		],
 	},
 
 	// ═══════════════════════════════════════════════════════════════
-	// TIER 3 — Massed combat. Squad caps ~200–500. Day 3.
+	// TIER 3 — Massed combat. Squads of ~100–300. Days two to four.
 	// ═══════════════════════════════════════════════════════════════
 
 	"ossuary-of-vael": {
@@ -271,28 +282,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "knight",
-				amount: 220,
+				amount: 85,
 				color: "#7A8290",
-				stats: { hp: 60, dmg: 18, speed: 0.9 },
+				stats: { hp: 209, dmg: 15, speed: 0.9 },
 			},
 			{
 				name: "spectre",
-				amount: 90,
+				amount: 34,
 				color: "#B5D8E8",
-				stats: { hp: 50, dmg: 22, speed: 1.4 },
+				stats: { hp: 177, dmg: 19, speed: 1.4 },
 			},
 		],
 		lootTable: {
-			bonesMin: 380,
-			bonesMax: 580,
-			soulChance: 0.16,
+			bonesMin: 1100,
+			bonesMax: 1800,
+			soulChance: 0.07,
 		},
-		travelTimeTicks: 700,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "whisper-wells", count: 1 }],
-		},
-		kind: "tower",
+		travelTimeTicks: 620,
+		unlockCondition: [{ dungeonId: "whisper-wells", count: 1 }],
 	},
 
 	"burning-reliquary": {
@@ -302,34 +309,24 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "inquisitor",
-				amount: 160,
+				amount: 165,
 				color: "#F0773E",
-				stats: { hp: 35, dmg: 25, speed: 1.2 },
+				stats: { hp: 153, dmg: 15, speed: 1.2 },
 			},
 			{
 				name: "knight",
-				amount: 110,
+				amount: 55,
 				color: "#7A8290",
-				stats: { hp: 60, dmg: 18, speed: 0.9 },
-			},
-			{
-				name: "high-warden",
-				amount: 35,
-				color: "#D9B872",
-				stats: { hp: 100, dmg: 30, speed: 1.0 },
+				stats: { hp: 278, dmg: 15, speed: 0.9 },
 			},
 		],
 		lootTable: {
-			bonesMin: 280,
-			bonesMax: 440,
-			soulChance: 0.18,
+			bonesMin: 900,
+			bonesMax: 1500,
+			soulChance: 0.08,
 		},
-		travelTimeTicks: 820,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "ossuary-of-vael", count: 3 }],
-		},
-		kind: "skull",
+		travelTimeTicks: 780,
+		unlockCondition: [{ dungeonId: "ossuary-of-vael", count: 3 }],
 	},
 
 	"sepulchre-of-kings": {
@@ -339,34 +336,30 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "knight",
-				amount: 270,
+				amount: 78,
 				color: "#7A8290",
-				stats: { hp: 60, dmg: 18, speed: 0.9 },
+				stats: { hp: 274, dmg: 24, speed: 0.9 },
 			},
 			{
 				name: "high-warden",
-				amount: 65,
+				amount: 40,
 				color: "#D9B872",
-				stats: { hp: 100, dmg: 30, speed: 1.0 },
+				stats: { hp: 454, dmg: 36, speed: 1.0 },
 			},
 			{
 				name: "bone-titan",
 				amount: 3,
 				color: "#E8DCB5",
-				stats: { hp: 220, dmg: 40, speed: 0.7 },
+				stats: { hp: 1074, dmg: 52, speed: 0.7 },
 			},
 		],
 		lootTable: {
-			bonesMin: 440,
-			bonesMax: 700,
-			soulChance: 0.2,
+			bonesMin: 1200,
+			bonesMax: 2000,
+			soulChance: 0.06,
 		},
-		travelTimeTicks: 960,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "ossuary-of-vael", count: 3 }],
-		},
-		kind: "ruin",
+		travelTimeTicks: 420,
+		unlockCondition: [{ dungeonId: "ossuary-of-vael", count: 3 }],
 	},
 
 	"citadel-of-ash": {
@@ -376,53 +369,49 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "knight",
-				amount: 220,
+				amount: 72,
 				color: "#7A8290",
-				stats: { hp: 60, dmg: 18, speed: 0.9 },
+				stats: { hp: 267, dmg: 22, speed: 0.9 },
 			},
 			{
 				name: "inquisitor",
-				amount: 160,
+				amount: 58,
 				color: "#F0773E",
-				stats: { hp: 35, dmg: 25, speed: 1.2 },
+				stats: { hp: 156, dmg: 20, speed: 1.2 },
 			},
 			{
 				name: "high-warden",
-				amount: 80,
+				amount: 46,
 				color: "#D9B872",
-				stats: { hp: 100, dmg: 30, speed: 1.0 },
+				stats: { hp: 445, dmg: 32, speed: 1.0 },
 			},
 			{
 				name: "bone-titan",
 				amount: 6,
 				color: "#E8DCB5",
-				stats: { hp: 220, dmg: 40, speed: 0.7 },
+				stats: { hp: 1001, dmg: 47, speed: 0.7 },
 			},
 			{
 				name: "saint-captain",
 				amount: 1,
 				color: "#F3E8A8",
-				stats: { hp: 500, dmg: 70, speed: 0.9 },
+				stats: { hp: 2669, dmg: 78, speed: 0.9 },
 			},
 		],
 		lootTable: {
-			bonesMin: 750,
-			bonesMax: 1200,
-			soulChance: 0.28,
+			bonesMin: 1700,
+			bonesMax: 2800,
+			soulChance: 0.24,
 		},
-		travelTimeTicks: 1120,
-		unlock: {
-			kind: "clears",
-			requires: [
-				{ dungeonId: "burning-reliquary", count: 1 },
-				{ dungeonId: "sepulchre-of-kings", count: 1 },
-			],
-		},
-		kind: "tower",
+		travelTimeTicks: 900,
+		unlockCondition: [
+			{ dungeonId: "burning-reliquary", count: 1 },
+			{ dungeonId: "sepulchre-of-kings", count: 1 },
+		],
 	},
 
 	// ═══════════════════════════════════════════════════════════════
-	// TIER 4 — Hordes. Squad caps ~700–1500. Day 4+ (endgame).
+	// TIER 4 — Hordes. Squads of ~300–700. The second week.
 	// ═══════════════════════════════════════════════════════════════
 
 	"bone-cathedral": {
@@ -432,34 +421,30 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "paladin",
-				amount: 800,
+				amount: 215,
 				color: "#E8DCB5",
-				stats: { hp: 150, dmg: 50, speed: 1.0 },
+				stats: { hp: 727, dmg: 34, speed: 1.0 },
 			},
 			{
 				name: "arch-inquisitor",
-				amount: 280,
+				amount: 82,
 				color: "#F0773E",
-				stats: { hp: 100, dmg: 80, speed: 1.2 },
+				stats: { hp: 509, dmg: 54, speed: 1.2 },
 			},
 			{
 				name: "doom-knight",
-				amount: 50,
+				amount: 22,
 				color: "#5C2E4A",
-				stats: { hp: 300, dmg: 60, speed: 0.9 },
+				stats: { hp: 1527, dmg: 42, speed: 0.9 },
 			},
 		],
 		lootTable: {
-			bonesMin: 1600,
-			bonesMax: 2600,
-			soulChance: 0.32,
+			bonesMin: 9000,
+			bonesMax: 15000,
+			soulChance: 0.1,
 		},
-		travelTimeTicks: 1500,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "citadel-of-ash", count: 1 }],
-		},
-		kind: "tower",
+		travelTimeTicks: 1200,
+		unlockCondition: [{ dungeonId: "citadel-of-ash", count: 1 }],
 	},
 
 	"throne-of-marrow": {
@@ -469,34 +454,68 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "paladin",
-				amount: 950,
+				amount: 340,
 				color: "#E8DCB5",
-				stats: { hp: 150, dmg: 50, speed: 1.0 },
+				stats: { hp: 561, dmg: 36, speed: 1.0 },
 			},
 			{
 				name: "doom-knight",
-				amount: 180,
+				amount: 78,
 				color: "#5C2E4A",
-				stats: { hp: 300, dmg: 60, speed: 0.9 },
+				stats: { hp: 1178, dmg: 45, speed: 0.9 },
 			},
 			{
 				name: "seraph",
-				amount: 30,
+				amount: 14,
 				color: "#F3E8A8",
-				stats: { hp: 500, dmg: 100, speed: 1.3 },
+				stats: { hp: 2019, dmg: 73, speed: 1.3 },
 			},
 		],
 		lootTable: {
-			bonesMin: 1900,
-			bonesMax: 3000,
-			soulChance: 0.36,
+			bonesMin: 8000,
+			bonesMax: 13000,
+			soulChance: 0.1,
 		},
-		travelTimeTicks: 1800,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "bone-cathedral", count: 3 }],
+		travelTimeTicks: 1600,
+		unlockCondition: [{ dungeonId: "bone-cathedral", count: 3 }],
+	},
+
+	// The elite room of the last tier — a third of the bodies of Throne of
+	// Marrow, each several times the weight, and the shortest march in Tier 4.
+	// Its stats sit below its slot in the power ladder on purpose: heavy enemies
+	// raise both thresholds for the same HP×DPS, so by *measured* difficulty it
+	// lands where it should.
+	"ashen-vigil": {
+		id: "ashen-vigil",
+		name: "Ashen Vigil",
+		tier: 4,
+		enemies: [
+			{
+				name: "doom-knight",
+				amount: 135,
+				color: "#5C2E4A",
+				stats: { hp: 978, dmg: 56, speed: 0.9 },
+			},
+			{
+				name: "seraph",
+				amount: 68,
+				color: "#F3E8A8",
+				stats: { hp: 1677, dmg: 89, speed: 1.3 },
+			},
+			{
+				name: "ash-king",
+				amount: 2,
+				color: "#8C2E2E",
+				stats: { hp: 4191, dmg: 134, speed: 0.8 },
+			},
+		],
+		lootTable: {
+			bonesMin: 11000,
+			bonesMax: 18000,
+			soulChance: 0.12,
 		},
-		kind: "tower",
+		travelTimeTicks: 800,
+		unlockCondition: [{ dungeonId: "throne-of-marrow", count: 3 }],
 	},
 
 	"final-mausoleum": {
@@ -506,45 +525,41 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		enemies: [
 			{
 				name: "paladin",
-				amount: 1200,
+				amount: 300,
 				color: "#E8DCB5",
-				stats: { hp: 150, dmg: 50, speed: 1.0 },
+				stats: { hp: 612, dmg: 48, speed: 1.0 },
 			},
 			{
 				name: "doom-knight",
-				amount: 350,
+				amount: 155,
 				color: "#5C2E4A",
-				stats: { hp: 300, dmg: 60, speed: 0.9 },
+				stats: { hp: 1285, dmg: 60, speed: 0.9 },
 			},
 			{
 				name: "seraph",
-				amount: 80,
+				amount: 62,
 				color: "#F3E8A8",
-				stats: { hp: 500, dmg: 100, speed: 1.3 },
+				stats: { hp: 2202, dmg: 96, speed: 1.3 },
 			},
 			{
 				name: "ash-king",
 				amount: 4,
 				color: "#8C2E2E",
-				stats: { hp: 1200, dmg: 150, speed: 0.8 },
+				stats: { hp: 5506, dmg: 144, speed: 0.8 },
 			},
 			{
 				name: "the-final",
 				amount: 1,
 				color: "#FFFFFF",
-				stats: { hp: 5000, dmg: 300, speed: 0.6 },
+				stats: { hp: 18353, dmg: 216, speed: 0.6 },
 			},
 		],
 		lootTable: {
-			bonesMin: 3500,
-			bonesMax: 5500,
-			soulChance: 0.55,
+			bonesMin: 18000,
+			bonesMax: 30000,
+			soulChance: 0.4,
 		},
-		travelTimeTicks: 2000,
-		unlock: {
-			kind: "clears",
-			requires: [{ dungeonId: "throne-of-marrow", count: 1 }],
-		},
-		kind: "tower",
+		travelTimeTicks: 1900,
+		unlockCondition: [{ dungeonId: "ashen-vigil", count: 1 }],
 	},
 };

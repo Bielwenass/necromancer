@@ -2,8 +2,8 @@ import { DUNGEON_DEFS } from "../data/dungeons";
 import { AFFIX_DEFS, SLOT_LABELS } from "../data/relics";
 import { UNIT_TYPES } from "../data/units";
 import {
+	CRYPT_CONFIG,
 	type CryptKey,
-	SQUAD_SIZE_PER_LEVEL,
 	TRAVEL_SPEED_PER_LEVEL,
 } from "../data/workshop";
 import type {
@@ -17,21 +17,7 @@ import type {
 	UpgradeNode,
 } from "../types";
 import { relicUpgradeMultiplier } from "./relics";
-
-/**
- * The player-facing sentence for a rule, generated from the rule itself.
- *
- * Nothing here holds a number of its own: these functions read the same data
- * the simulation reads, so a balance tweak in `data/` moves the text with it.
- *
- * Pure and React-free, like the rest of `rules/`; the UI imports it.
- */
-
-export interface EffectLine {
-	text: string;
-	/** True for an effect that is declared but not built yet. */
-	unimplemented: boolean;
-}
+import { squadSizeFromLevel } from "./workshop";
 
 /** A decimal bonus as a percentage, without float noise (`0.08` → `8%`). */
 function pct(value: number): string {
@@ -137,49 +123,28 @@ function describeUnitEffect(
 		: `${signed(value, magnitude)}${who} ${UNIT_STAT_LABELS[stat]}`;
 }
 
-export function describeEffect(effect: UpgradeEffect): EffectLine {
+export function describeEffect(effect: UpgradeEffect): string {
 	switch (effect.kind) {
 		case "global":
-			return {
-				text: describeGlobal(effect.stat, effect.op, effect.value),
-				unimplemented: false,
-			};
+			return describeGlobal(effect.stat, effect.op, effect.value);
 		case "unit":
-			return {
-				text: describeUnitEffect(effect.units, effect.stat, effect.value),
-				unimplemented: false,
-			};
+			return describeUnitEffect(effect.units, effect.stat, effect.value);
 		case "flag":
-			return { text: FLAG_LABELS[effect.flag], unimplemented: false };
+			return FLAG_LABELS[effect.flag];
 		case "slot":
-			return {
-				text: `Opens relic slot ${SLOT_LABELS[effect.slot]}`,
-				unimplemented: false,
-			};
-		case "elsewhere":
-			return {
-				text: effect.note,
-				unimplemented: effect.where === "unimplemented",
-			};
+			return `Opens relic slot ${SLOT_LABELS[effect.slot]}`;
 	}
 }
 
 /** Every mechanical line for a node, in declaration order. */
-export function describeUpgradeEffects(node: UpgradeNode): EffectLine[] {
+export function describeUpgradeEffects(node: UpgradeNode): string[] {
 	return node.effects.map(describeEffect);
 }
 
-/**
- * The node's effects as one sentence, for the compact row layout. An effect
- * that isn't built yet says so rather than reading as a promise.
- */
+/** The node's effects as one sentence, for the compact row layout. */
 export function summarizeUpgradeEffects(node: UpgradeNode): string {
 	const sentence = (text: string) => text.replace(/\.$/, "");
-	const parts = describeUpgradeEffects(node).map((l) =>
-		l.unimplemented
-			? `${sentence(l.text)} (not yet implemented)`
-			: sentence(l.text),
-	);
+	const parts = describeUpgradeEffects(node);
 	// The node's own `description` is qualitative colour, where it has one.
 	if (node.description) parts.push(sentence(node.description));
 	return `${parts.join(". ")}.`;
@@ -196,79 +161,57 @@ function asShownPercent(value: number): number {
 /**
  * Every mechanical line for one rolled affix, at the magnitude this relic
  * carries. Mirrors `applyAffixEffect`: the roll is a percentage and each effect
- * takes its own `scale` of it, which is what makes a trade-off affix read as
- * two lines — the bonus and what pays for it.
+ * takes its own `scale` of it.
  */
 export function describeAffixEffects(
 	affixId: string,
 	value: number,
 	upgradeLevel = 0,
-): EffectLine[] {
+): string[] {
 	const def = AFFIX_DEFS[affixId];
 	if (!def) return [];
 	const rolled = (value * relicUpgradeMultiplier(upgradeLevel)) / 100;
 	return def.effects.map((effect) => describeAffixEffect(effect, rolled));
 }
 
-function describeAffixEffect(effect: AffixEffect, rolled: number): EffectLine {
+function describeAffixEffect(effect: AffixEffect, rolled: number): string {
 	switch (effect.kind) {
 		case "global":
-			return {
-				text: describeGlobal(
-					effect.stat,
-					effect.op,
-					asShownPercent(rolled * (effect.scale ?? 1)),
-				),
-				unimplemented: false,
-			};
+			return describeGlobal(
+				effect.stat,
+				effect.op,
+				asShownPercent(rolled * (effect.scale ?? 1)),
+			);
 		case "unit":
-			return {
-				text: describeUnitEffect(
-					effect.units,
-					effect.stat,
-					asShownPercent(rolled * (effect.scale ?? 1)),
-				),
-				unimplemented: false,
-			};
-		case "elsewhere":
-			return {
-				text: effect.note,
-				unimplemented: effect.where === "unimplemented",
-			};
+			return describeUnitEffect(
+				effect.units,
+				effect.stat,
+				asShownPercent(rolled * (effect.scale ?? 1)),
+			);
 	}
 }
 
-/** What the player must do to open a dungeon. */
 export function describeUnlock(def: DungeonDef): string {
-	const rule = def.unlock;
+	const rule = def.unlockCondition;
+
+	if (rule.length === 0) return "Available from the start";
+
 	const name = (id: string) => DUNGEON_DEFS[id]?.name ?? id;
 	const times = (n: number) => (n === 1 ? "" : ` ${n} times`);
 
-	switch (rule.kind) {
-		case "always":
-			return "Available from the start";
-
-		case "clears": {
-			const parts = rule.requires.map(
-				(r) => `${name(r.dungeonId)}${times(r.count)}`,
-			);
-			const list =
-				parts.length > 1
-					? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
-					: parts[0];
-			return `Clear ${list}`;
-		}
-
-		case "allOfTier":
-			return `Clear every other tier-${rule.tier} dungeon${times(rule.count)}`;
-	}
+	const parts = rule.map((r) => `${name(r.dungeonId)}${times(r.count)}`);
+	const list =
+		parts.length > 1
+			? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+			: parts[0];
+	return `Clear ${list}`;
 }
 
 /** What one level of a crypt track is worth, e.g. "+8% per level". */
 export function describeCryptTrack(key: CryptKey): string {
 	switch (key) {
 		case "squadSize":
-			return `+${SQUAD_SIZE_PER_LEVEL} max squad size per level`;
+			return `+${CRYPT_CONFIG.squadSize.perLevelBase} max squad size per level, +1 more every ${CRYPT_CONFIG.squadSize.levelsPerStep}`;
 		case "travelSpeed":
 			return `+${pct(TRAVEL_SPEED_PER_LEVEL)} travel & return speed per level`;
 	}
@@ -278,7 +221,7 @@ export function describeCryptTrack(key: CryptKey): string {
 export function describeCryptLevel(key: CryptKey, level: number): string {
 	switch (key) {
 		case "squadSize":
-			return `+${level * SQUAD_SIZE_PER_LEVEL}`;
+			return `+${squadSizeFromLevel(level)}`;
 		case "travelSpeed":
 			return `+${pct(level * TRAVEL_SPEED_PER_LEVEL)}`;
 	}

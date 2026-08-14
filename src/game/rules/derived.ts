@@ -8,7 +8,7 @@ import { TICKS_PER_SECOND } from "../data/pacing";
 import { AFFIX_DEFS, BASE_UNLOCKED_SLOTS } from "../data/relics";
 import { UNIT_STAT_CONFIG, UNIT_TYPES } from "../data/units";
 import { UPGRADE_NODES } from "../data/upgrades";
-import { SQUAD_SIZE_PER_LEVEL, TRAVEL_SPEED_PER_LEVEL } from "../data/workshop";
+import { TRAVEL_SPEED_PER_LEVEL } from "../data/workshop";
 import type {
 	AffixEffect,
 	DerivedFlagKey,
@@ -23,13 +23,31 @@ import type {
 } from "../types";
 import { allAffixes, relicUpgradeMultiplier } from "./relics";
 import { canAffordCost } from "./resources";
-import { gardenTotalYield } from "./workshop";
+import { gardenTotalYield, squadSizeFromLevel, statAtLevel } from "./workshop";
 
 export { UPGRADE_NODES };
 
-/** An upgrade node's price. Already a resource map in the data table. */
-export function upgradeCost(node: UpgradeNode): Partial<Resources> {
-	return node.cost;
+/**
+ * An upgrade node's price. A repeatable node multiplies it by `repeatGrowth`
+ * once per purchase already made.
+ */
+export function upgradeCost(
+	node: UpgradeNode,
+	timesBought = 0,
+): Partial<Resources> {
+	if (!node.repeatGrowth || timesBought === 0) return node.cost;
+	const scale = node.repeatGrowth ** timesBought;
+	const out: Partial<Resources> = {};
+	for (const [key, amount] of Object.entries(node.cost)) {
+		out[key as keyof Resources] = Math.ceil(amount * scale);
+	}
+	return out;
+}
+
+/** How many times a node has been bought — 0, 1, or more for a repeatable one. */
+export function upgradeTimesBought(state: GameState, nodeId: string): number {
+	const owned = state.upgrades.purchased.includes(nodeId) ? 1 : 0;
+	return owned + (state.upgrades.repeats?.[nodeId] ?? 0);
 }
 
 type Globals = Record<GlobalStatKey, number>;
@@ -124,9 +142,6 @@ function applyUpgradeEffect(
 		case "slot":
 			slots.add(effect.slot);
 			break;
-		case "elsewhere":
-			// Owned by the combat engine, or not built yet — nothing to fold in.
-			break;
 	}
 }
 
@@ -146,8 +161,6 @@ function applyAffixEffect(
 			for (const type of effect.units) units[type][effect.stat] += scaled;
 			break;
 		}
-		case "elsewhere":
-			break;
 	}
 }
 
@@ -178,8 +191,14 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 	for (const nodeId of state.upgrades.purchased) {
 		const node = NODES_BY_ID.get(nodeId);
 		if (!node) continue;
-		for (const effect of node.effects) {
-			applyUpgradeEffect(effect, g, units, flags, slots);
+		// A repeatable node applies once per purchase; every other node once.
+		const times = node.repeatGrowth
+			? 1 + (state.upgrades.repeats?.[nodeId] ?? 0)
+			: 1;
+		for (let i = 0; i < times; i++) {
+			for (const effect of node.effects) {
+				applyUpgradeEffect(effect, g, units, flags, slots);
+			}
 		}
 	}
 
@@ -189,12 +208,11 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		const ws = state.workshop;
 		for (const type of UNIT_TYPES) {
 			const cfg = UNIT_STAT_CONFIG[type];
-			units[type].hpFlat += cfg.hp.base + ws[type].hp * cfg.hp.perLevel;
-			units[type].dmgFlat += cfg.dmg.base + ws[type].dmg * cfg.dmg.perLevel;
-			units[type].speedFlat +=
-				cfg.speed.base + ws[type].speed * cfg.speed.perLevel;
+			units[type].hpFlat += statAtLevel(cfg.hp, ws[type].hp);
+			units[type].dmgFlat += statAtLevel(cfg.dmg, ws[type].dmg);
+			units[type].speedFlat += statAtLevel(cfg.speed, ws[type].speed);
 		}
-		g.maxSquadSize += ws.crypt.squadSize * SQUAD_SIZE_PER_LEVEL;
+		g.maxSquadSize += squadSizeFromLevel(ws.crypt.squadSize);
 		g.squadTravelSpeedBonus += ws.crypt.travelSpeed * TRAVEL_SPEED_PER_LEVEL;
 
 		gardenBonesPerTick = gardenTotalYield(ws.garden) / TICKS_PER_SECOND;
@@ -218,37 +236,21 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		}
 	}
 
+	// Clamped so a stacked debuff build can't erase a dungeon outright.
+	g.enemyHpPenalty = Math.min(MAX_ENEMY_PENALTY, g.enemyHpPenalty);
+	g.enemyDmgPenalty = Math.min(MAX_ENEMY_PENALTY, g.enemyDmgPenalty);
+	g.pityReduction = Math.min(MAX_PITY_REDUCTION, g.pityReduction);
+
+	// `bonesPassiveMult` is the one global that doesn't survive under its own
+	// name — it multiplies the garden's output and nothing else reads it.
+	const { bonesPassiveMult, ...globals } = g;
+
 	return {
-		bonesPerTick: gardenBonesPerTick * g.bonesPassiveMult,
-		soulsPerTick: 0,
-		boneYieldBonus: g.boneYieldBonus,
-		soulsYieldBonus: g.soulsYieldBonus,
-		corpseYieldBonus: g.corpseYieldBonus,
-		maxSquadSize: g.maxSquadSize,
-		maxSquads: g.maxSquads,
-		zombiesUnlocked: flags.zombiesUnlocked,
-		wraithsUnlocked: flags.wraithsUnlocked,
-		corpsesUnlocked: flags.corpsesUnlocked,
-		soulsUnlocked: flags.soulsUnlocked,
-		autoDeploy: flags.autoDeploy,
-		phylactery: flags.phylactery,
-		soulHarvestBonus: g.soulHarvestBonus,
-		bannerChanceBonus: g.bannerChanceBonus,
-		clearMultBonus: g.clearMultBonus,
-		reanimateChance: g.reanimateChance,
-		groupTacticsBonus: g.groupTacticsBonus,
-		// Clamped so a stacked debuff build can't erase a dungeon outright.
-		enemyHpPenalty: Math.min(MAX_ENEMY_PENALTY, g.enemyHpPenalty),
-		enemyDmgPenalty: Math.min(MAX_ENEMY_PENALTY, g.enemyDmgPenalty),
-		pityReduction: Math.min(MAX_PITY_REDUCTION, g.pityReduction),
+		...globals,
+		...flags,
+		...units,
+		bonesPerTick: gardenBonesPerTick * bonesPassiveMult,
 		unlockedSlots: [...slots],
-
-		skeleton: units.skeleton,
-		zombie: units.zombie,
-		wraith: units.wraith,
-
-		squadTravelSpeedBonus: g.squadTravelSpeedBonus,
-		summonCostBonus: g.summonCostBonus,
 		// Nothing varies this yet; it exists so catchup and the live loop agree on
 		// how sim time converts to wall-clock time.
 		combatSpeedMultiplier: 1,
@@ -258,8 +260,9 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 export function canPurchaseUpgrade(state: GameState, nodeId: string): boolean {
 	const node = NODES_BY_ID.get(nodeId);
 	if (!node) return false;
-	if (state.upgrades.purchased.includes(nodeId)) return false;
-	if (!canAffordCost(upgradeCost(node), state.resources)) return false;
+	const bought = upgradeTimesBought(state, nodeId);
+	if (bought > 0 && !node.repeatGrowth) return false;
+	if (!canAffordCost(upgradeCost(node, bought), state.resources)) return false;
 	for (const prereq of node.prerequisites) {
 		if (!state.upgrades.purchased.includes(prereq)) return false;
 	}

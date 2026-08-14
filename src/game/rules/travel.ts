@@ -1,29 +1,33 @@
 import type { DungeonDef, Squad } from "../types";
 
 /**
- * Travel duration in ticks after squad travel-speed upgrades are applied.
- * The single source of truth for travel pacing: the live tick, the offline
- * catchup, and the UI timers all go through this.
+ * Whole ticks one leg of a trip costs, after squad travel-speed upgrades. The
+ * single source of truth for travel pacing: the live tick, the offline catchup
+ * and the Crypt timers all go through it.
+ *
+ * Rounded up and floored at one, so a leg always lands on a tick boundary and
+ * never ends on the tick it started — every deadline being strictly in the
+ * future is what lets `advance` settle a tick in a single pass.
  */
-export function effectiveTravelTicks(
+export function travelLegTicks(
 	def: DungeonDef,
 	squadTravelSpeedBonus: number,
 ): number {
-	return def.travelTimeTicks / (1 + squadTravelSpeedBonus);
+	return Math.max(
+		1,
+		Math.ceil(def.travelTimeTicks / (1 + squadTravelSpeedBonus)),
+	);
 }
 
 /**
- * Ticks left on a squad's current leg. `position` runs 0→1 outbound and is
- * walked back down 1→0 on the way home, so the two directions read it in
- * opposite senses. Returns null for a squad that is not on the road.
+ * Ticks left on a squad's current leg, or null for one that is not on the road.
+ * A fighting squad also reads null: its phase ends when the engine calls it.
  */
 export function squadRemainingTicks(
 	squad: Squad,
-	travelTicks: number,
+	tickCount: number,
 ): number | null {
-	if (squad.state === "traveling")
-		return Math.round((1 - squad.position) * travelTicks);
-	if (squad.state === "returning")
-		return Math.round(squad.position * travelTicks);
-	return null;
+	if (squad.state !== "traveling" && squad.state !== "returning") return null;
+	if (squad.phaseEndTick === undefined) return null;
+	return Math.max(0, squad.phaseEndTick - tickCount);
 }

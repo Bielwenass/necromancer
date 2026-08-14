@@ -1,4 +1,5 @@
-import type { IconProps } from "./IconProps";
+import type { UnitType } from "../../../game/types";
+import type { IconComponent, IconProps } from "./IconProps";
 
 export const IconSkeleton = ({
 	size = 14,
@@ -69,3 +70,10 @@ export const IconWraith = ({
 		/>
 	</svg>
 );
+
+/** Icon per unit type, so a list of unit rows can be built by looping. */
+export const UNIT_ICONS: Record<UnitType, IconComponent> = {
+	skeleton: IconSkeleton,
+	zombie: IconZombie,
+	wraith: IconWraith,
+};

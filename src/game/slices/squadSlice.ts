@@ -1,5 +1,7 @@
+import { applyFightResolution, cloneForAdvance } from "../advance";
 import { DUNGEON_DEFS } from "../data/dungeons";
-import { resolveFightOutcome } from "../rules/fight";
+import { dungeonOccupancy } from "../rules/squads";
+import { travelLegTicks } from "../rules/travel";
 import { addComposition, replenishDelta, squadSize } from "../rules/units";
 import type { UnitType } from "../types";
 import { applyUnitDelta, hasUnitsAvailable, withDerived } from "./helpers";
@@ -45,11 +47,16 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 		set((prev) => {
 			const squad = prev.squads.find((s) => s.id === squadId);
 			const dungeonState = prev.dungeons.find((d) => d.id === dungeonId);
-			if (!squad || !dungeonState) return prev;
+			const def = DUNGEON_DEFS[dungeonId];
+			if (!squad || !dungeonState || !def) return prev;
 			if (!dungeonState.unlocked) return prev;
 			if (squad.state !== "idle") return prev;
 			if (squadSize(squad.composition) === 0) return prev;
+			// One squad per dungeon. The dispatching squad is idle to have reached
+			// this line, so it never blocks itself.
+			if (dungeonOccupancy(prev.squads).has(dungeonId)) return prev;
 
+			const legTicks = travelLegTicks(def, prev.derived.squadTravelSpeedBonus);
 			return {
 				squads: prev.squads.map((s) =>
 					s.id === squadId
@@ -57,7 +64,8 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 								...s,
 								state: "traveling" as const,
 								targetDungeonId: dungeonId,
-								position: 0,
+								phaseStartTick: prev.meta.tickCount,
+								phaseEndTick: prev.meta.tickCount + legTicks,
 							}
 						: s,
 				),
@@ -67,24 +75,51 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 
 	/**
 	 * Turn a squad around, or — for one already on its way home — mark the trip
-	 * as a recall so auto-deploy leaves it in the crypt on arrival. The loot a
-	 * returning squad carries survives that; only a squad pulled out mid-run
-	 * drops it, since it never finished the dungeon.
+	 * as a recall so auto-deploy leaves it in the crypt. A returning squad keeps
+	 * its loot; one pulled out mid-run never finished the dungeon and drops it.
 	 */
 	recallSquad: (squadId) => {
-		set((prev) => ({
-			squads: prev.squads.map((s) => {
-				if (s.id !== squadId) return s;
-				if (s.state === "idle") return s;
-				if (s.state === "returning") return { ...s, manualRecall: true };
-				return {
-					...s,
-					state: "returning" as const,
-					pendingLoot: null,
-					manualRecall: true,
-				};
-			}),
-		}));
+		// A squad pulled out of a fight abandons it, so its engine is retired here
+		// rather than left to run to a verdict `resolveFight` would then discard.
+		if (get().squads.find((s) => s.id === squadId)?.state === "fighting") {
+			get().removeCombatEngine(squadId);
+		}
+		set((prev) => {
+			const tickCount = prev.meta.tickCount;
+			return {
+				squads: prev.squads.map((s) => {
+					if (s.id !== squadId) return s;
+					if (s.state === "idle") return s;
+					if (s.state === "returning") return { ...s, manualRecall: true };
+
+					const def = s.targetDungeonId
+						? DUNGEON_DEFS[s.targetDungeonId]
+						: undefined;
+					const fullLeg = def
+						? travelLegTicks(def, prev.derived.squadTravelSpeedBonus)
+						: 1;
+					// Turning back costs whatever the squad has already walked. One
+					// pulled out of a fight has walked the whole way there, so it walks
+					// the whole way home.
+					const walked =
+						s.state === "fighting"
+							? fullLeg
+							: Math.min(
+									fullLeg,
+									Math.max(1, tickCount - (s.phaseStartTick ?? tickCount)),
+								);
+
+					return {
+						...s,
+						state: "returning" as const,
+						pendingLoot: null,
+						manualRecall: true,
+						phaseStartTick: tickCount,
+						phaseEndTick: tickCount + walked,
+					};
+				}),
+			};
+		});
 	},
 
 	/**
@@ -139,7 +174,6 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 					roster: { ...composition },
 					targetDungeonId: null,
 					state: "idle" as const,
-					position: 0,
 					pendingLoot: null,
 				},
 			],
@@ -163,51 +197,29 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 
 	resolveFight: (squadId, winner, survivorsByType) => {
 		set((prev) => {
-			const squad = prev.squads.find((s) => s.id === squadId);
-			if (squad?.state !== "fighting") return prev;
+			const current = prev.squads.find((s) => s.id === squadId);
+			if (current?.state !== "fighting") return prev;
+			const dungeonId = current.targetDungeonId;
+			if (!dungeonId || !DUNGEON_DEFS[dungeonId]) return prev;
 
-			const dungeonId = squad.targetDungeonId;
-			if (!dungeonId) return prev;
-			const dungeonState = prev.dungeons.find((d) => d.id === dungeonId);
-			const def = DUNGEON_DEFS[dungeonId];
-			if (!dungeonState || !def) return prev;
+			// `applyFightResolution` is what a finished fight does to the game, and
+			// catchup drives it too; this action only decides *when*.
+			const draft = cloneForAdvance(prev);
+			const squad = draft.squads.find((s) => s.id === squadId);
+			const dungeon = draft.dungeons.find((d) => d.id === dungeonId);
+			if (!squad || !dungeon) return prev;
 
-			// The rules themselves live in `rules/fight.ts`, which offline catchup
-			// calls too — this action only applies the result to store state.
-			const res = resolveFightOutcome(
-				squad.composition,
-				def,
-				dungeonState.clearCount,
+			applyFightResolution(
+				draft,
+				squad,
+				dungeon,
 				{ winner, survivorsByType },
-				prev.derived,
+				prev.meta.tickCount,
 			);
 
-			if (res.kind === "destroyed") {
-				return { squads: prev.squads.filter((s) => s.id !== squadId) };
-			}
-
 			return withDerived(prev, {
-				resources: {
-					...prev.resources,
-					banners: prev.resources.banners + res.bannersAwarded,
-				},
-				squads: prev.squads.map((s) =>
-					s.id === squadId
-						? {
-								...s,
-								state: "returning" as const,
-								position: 1.0,
-								composition: res.composition,
-								pendingLoot: res.loot,
-								manualRecall: res.suppressAutoDeploy,
-							}
-						: s,
-				),
-				dungeons: prev.dungeons.map((ds) =>
-					ds.id === dungeonId
-						? { ...ds, clearCount: ds.clearCount + res.clearCountDelta }
-						: ds,
-				),
+				squads: draft.squads,
+				dungeons: draft.dungeons,
 			});
 		});
 	},

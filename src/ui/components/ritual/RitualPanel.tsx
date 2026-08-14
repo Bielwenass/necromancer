@@ -6,7 +6,7 @@ import {
 } from "../../../game/rules/gacha";
 import { useGameStore } from "../../../game/store";
 import type { PoolId, Relic } from "../../../game/types";
-import { IconBanner, IconCorpse, IconSoul } from "../icons";
+import { resourceMeta } from "../../resources";
 import { DropOddsTable } from "./DropOddsTable";
 import { PityMeter } from "./PityMeter";
 import { PullButton } from "./PullButton";
@@ -55,12 +55,7 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 		}
 	}, [lastPulledRelics, myPullPending]);
 
-	const ResourceIcon =
-		resource === "banners"
-			? IconBanner
-			: resource === "corpses"
-				? IconCorpse
-				: IconSoul;
+	const ResourceIcon = resourceMeta(resource).icon;
 
 	return (
 		<div

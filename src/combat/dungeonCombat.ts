@@ -15,12 +15,9 @@ export const DEFENDER_SPAWN = {
 };
 
 /**
- * A unit type's stats as combat actually uses them: the flat value from the
- * workshop, raised by the percentage bonuses from upgrades and relics.
- *
- * The single source of truth for what a unit is worth in a fight. The
- * Reliquary's stat panel reads it too, so the panel and the engine can't
- * disagree by a point of rounding.
+ * A unit type's stats as combat uses them: the flat value from the workshop,
+ * raised by the percentage bonuses from upgrades and relics. The Reliquary's
+ * stat panel reads it too, so the panel and the engine can't disagree.
  */
 export function effectiveUnitStats(
 	derived: GameState["derived"],
@@ -97,13 +94,12 @@ export function buildAttackerConfig(
 
 /**
  * The dungeon's side of the fight, shared by the live loop, offline catchup and
- * the benchmark so none of them writes the spawn rectangle out by hand.
+ * the benchmark so none writes the spawn rectangle out by hand.
  *
- * The enemy debuff affixes are applied here rather than in the engine, which is
- * what keeps them free of any simulation cost — and identical online and off,
- * since both paths build their defenders through this function. The roster is
- * rebuilt rather than passed through: `def.enemies` belongs to the dungeon
- * table and must not be scaled in place.
+ * Enemy debuff affixes are applied here rather than in the engine, keeping them
+ * free of simulation cost and identical on both paths. The roster is rebuilt
+ * rather than passed through: `def.enemies` belongs to the dungeon table and
+ * must not be scaled in place.
  */
 export function buildDefenderConfig(
 	def: DungeonDef,

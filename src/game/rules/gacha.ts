@@ -11,10 +11,9 @@ import { rarityRank, rollRelic } from "./relics";
 export { POOL_CONFIGS };
 
 /**
- * A pool's drop table as displayed percentages. The weights are relative, so
- * they are normalised here rather than printed raw — they happen to sum to 100
- * in every pool today, and reading them as percentages directly would break
- * silently the first time one didn't.
+ * A pool's drop table as displayed percentages. Weights are relative and
+ * normalised here — they happen to sum to 100 in every pool today, and reading
+ * one as a percentage would break silently the first time it didn't.
  */
 export function poolOdds(poolId: PoolId): { rarity: Rarity; pct: number }[] {
 	const { odds } = POOL_CONFIGS[poolId];
@@ -61,12 +60,9 @@ export function effectivePityInterval(
 }
 
 /**
- * Advance the Phylactery by `ticks` and hand back the new counters.
- *
- * Written to be batch-exact: one call for a thousand ticks lands on the same
- * numbers as a thousand calls for one, which is what lets the live tick and the
- * offline catchup share it. At the cap, progress stops rather than banking a
- * backlog, so a week away is worth the same as a night.
+ * Advance the Phylactery by `ticks` and hand back the new counters. Batch-exact,
+ * which is what lets the live tick and the offline catchup share it. At the cap
+ * progress stops rather than banking a backlog, so a week away is worth a night.
  */
 export function accrueFreePulls(
 	gacha: Pick<GameState["gacha"], "freePulls" | "freePullTicks">,

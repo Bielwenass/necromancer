@@ -1,12 +1,20 @@
 import { UNIT_COLORS } from "../game/data/units";
+import type { UnitType } from "../game/types";
 
 /**
- * The squad colour that stands for a unit type wherever one is shown — dots,
- * chips, reserve rows, and the combat canvas alike. Re-exported from the game
- * layer rather than declared here, because the canvas can't read a CSS variable
- * and a mirrored palette would drift.
+ * The colour standing for a unit type wherever one is shown — dots, chips,
+ * reserve rows and the combat canvas. Re-exported from the game layer rather
+ * than declared here: the canvas can't read a CSS variable, and a mirrored
+ * palette would drift.
  */
 export { UNIT_COLORS };
+
+/** Singular display name for a unit type, for labels and buttons. */
+export const UNIT_LABELS: Record<UnitType, string> = {
+	skeleton: "Skeleton",
+	zombie: "Zombie",
+	wraith: "Wraith",
+};
 
 export const RARITY_COLORS: Record<string, string> = {
 	common: "var(--r-common)",

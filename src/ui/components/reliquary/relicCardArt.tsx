@@ -1,11 +1,18 @@
 import type React from "react";
 import type { Rarity } from "../../../game/types";
 import { rarityName } from "../../theme";
+import {
+	IconRarityCommon,
+	IconRarityEpic,
+	IconRarityLegendary,
+	IconRarityRare,
+	IconRarityUncommon,
+} from "../icons/RarityIcons";
 
 // ── rarity config ────────────────────────────────────────────────
 export type RarityConfig = {
 	label: string;
-	glyph: string;
+	glyph: React.ReactNode;
 	color: string;
 	deep: string;
 	accents: [string, string];
@@ -16,16 +23,15 @@ export type RarityConfig = {
 };
 
 /**
- * The card's own rarity palette. Deliberately *not* `theme.ts`'s
- * `RARITY_COLORS`: those are flat UI accents, while these are the base of a
- * layered foil treatment and carry a deep tone, two accents and a hue set that
- * the rest of the UI has no use for. Changing a rarity's look means changing
- * both.
+ * The card's own rarity palette — not `theme.ts`'s `RARITY_COLORS`, which are
+ * flat UI accents. These are the base of a layered foil treatment and carry a
+ * deep tone, two accents and a hue set the rest of the UI has no use for.
+ * Changing a rarity's look means changing both.
  */
 export const RARITIES: Record<Rarity, RarityConfig> = {
 	common: {
 		label: rarityName("common"),
-		glyph: "♦",
+		glyph: IconRarityCommon({ size: 20, color: "currentColor" }),
 		color: "#a8a39a",
 		deep: "#3a352e",
 		accents: ["#cfc7b8", "#7e7669"],
@@ -36,7 +42,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 	},
 	uncommon: {
 		label: rarityName("uncommon"),
-		glyph: "❖",
+		glyph: IconRarityUncommon({ size: 20, color: "currentColor" }),
 		color: "#8fb78a",
 		deep: "#1f3a26",
 		accents: ["#b6d4a6", "#5a8b66"],
@@ -47,7 +53,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 	},
 	rare: {
 		label: rarityName("rare"),
-		glyph: "⋈",
+		glyph: IconRarityRare({ size: 20, color: "currentColor" }),
 		color: "#7aa6d6",
 		deep: "#15243c",
 		accents: ["#a8c8ef", "#4d75ad"],
@@ -58,7 +64,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 	},
 	epic: {
 		label: rarityName("epic"),
-		glyph: "❉",
+		glyph: IconRarityEpic({ size: 20, color: "currentColor" }),
 		color: "#b083d6",
 		deep: "#2c1a3d",
 		accents: ["#d9b8f0", "#7e54a6"],
@@ -69,7 +75,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 	},
 	legendary: {
 		label: rarityName("legendary"),
-		glyph: "✠",
+		glyph: IconRarityLegendary({ size: 20, color: "currentColor" }),
 		color: "#f3c0a8",
 		deep: "#6a2e1e",
 		accents: ["#ffc099", "#fa8163"],
@@ -95,10 +101,10 @@ export const STAR_ANGLES = [-90, -30, 30, 90, 150, 210];
 
 // Corner brackets: [x, y, rotation].
 export const CARD_CORNERS: [number, number, number][] = [
-	[15, 15, 0],
-	[305, 15, 90],
-	[15, 445, 270],
-	[305, 445, 180],
+	[18, 18, 0],
+	[302, 18, 90],
+	[18, 442, 270],
+	[302, 442, 180],
 ];
 
 // ── foil builders ────────────────────────────────────────────────
@@ -162,7 +168,7 @@ export function CardFrame({ cornerOpacity, children }: CardFrameProps) {
 				rx="10"
 				fill="none"
 				stroke="currentColor"
-				strokeOpacity="0.55"
+				strokeOpacity="0.8"
 				strokeWidth="0.8"
 			/>
 			<rect
@@ -173,17 +179,17 @@ export function CardFrame({ cornerOpacity, children }: CardFrameProps) {
 				rx="7"
 				fill="none"
 				stroke="currentColor"
-				strokeOpacity="0.18"
+				strokeOpacity="0.65"
 				strokeWidth="0.5"
 			/>
 			{CARD_CORNERS.map(([x, y, deg]) => (
 				<g key={`${x}-${y}`} transform={`translate(${x} ${y}) rotate(${deg})`}>
 					<path
-						d="M -8 0 L 0 0 L 0 -8"
+						d="M -12 0 L 0 0 L 0 -12"
 						fill="none"
 						stroke="currentColor"
 						strokeOpacity={cornerOpacity}
-						strokeWidth="0.9"
+						strokeWidth="0.45"
 					/>
 				</g>
 			))}

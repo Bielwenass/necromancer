@@ -31,19 +31,21 @@ longer promise a number the simulation doesn't apply.
 
 One component per file. `src/ui/components/` is split by feature — one folder per screen (`crypt/`, `reliquary/`, `ritual/`, `workshop/`), each holding its components plus the pure builders and helpers only it uses. Two folders are cross-cutting: `common/` for the shared primitives (`Screen`, `Modal`, `ConfirmAction`, `Meter`, `StatRow`, `EmptyState`, `SectionLabel`, `UnitDot`) and `chrome/` for the app frame (`TopBar`, `TabBar`, `ResourceReadout`, `CatchupOverlay`). Check `common/` before hand-rolling a panel, dialog, or confirm.
 
-`src/ui/theme.ts` holds the rarity colour lookups and re-exports `UNIT_COLORS` from `game/data/units.ts` — the canvas can't read a CSS variable, so the unit palette is a single hex table in the game layer. `src/ui/format.ts` holds the number/time formatters.
+`src/ui/theme.ts` holds the rarity colour lookups and re-exports `UNIT_COLORS` from `game/data/units.ts` — the canvas can't read a CSS variable, so the unit palette is a single hex table in the game layer. `src/ui/format.ts` holds the number/time formatters, and `src/ui/resources.ts` the per-resource icon/colour/label table every cost line, plot and readout draws from.
 
-The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup, in `src/combat/benchmark.ts`, and in `src/game/parityCheck.ts`.
+The React-free boundary is load-bearing: it's what lets the simulation run headlessly in offline catchup, in `src/combat/benchmark.ts`, and under `bun test`.
 
 ## Tick pipeline
 
 `useGameLifecycle` is the only driver. Every 100 ms it:
 
 1. Calls `store.tick(TICK_MS)`, whose accumulator drains exact steps through `gameTick(state)`.
-2. Creates a `CombatEngine` for any squad that just entered `fighting`.
-3. Advances live engines in `ENGINE_DT` steps and calls `resolveFight` when one reports a winner.
+2. Advances live engines by one tick of sim time (`stepLiveFights`) and calls `resolveFight` on any that report a winner.
+3. Creates a `CombatEngine` for any squad that just entered `fighting` (`beginLiveFights`) — last, so a new engine's first step lands on the next tick.
 
-`gameTick` (`game/tick.ts`) is pure — `GameState → Partial<GameState>`. It never mutates and never touches the engine. Every constant above is in `game/data/pacing.ts`, which is the sole owner of `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, and `MAX_HEADLESS_TICKS`.
+`gameTick` (`game/tick.ts`) is a thin pacer: it clones the state and calls `advance` (`game/advance.ts`) for a single tick. **`advance` is the simulation**, and offline catchup calls the same function for a whole span at a time — see [systems.md](systems.md#offline-catchup). It mutates only the draft it is handed, never `derived`, and never reads the clock or `Math.random`.
+
+Every constant above is in `game/data/pacing.ts`, which is the sole owner of `TICK_MS`, `TICKS_PER_SECOND`, `ENGINE_DT`, `TICKS_PER_DAY`, `TICKS_PER_AUTOSAVE`, `MAX_OFFLINE_MS`, `CATCHUP_THRESHOLD_MS`, `MAX_FIGHT_MS`, and `MAX_HEADLESS_TICKS` (derived from `MAX_FIGHT_MS`).
 
 ## `derived`
 
@@ -60,7 +62,7 @@ return withDerived(prev, { /* patch */ });
 ```
 resources   bones, souls, dust, corpses, banners
 units       reserve counts per type
-squads      Squad[] — composition, roster, state, position, pendingLoot
+squads      Squad[] — composition, roster, state, phaseStart/EndTick, pendingLoot
 dungeons    DungeonState[] — clearCount, unlocked
 relics      { inventory, equipped }
 upgrades    { purchased }

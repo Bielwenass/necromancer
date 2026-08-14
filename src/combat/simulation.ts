@@ -34,18 +34,40 @@ export function createSimState(): SimState {
 }
 
 /**
- * Record what each side mustered, and whether an aura is in play. Called once,
- * after both sides have spawned: `startCount` is what `lastStand` measures
- * against, and `hasAura` is what keeps a fight with no aura in it querying at
- * exactly the radius it always did.
+ * Record what each side mustered, and whether an aura is in play. Called once
+ * after both sides have spawned.
  */
-export function finalizeSpawn(state: SimState): void {
+export function finalizeSpawn(
+	state: SimState,
+	rand: () => number = Math.random,
+): void {
 	state.startCount = { a: 0, b: 0 };
 	state.hasAura = false;
+	const interval = COMBAT_CONFIG.simulation.attackIntervalMs / 1000;
 	for (const u of state.units) {
 		state.startCount[u.side]++;
 		if (u.mods !== null && u.mods.aura > 0) state.hasAura = true;
+		// Scatter the first swing across one interval, or a whole side swings on
+		// the same tick forever and the fight resolves in visible pulses. Drawn
+		// after `spawnUnits` so spawn layout is unchanged by it.
+		u.swingCooldown = rand() * interval;
 	}
+}
+
+/**
+ * Which side is ahead on the fraction of its muster still standing. Used to call
+ * a fight that has run past `MAX_FIGHT_MS` without either side being wiped out —
+ * a share rather than a raw count, so the smaller force isn't punished for being
+ * the smaller force.
+ */
+export function leadingSide(state: SimState): Side | "draw" {
+	const alive = { a: 0, b: 0 };
+	for (const u of state.units) alive[u.side]++;
+	const fracA = state.startCount.a > 0 ? alive.a / state.startCount.a : 0;
+	const fracB = state.startCount.b > 0 ? alive.b / state.startCount.b : 0;
+	if (fracA > fracB) return "a";
+	if (fracB > fracA) return "b";
+	return "draw";
 }
 
 export function spawnUnits(
@@ -73,6 +95,9 @@ export function spawnUnits(
 				side,
 				mods: unit.mods ?? null,
 				revived: false,
+				// Overwritten with a scattered value by `finalizeSpawn`; set here so
+				// every unit has the same object shape from creation.
+				swingCooldown: 0,
 			});
 		}
 	}
@@ -114,15 +139,11 @@ export function tickSimulation(
 	if (N === 0) return;
 
 	// ── Tunables derived from config ────────────────────────────
-	// Aggregate grid: a unit reads a 3x3 block, so the block spans 3 cells.
-	// Sizing a cell at cohesionRadius makes the block ~3x cohesionRadius wide —
-	// a smooth approximation of "the crowd around me". Tune by eye; smaller =
-	// tighter/more local cohesion, larger = broader blobs.
+	// A unit reads a 3x3 block, so sizing a cell at cohesionRadius makes the
+	// block ~3x that wide — a smooth approximation of "the crowd around me".
 	const aggCell = cfg.cohesionRadius;
-	// Fine hash only needs to cover the largest *short-range* interaction:
-	// separation (sep radius) and combat targeting (attack radius) — plus aura
-	// reach, but only in a fight where something actually has an aura, so the
-	// query stays as cheap as it ever was for everyone else.
+	// The fine hash covers only the short-range interactions: separation, combat
+	// targeting, and aura reach — the last only in a fight that has one.
 	const mcfg = COMBAT_CONFIG.modifiers;
 	const fineRadius = Math.max(
 		cfg.separationRadius,
@@ -141,6 +162,7 @@ export function tickSimulation(
 	const cohWeight = cfg.cohesionWeight;
 	const seekWeight = cfg.seekWeight;
 	const attackR2 = cfg.attackRadius * cfg.attackRadius;
+	const swingInterval = cfg.attackIntervalMs / 1000;
 	const maxAccel = cfg.maxAccel;
 	const maxAccel2 = maxAccel * maxAccel;
 	const speedScale = cfg.speedScale;
@@ -307,9 +329,8 @@ export function tickSimulation(
 			ay += (sSumVy * inv - uvy) * alignWeight;
 		}
 
-		// Seek: toward enemy local COM if any enemies in the block, else toward
-		// the global enemy centroid. Only read when haveSeek is true;
-		// zero-initialized so the hot loop needs no null checks or assertions.
+		// Seek: the enemy local COM if the block holds any, else the global enemy
+		// centroid. Zero-initialized so the hot loop needs no null checks.
 		let seekTx = 0,
 			seekTy = 0,
 			haveSeek = false;
@@ -413,8 +434,20 @@ export function tickSimulation(
 		accX[i] = ax;
 		accY[i] = ay;
 
-		if (nearestEnemy !== null && nearestEnemyDist2 < attackR2) {
-			let dmg = (u.dmg ?? defaultDmg) * dt;
+		// Floored rather than left to run negative: a unit that spent ten seconds
+		// crossing the arena arrives with one blow ready, not ten banked.
+		u.swingCooldown = u.swingCooldown > dt ? u.swingCooldown - dt : 0;
+
+		if (
+			nearestEnemy !== null &&
+			nearestEnemyDist2 < attackR2 &&
+			u.swingCooldown === 0
+		) {
+			// Assigned, not accumulated: accumulating would let a unit bank blows
+			// across a gap in targets. Quantizing every cadence to a whole number of
+			// steps costs well under 2% of nominal DPS.
+			u.swingCooldown = swingInterval;
+			let dmg = (u.dmg ?? defaultDmg) * swingInterval;
 
 			if (mods !== null) {
 				// Every modifier is additive into one multiplier, so stacking two of
@@ -440,10 +473,12 @@ export function tickSimulation(
 				}
 				dmg *= mult;
 
-				// Lifesteal pays out on damage actually dealt, so a unit with nothing
-				// in reach heals for nothing.
+				// Clamped to what the target can absorb, so overkill isn't also a
+				// heal. Approximate: damage other attackers buffered this tick isn't
+				// visible yet, so two units finishing one target both count it.
 				if (mods.lifesteal > 0) {
-					const healed = u.hp + dmg * mods.lifesteal;
+					const landed = dmg < nearestEnemy.hp ? dmg : nearestEnemy.hp;
+					const healed = u.hp + landed * mods.lifesteal;
 					u.hp = healed > u.maxHp ? u.maxHp : healed;
 				}
 			}

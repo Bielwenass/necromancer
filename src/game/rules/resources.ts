@@ -2,29 +2,32 @@ import type { Resources } from "../types";
 
 /**
  * Generic resource-cost helpers. A cost is a `Partial<Resources>` — absent keys
- * mean "free", never "zero required", so callers can list only what they charge.
+ * mean free.
  */
+
+/** Every resource in display order. */
+export const RESOURCE_KEYS = [
+	"bones",
+	"souls",
+	"dust",
+	"corpses",
+	"banners",
+] as const satisfies readonly (keyof Resources)[];
+
+/** A full ledger at zero, for a delta or an empty purse. */
+export function zeroResources(): Resources {
+	return { bones: 0, souls: 0, dust: 0, corpses: 0, banners: 0 };
+}
 
 export function canAffordCost(
 	cost: Partial<Resources>,
 	res: Resources,
 ): boolean {
-	return (
-		(cost.bones ?? 0) <= res.bones &&
-		(cost.souls ?? 0) <= res.souls &&
-		(cost.dust ?? 0) <= res.dust &&
-		(cost.corpses ?? 0) <= res.corpses &&
-		(cost.banners ?? 0) <= res.banners
-	);
+	return RESOURCE_KEYS.every((key) => (cost[key] ?? 0) <= res[key]);
 }
 
 export function applyCost(cost: Partial<Resources>, res: Resources): Resources {
-	return {
-		...res,
-		bones: res.bones - (cost.bones ?? 0),
-		souls: res.souls - (cost.souls ?? 0),
-		dust: res.dust - (cost.dust ?? 0),
-		corpses: res.corpses - (cost.corpses ?? 0),
-		banners: res.banners - (cost.banners ?? 0),
-	};
+	const next = { ...res };
+	for (const key of RESOURCE_KEYS) next[key] -= cost[key] ?? 0;
+	return next;
 }

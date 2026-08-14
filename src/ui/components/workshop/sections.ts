@@ -6,17 +6,25 @@ import {
 	summarizeUpgradeEffects,
 } from "../../../game/rules/describe";
 import { canAffordCost } from "../../../game/rules/resources";
+import { isUnitUnlocked, UNIT_TYPES } from "../../../game/rules/units";
 import {
 	cryptCost,
 	GARDEN_PLOTS,
 	gardenCost,
 	gardenYield,
+	statAtLevel,
 	UNIT_STAT_CONFIG,
 	unitStatCost,
 } from "../../../game/rules/workshop";
-import type { Resources, UnitType, WorkshopState } from "../../../game/types";
-import { IconSkeleton, IconWraith, IconZombie } from "../icons";
-import { resourceMeta } from "./cost";
+import type {
+	GameState,
+	Resources,
+	UnitType,
+	WorkshopState,
+} from "../../../game/types";
+import { resourceMeta } from "../../resources";
+import { UNIT_LABELS } from "../../theme";
+import { UNIT_ICONS } from "../icons";
 import type { WorkshopRow, WorkshopSection } from "./types";
 
 /** A row is done when it has a ceiling and has reached it. */
@@ -30,27 +38,53 @@ function arrange(rows: WorkshopRow[]): WorkshopRow[] {
 }
 
 /** Nodes whose prerequisites are unmet are omitted, not shown as locked. */
-function skillRows(purchased: string[], branch: string): WorkshopRow[] {
+function skillRows(
+	purchased: string[],
+	repeats: Record<string, number>,
+	branch: string,
+): WorkshopRow[] {
 	return UPGRADE_NODES.filter(
 		(n) =>
 			n.branch === branch &&
 			(purchased.includes(n.id) ||
 				n.prerequisites.every((p) => purchased.includes(p))),
-	).map((n) => ({
-		id: n.id,
-		name: n.name,
-		description: summarizeUpgradeEffects(n),
-		flavor: n.flavor,
-		icon: n.icon,
-		level: purchased.includes(n.id) ? 1 : 0,
-		maxLevel: 1,
-		kindLabel: "One-time Upgrade",
-		buyLabel: () => "Inscribe",
-		costFn: (lv) => (lv >= 1 ? null : upgradeCost(n)),
-		valueFn: (lv) => (lv >= 1 ? "Inscribed" : "—"),
-		nextFn: (lv) => (lv >= 1 ? "— maxed —" : summarizeUpgradeEffects(n)),
-		skill: { upgradeId: n.id },
-	}));
+	).map((n) => {
+		const bought = (purchased.includes(n.id) ? 1 : 0) + (repeats[n.id] ?? 0);
+		// A repeatable node has no maxLevel, so it reads as a track that keeps
+		// going rather than a one-off that is finished.
+		if (n.repeatGrowth) {
+			return {
+				id: n.id,
+				name: n.name,
+				description: summarizeUpgradeEffects(n),
+				flavor: n.flavor,
+				icon: n.icon,
+				level: bought,
+				kindLabel: "Repeatable Rite",
+				buyLabel: () => "Perform",
+				costFn: (lv: number) => upgradeCost(n, lv),
+				valueFn: (lv: number) => (lv > 0 ? `×${lv}` : "—"),
+				nextFn: () => summarizeUpgradeEffects(n),
+				skill: { upgradeId: n.id },
+			};
+		}
+		return {
+			id: n.id,
+			name: n.name,
+			description: summarizeUpgradeEffects(n),
+			flavor: n.flavor,
+			icon: n.icon,
+			level: bought,
+			maxLevel: 1,
+			kindLabel: "One-time Upgrade",
+			buyLabel: () => "Inscribe",
+			costFn: (lv: number) => (lv >= 1 ? null : upgradeCost(n)),
+			valueFn: (lv: number) => (lv >= 1 ? "Inscribed" : "—"),
+			nextFn: (lv: number) =>
+				lv >= 1 ? "— maxed —" : summarizeUpgradeEffects(n),
+			skill: { upgradeId: n.id },
+		};
+	});
 }
 
 const UNIT_FLAVOR: Record<UnitType, Record<"hp" | "dmg" | "speed", string>> = {
@@ -75,6 +109,9 @@ function unitRows(
 	unit: UnitType,
 	levels: { hp: number; dmg: number; speed: number },
 ): WorkshopRow[] {
+	/** Stat curves are geometric, so a raw value is rarely a whole number. */
+	const formatStat = (n: number) =>
+		n >= 100 ? String(Math.round(n)) : n.toFixed(n >= 10 ? 1 : 2);
 	const cfg = UNIT_STAT_CONFIG[unit];
 	return (["hp", "dmg", "speed"] as const).map((stat) => {
 		const c = cfg[stat];
@@ -82,13 +119,13 @@ function unitRows(
 		return {
 			id: `${unit}.${stat}`,
 			name: `${unit.charAt(0).toUpperCase() + unit.slice(1)} ${c.label}`,
-			description: `+${c.perLevel} ${c.label} per level (base ${c.base})`,
+			description: `+${((c.statGrowth - 1) * 100).toFixed(1)}% ${c.label} per level (base ${c.base})`,
 			flavor: UNIT_FLAVOR[unit][stat],
 			icon: stat === "hp" ? "heal" : stat === "dmg" ? "aggro" : "fast",
 			level: lv,
 			costFn: () => unitStatCost(unit, stat, lv),
-			valueFn: (l) => `${c.base + l * c.perLevel}`,
-			nextFn: (l) => `${c.base + (l + 1) * c.perLevel}`,
+			valueFn: (l) => formatStat(statAtLevel(c, l)),
+			nextFn: (l) => formatStat(statAtLevel(c, l + 1)),
 		};
 	});
 }
@@ -146,11 +183,28 @@ function gardenRows(garden: WorkshopState["garden"]): WorkshopRow[] {
 	});
 }
 
+/** One levelled-stat section per unit type, locked until that type is unlocked. */
+function unitSections(
+	ws: WorkshopState,
+	derived: GameState["derived"],
+): WorkshopSection[] {
+	return UNIT_TYPES.map((type) => ({
+		id: `${type}s`,
+		name: `${UNIT_LABELS[type]}s`,
+		subtitle: `Leveled stat upgrades for ${type}s.`,
+		icon: UNIT_ICONS[type],
+		unlocked: isUnitUnlocked(type, derived),
+		lockedTitle: `${UNIT_LABELS[type]}s Locked`,
+		lockedBody: "Unlock via Summoning branch.",
+		rows: unitRows(type, ws[type]),
+	}));
+}
+
 export function buildSections(
 	purchased: string[],
+	repeats: Record<string, number>,
 	ws: WorkshopState,
-	zombiesUnlocked: boolean,
-	wraithsUnlocked: boolean,
+	derived: GameState["derived"],
 ): WorkshopSection[] {
 	return [
 		{
@@ -159,7 +213,7 @@ export function buildSections(
 			subtitle: "One-time summon enhancements.",
 			icon: "army",
 			unlocked: true,
-			rows: arrange(skillRows(purchased, "summoning")),
+			rows: arrange(skillRows(purchased, repeats, "summoning")),
 		},
 		{
 			id: "command",
@@ -167,7 +221,7 @@ export function buildSections(
 			subtitle: "One-time battlefield enhancements.",
 			icon: "auto",
 			unlocked: true,
-			rows: arrange(skillRows(purchased, "command")),
+			rows: arrange(skillRows(purchased, repeats, "command")),
 		},
 		{
 			id: "necromancy",
@@ -175,36 +229,9 @@ export function buildSections(
 			subtitle: "One-time dark arts enhancements.",
 			icon: "soul",
 			unlocked: true,
-			rows: arrange(skillRows(purchased, "necromancy")),
+			rows: arrange(skillRows(purchased, repeats, "necromancy")),
 		},
-		{
-			id: "skeletons",
-			name: "Skeletons",
-			subtitle: "Leveled stat upgrades for skeletons.",
-			icon: IconSkeleton,
-			unlocked: true,
-			rows: unitRows("skeleton", ws.skeleton),
-		},
-		{
-			id: "zombies",
-			name: "Zombies",
-			subtitle: "Leveled stat upgrades for zombies.",
-			icon: IconZombie,
-			unlocked: zombiesUnlocked,
-			lockedTitle: "Zombies Locked",
-			lockedBody: "Unlock via Summoning branch.",
-			rows: unitRows("zombie", ws.zombie),
-		},
-		{
-			id: "wraiths",
-			name: "Wraiths",
-			subtitle: "Leveled stat upgrades for wraiths.",
-			icon: IconWraith,
-			unlocked: wraithsUnlocked,
-			lockedTitle: "Wraiths Locked",
-			lockedBody: "Unlock via Summoning branch.",
-			rows: unitRows("wraith", ws.wraith),
-		},
+		...unitSections(ws, derived),
 		{
 			id: "crypt",
 			name: "Crypt",

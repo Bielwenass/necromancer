@@ -11,19 +11,22 @@ interface TabBarProps {
 const TABS: {
 	id: TabId;
 	label: string;
-	/** The number key that jumps to this tab. `App` routes from this field. */
-	k: string;
+	shortcutKey: string;
 	Icon: IconComponent;
 }[] = [
-	{ id: "crypt", label: "Crypt", k: "1", Icon: IconCrypt },
-	{ id: "reliquary", label: "Reliquary", k: "2", Icon: IconReliquary },
-	{ id: "ritual", label: "Ritual", k: "3", Icon: IconRitual },
-	{ id: "workshop", label: "Workshop", k: "4", Icon: IconWorkshop },
+	{ id: "crypt", label: "Crypt", shortcutKey: "1", Icon: IconCrypt },
+	{
+		id: "reliquary",
+		label: "Reliquary",
+		shortcutKey: "2",
+		Icon: IconReliquary,
+	},
+	{ id: "ritual", label: "Ritual", shortcutKey: "3", Icon: IconRitual },
+	{ id: "workshop", label: "Workshop", shortcutKey: "4", Icon: IconWorkshop },
 ];
 
-/** Keyboard shortcut → tab, derived from `TABS` so the two can't disagree. */
 export const TAB_KEYS: Record<string, TabId> = Object.fromEntries(
-	TABS.map((t) => [t.k, t.id]),
+	TABS.map((t) => [t.shortcutKey, t.id]),
 );
 
 export function TabBar({ active, onTabChange }: TabBarProps) {
@@ -35,17 +38,15 @@ export function TabBar({ active, onTabChange }: TabBarProps) {
 					<button
 						type="button"
 						key={t.id}
-						className={`tab${isActive ? " active" : ""}`}
+						className={`tab ${isActive ? " active" : ""}`}
 						onClick={() => onTabChange(t.id)}
 					>
 						<t.Icon
 							size={24}
 							color={isActive ? "var(--c-coin)" : "var(--ink-muted)"}
 						/>
-						<span className="text-lg max-md:text-[9px] max-md:tracking-normal">
-							{t.label}
-						</span>
-						<span className="key max-md:hidden">{t.k}</span>
+						<span className="text-lg max-md:text-xs/normal">{t.label}</span>
+						<span className="key max-md:hidden">{t.shortcutKey}</span>
 					</button>
 				);
 			})}

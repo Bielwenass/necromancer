@@ -1,14 +1,20 @@
-import type { Resources, UnitType } from "../types";
+import type { DerivedFlagKey, Resources, UnitType } from "../types";
 
 /** Canonical unit order. Squad compositions are keyed by exactly these. */
 export const UNIT_TYPES = ["skeleton", "zombie", "wraith"] as const;
 
+/** The `derived` flag that opens each unit type; skeletons start open. */
+export const UNIT_UNLOCK_FLAG: Record<UnitType, DerivedFlagKey | null> = {
+	skeleton: null,
+	zombie: "zombiesUnlocked",
+	wraith: "wraithsUnlocked",
+};
+
 /**
- * The colour a unit type is drawn in, everywhere it is drawn — squad dots,
- * filter chips, reserve rows, and the combat canvas alike.
- *
- * The combat canvas can't read a CSS variable, so the hex lives here and
- * `ui/theme.ts` re-exports it. Never mirror these into CSS.
+ * The colour a unit type is drawn in everywhere — squad dots, filter chips,
+ * reserve rows and the combat canvas alike. The canvas can't read a CSS
+ * variable, so the hex lives here and `ui/theme.ts` re-exports it. Never mirror
+ * these into CSS.
  */
 export const UNIT_COLORS: Record<UnitType, string> = {
 	skeleton: "#e8dcc0",
@@ -17,9 +23,8 @@ export const UNIT_COLORS: Record<UnitType, string> = {
 };
 
 /**
- * Units that reform after a fight however it went. A wraith is bound spirit
- * rather than flesh: scattering it costs it nothing it cannot gather back, so
- * it comes home at full count from a clear *and* from a wipe.
+ * Units that reform after a fight however it went — bound spirit rather than
+ * flesh, so they come home at full count from a clear *and* from a wipe.
  */
 export const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>([
 	"wraith",
@@ -27,39 +32,84 @@ export const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>([
 
 /**
  * Per-unit workshop tracks. `baseBones` × `growth^level` is the price curve,
- * `perLevel` is what a level adds to the stat, and `base` is the stat at level
- * zero — the flat value combat starts from before any percentage bonus.
+ * `base` is the stat at level zero, and `statGrowth` is what a level multiplies
+ * it by.
+ *
+ * Both curves are geometric on purpose. A flat gain against a compounding price
+ * makes a stat grow as the *logarithm* of bones spent, which cannot keep pace
+ * with a compounding dungeon ladder. Two geometric curves make it a power of
+ * bones spent instead, at exponent `ln(statGrowth) / ln(growth)`.
+ *
+ * Keep `statGrowth` below `growth`, or a track pays for itself and the workshop
+ * becomes the only purchase worth making. Speed is deliberately near-flat: it
+ * decides engagement rather than attrition, and compounds badly.
  */
 export const UNIT_STAT_CONFIG = {
 	skeleton: {
-		hp: { baseBones: 50, growth: 1.22, perLevel: 2, label: "HP", base: 10 },
-		dmg: { baseBones: 80, growth: 1.25, perLevel: 1, label: "DMG", base: 4 },
+		hp: {
+			baseBones: 50,
+			growth: 1.22,
+			statGrowth: 1.07,
+			label: "HP",
+			base: 40,
+		},
+		dmg: {
+			baseBones: 80,
+			growth: 1.25,
+			statGrowth: 1.07,
+			label: "DMG",
+			base: 4,
+		},
 		speed: {
 			baseBones: 200,
 			growth: 1.3,
-			perLevel: 0.05,
+			statGrowth: 1.015,
 			label: "Speed",
 			base: 1.0,
 		},
 	},
 	zombie: {
-		hp: { baseBones: 120, growth: 1.22, perLevel: 4, label: "HP", base: 24 },
-		dmg: { baseBones: 100, growth: 1.25, perLevel: 0.5, label: "DMG", base: 3 },
+		hp: {
+			baseBones: 120,
+			growth: 1.22,
+			statGrowth: 1.075,
+			label: "HP",
+			base: 96,
+		},
+		dmg: {
+			baseBones: 100,
+			growth: 1.25,
+			statGrowth: 1.062,
+			label: "DMG",
+			base: 3,
+		},
 		speed: {
 			baseBones: 300,
 			growth: 1.3,
-			perLevel: 0.04,
+			statGrowth: 1.012,
 			label: "Speed",
 			base: 0.6,
 		},
 	},
 	wraith: {
-		hp: { baseBones: 80, growth: 1.24, perLevel: 1, label: "HP", base: 6 },
-		dmg: { baseBones: 150, growth: 1.25, perLevel: 2, label: "DMG", base: 8 },
+		hp: {
+			baseBones: 80,
+			growth: 1.24,
+			statGrowth: 1.06,
+			label: "HP",
+			base: 24,
+		},
+		dmg: {
+			baseBones: 150,
+			growth: 1.25,
+			statGrowth: 1.08,
+			label: "DMG",
+			base: 8,
+		},
 		speed: {
 			baseBones: 400,
 			growth: 1.3,
-			perLevel: 0.07,
+			statGrowth: 1.018,
 			label: "Speed",
 			base: 1.5,
 		},

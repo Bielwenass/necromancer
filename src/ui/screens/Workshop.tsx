@@ -17,22 +17,17 @@ interface WorkshopProps {
 
 export function Workshop({ onTabChange }: WorkshopProps) {
 	const purchased = useGameStore((s) => s.upgrades.purchased);
+	const repeats = useGameStore((s) => s.upgrades.repeats);
 	const ws = useGameStore((s) => s.workshop);
 	const resources = useGameStore((s) => s.resources);
-	const zombiesUnlocked = useGameStore((s) => s.derived.zombiesUnlocked);
-	const wraithsUnlocked = useGameStore((s) => s.derived.wraithsUnlocked);
+	const derived = useGameStore((s) => s.derived);
 	const purchaseUpgrade = useGameStore((s) => s.purchaseUpgrade);
 	const levelUpWorkshop = useGameStore((s) => s.levelUpWorkshop);
 
 	const [activeId, setActiveId] = useState("summoning");
 	const [pinnedId, setPinnedId] = useState<string | null>(null);
 
-	const sections = buildSections(
-		purchased,
-		ws,
-		zombiesUnlocked,
-		wraithsUnlocked,
-	);
+	const sections = buildSections(purchased, repeats ?? {}, ws, derived);
 	const active = sections.find((s) => s.id === activeId) ?? sections[0];
 
 	// A pin from another section — or one whose row vanished — falls back to the

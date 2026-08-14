@@ -10,7 +10,7 @@ import type { DungeonDef, DungeonState, Squad } from "../../../game/types";
 import { formatSeconds, formatTime } from "../../format";
 import { IconBone, IconCorpse, IconSoul } from "../icons";
 import { DungeonLootStat } from "./DungeonLootStat";
-import { SQUAD_STATE_GLYPH, squadColor, tierDecoration } from "./squadDisplay";
+import { SQUAD_STATE_GLYPH, squadColor, TIER_DECORATION } from "./squadDisplay";
 
 /** A payout figure: whole numbers past 10, one decimal below it. */
 function formatAmount(n: number): string {
@@ -37,38 +37,37 @@ export function DungeonCard({
 	ds,
 	squads,
 	travelTicks,
+	tickCount,
 	loot,
 	onDispatch,
 }: {
 	def: DungeonDef;
 	ds: DungeonState;
 	squads: Squad[];
-	/** Travel duration after upgrades — see effectiveTravelTicks. */
+	/** One leg of the trip after upgrades — see travelLegTicks. */
 	travelTicks: number;
+	/** Now, in game ticks. The squad's ETA is the gap to its phase deadline. */
+	tickCount: number;
 	/** Payout after clear and yield bonuses — see projectLoot. */
 	loot: ProjectedLoot;
 	onDispatch: (id: string) => void;
 }) {
-	const fightingSquad = squads.find(
-		(s) => s.targetDungeonId === def.id && s.state === "fighting",
+	// Only one squad may hold a dungeon, so at most one can match — see
+	// `dungeonOccupancy`. Its presence is exactly what makes the card unavailable.
+	const activeSquad = squads.find(
+		(s) => s.targetDungeonId === def.id && s.state !== "idle",
 	);
-	const travelingSquad = squads.find(
-		(s) => s.targetDungeonId === def.id && s.state === "traveling",
-	);
-	const returningSquad = squads.find(
-		(s) => s.targetDungeonId === def.id && s.state === "returning",
-	);
-	const activeSquad = fightingSquad ?? travelingSquad ?? returningSquad;
 
 	const locked = !ds.unlocked;
+	const held = activeSquad !== undefined;
 	const totalUnits = activeSquad ? squadSize(activeSquad.composition) : 0;
 
 	const remaining = activeSquad
-		? squadRemainingTicks(activeSquad, travelTicks)
+		? squadRemainingTicks(activeSquad, tickCount)
 		: null;
 	const eta = remaining === null ? null : formatTime(remaining);
 
-	const tierDec = tierDecoration(def.tier);
+	const tierDec = TIER_DECORATION[def.tier];
 
 	// `projectLoot` reports the clear multiplier and each yield ratio alongside
 	// the figures, so the tooltip names the breakdown without re-deriving the
@@ -83,9 +82,9 @@ export function DungeonCard({
 	return (
 		<button
 			type="button"
-			onClick={() => !locked && onDispatch(def.id)}
+			onClick={() => !locked && !held && onDispatch(def.id)}
 			className={`relative block w-full text-left h-[140px] shrink-0 border-b border-rule overflow-hidden max-md:h-auto
-        ${locked ? "opacity-[0.55] cursor-default" : "cursor-pointer"}`}
+        ${locked ? "opacity-[0.55] cursor-default" : held ? "cursor-default" : "cursor-pointer"}`}
 		>
 			<div className="relative px-8 h-full flex items-center gap-7 max-md:h-auto max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-5 max-md:py-4">
 				{/* Tier badge — border/text color are dynamic */}

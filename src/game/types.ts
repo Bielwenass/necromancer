@@ -29,8 +29,8 @@ export interface Relic {
 	minorAffixes: Affix[];
 	/**
 	 * The base's signature power, present only when the relic rolled at or above
-	 * the rarity that affix demands. This is the only way a gated affix reaches a
-	 * relic — they are filtered out of every minor pool.
+	 * the rarity that affix demands. The only route to a gated affix, which every
+	 * minor pool filters out.
 	 */
 	uniqueAffix?: Affix;
 	upgradeLevel: number; // 0-5
@@ -48,13 +48,11 @@ export interface RelicBase {
 	mainAffixRange: [number, number];
 	minorAffixPool: string[];
 	/**
-	 * The affix this base awakens at high rarity. Its `minRarity` decides which
-	 * rarities get it, so the gate lives with the affix rather than being
-	 * restated per base.
+	 * The affix this base awakens at high rarity. Its own `minRarity` decides
+	 * which rarities get it, so the gate isn't restated per base.
 	 */
 	signatureAffixId?: string;
 	glyph: string;
-	set?: string;
 	description: string;
 }
 
@@ -99,17 +97,6 @@ export type DerivedFlagKey =
 	| "phylactery";
 
 /**
- * Where an effect that `recomputeDerived` can't apply actually lives. An effect
- * the combat engine owns, or one that isn't built yet, still has to declare
- * itself, so the data tables stay auditable on their own.
- */
-export type ElsewhereEffect = {
-	kind: "elsewhere";
-	where: "combat" | "tick" | "gacha" | "unimplemented";
-	note: string;
-};
-
-/**
  * A fixed effect declared by an upgrade node. `pctOfSelf` raises a stat by a
  * share of its own running value, which is how a percentage squad-size bonus
  * has to work.
@@ -128,16 +115,14 @@ export type UpgradeEffect =
 			value: number;
 	  }
 	| { kind: "flag"; flag: DerivedFlagKey }
-	| { kind: "slot"; slot: SlotId }
-	| ElsewhereEffect;
+	| { kind: "slot"; slot: SlotId };
 
 /**
- * Where a relic affix's *rolled* value lands. Unlike an upgrade effect, the
- * magnitude isn't in the data — it comes off the roll — so this declares only
- * the target. Affix values are percentages, converted to a decimal before
- * being applied; `scale` multiplies that decimal, which is what makes a
- * trade-off affix possible: one roll, a positive effect at full scale and a
- * negative one at a fraction of it.
+ * Where a relic affix's *rolled* value lands — only the target, since the
+ * magnitude comes off the roll. Affix values are percentages converted to a
+ * decimal; `scale` multiplies that decimal, which is what makes a trade-off
+ * affix possible: one roll, a positive effect at full scale and a negative one
+ * at a fraction of it.
  */
 export type AffixEffect =
 	| {
@@ -151,8 +136,7 @@ export type AffixEffect =
 			units: readonly UnitType[];
 			stat: UnitStatKey;
 			scale?: number;
-	  }
-	| ElsewhereEffect;
+	  };
 
 export type CombatOutcome = {
 	winner: "a" | "b" | "draw";
@@ -170,10 +154,18 @@ export interface Squad {
 	roster: Record<UnitType, number>;
 	targetDungeonId: string | null;
 	state: SquadState;
-	position: number; // 0-1 along route
+	/**
+	 * The current phase's bounds, in absolute `meta.tickCount`. Both absent for an
+	 * idle squad; `phaseEndTick` is also absent while `fighting`, since a fight
+	 * ends when it is decided rather than on a clock.
+	 *
+	 * Deadlines rather than a 0-1 fraction so "which squads transition at tick T"
+	 * has one answer. UI travel progress is derived from these.
+	 */
+	phaseStartTick?: number;
+	phaseEndTick?: number;
 	pendingLoot: Partial<Resources> | null;
 	fightSeed?: number;
-	fightStartWallTime?: number;
 	manualRecall?: boolean;
 }
 
@@ -183,22 +175,6 @@ export type EnemyDef = {
 	color: string;
 	stats: { hp: number; dmg: number; speed: number };
 };
-
-/**
- * What opens a dungeon. This is the *live* gate: `checkUnlockConditions`
- * evaluates it and `describeUnlock` renders the sentence the player reads, so
- * the two can't disagree. `clears` requires every entry; `allOfTier` requires
- * `count` clears of every tier-N dungeon outside `except`.
- */
-export type UnlockRule =
-	| { kind: "always" }
-	| { kind: "clears"; requires: { dungeonId: string; count: number }[] }
-	| {
-			kind: "allOfTier";
-			tier: 1 | 2 | 3 | 4;
-			except?: string[];
-			count: number;
-	  };
 
 export interface DungeonDef {
 	id: string;
@@ -211,8 +187,7 @@ export interface DungeonDef {
 		soulChance: number;
 	};
 	travelTimeTicks: number;
-	unlock: UnlockRule;
-	kind: "ruin" | "tower" | "skull";
+	unlockCondition: { dungeonId: string; count: number }[];
 }
 
 export interface DungeonState {
@@ -226,37 +201,27 @@ export interface UpgradeNode {
 	branch: "summoning" | "command" | "necromancy";
 	name: string;
 	/**
-	 * Qualitative colour only — what the node is *for*. The mechanical line the
-	 * player reads is generated from `effects` by `describeUpgradeEffects`, so
-	 * magnitudes must never be restated here.
+	 * Qualitative flavour only — the mechanical line is generated from `effects`
+	 * by `describeUpgradeEffects`, so magnitudes must never be restated here.
 	 */
 	description?: string;
 	flavor?: string;
 	tier: number;
-	/**
-	 * Priced like every other purchase in the game. Most nodes charge banners
-	 * alone; the two that open a new unit type also charge the resource that unit
-	 * will be summoned with, so the tree can't outrun the economy feeding it.
-	 */
 	cost: Partial<Resources>;
-	/** Every node carries at least one, `elsewhere` included. */
 	effects: UpgradeEffect[];
-	/**
-	 * Ids that must already be purchased. The only edge the tree has — a node
-	 * with an unmet prerequisite is omitted from its branch rather than drawn
-	 * locked, so a prerequisite naming a *different* branch's node reads as a
-	 * node that simply isn't there. Reach across branches by charging that
-	 * branch's resource in `cost` instead.
-	 */
+
+	// Ids that must already be purchased.
 	prerequisites: string[];
 	icon: string;
 	capstone?: boolean;
+	/**
+	 * Present on a node that can be bought over and over, its price multiplied by
+	 * this each time and its effects applied once per purchase.
+	 */
+	repeatGrowth?: number;
 }
 
-/**
- * A garden plot is identified by the resource that buys it. Banners are
- * excluded because they are earned by clearing dungeons, not farmed.
- */
+/** A garden plot is identified by the resource that buys it. */
 export type GardenPlotId = Exclude<keyof Resources, "banners">;
 
 export interface Resources {
@@ -264,11 +229,6 @@ export interface Resources {
 	souls: number;
 	dust: number;
 	corpses: number;
-	/**
-	 * Awarded per dungeon clear (`def.tier` of them) and spent on upgrade-tree
-	 * nodes. A normal resource in every respect — stored in `resources`, charged
-	 * through `canAffordCost`/`applyCost`, priced in a `Partial<Resources>`.
-	 */
 	banners: number;
 }
 
@@ -281,20 +241,14 @@ export interface WorkshopState {
 	garden: Record<GardenPlotId, number>;
 }
 
-export interface Units {
-	skeletons: number;
-	zombies: number;
-	wraiths: number;
-}
+export type Units = Record<UnitType, number>;
 
 /**
- * Everything a unit type is worth in a fight.
- *
- * The first six are the stat line: a flat value from the workshop, raised by a
- * percentage from upgrades and relics. The rest are *combat modifiers* — the
- * simulation reads them per unit and they do nothing outside a fight. Every one
- * is a fraction; zero means "this unit doesn't have it", which is the common
- * case and the one the hot loop is optimised for.
+ * Everything a unit type is worth in a fight. The first six are the stat line —
+ * a flat value from the workshop raised by a percentage from upgrades and
+ * relics. The rest are *combat modifiers*, read per unit by the simulation and
+ * inert outside a fight. Each is a fraction, and zero — "this unit doesn't have
+ * it" — is the common case the hot loop is optimised for.
  */
 export interface UnitDerivedStats {
 	hpFlat: number;
@@ -337,6 +291,8 @@ export interface GameState {
 	};
 	upgrades: {
 		purchased: string[];
+		/** Times each `repeatGrowth` node has been bought, past the first. */
+		repeats?: Record<string, number>;
 	};
 	gacha: {
 		pityCounters: Record<PoolId, number>;
@@ -354,14 +310,12 @@ export interface GameState {
 	};
 	derived: {
 		bonesPerTick: number;
-		soulsPerTick: number;
 		boneYieldBonus: number;
 		/** Added to the souls banked per drop, rather than to the drop chance. */
 		soulsYieldBonus: number;
 		/**
-		 * From the `corpseYield` affix and the Resurrection upgrade. Multiplies
-		 * corpses on loot deposit, like the other yield bonuses — the per-kill drop
-		 * chance itself is flat.
+		 * Multiplies corpses on deposit like the other yield bonuses; the per-kill
+		 * drop chance itself is flat.
 		 */
 		corpseYieldBonus: number;
 		maxSquadSize: number;
@@ -369,9 +323,8 @@ export interface GameState {
 		zombiesUnlocked: boolean;
 		wraithsUnlocked: boolean;
 		/**
-		 * Whether a clear drops the resource at all. Both start closed: the early
-		 * tree is what opens the corpse and soul economies, so a new necromancer
-		 * banks bones and banners and nothing else.
+		 * Whether a clear drops the resource at all. Both start closed — the early
+		 * tree opens them, so a new necromancer banks bones and banners only.
 		 */
 		corpsesUnlocked: boolean;
 		soulsUnlocked: boolean;

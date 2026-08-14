@@ -1,17 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import {
-	buildAttackerConfig,
-	buildDefenderConfig,
-	COMBAT_H,
-	COMBAT_W,
-} from "../combat/dungeonCombat";
-import { CombatEngine } from "../combat/engine";
+import type { CombatEngine } from "../combat/engine";
 import { type CatchupStats, simulateOffline } from "./catchupOffline";
-import { DUNGEON_DEFS } from "./data/dungeons";
-import { CATCHUP_THRESHOLD_MS, ENGINE_DT, TICK_MS } from "./data/pacing";
+import { CATCHUP_THRESHOLD_MS, TICK_MS } from "./data/pacing";
+import { beginLiveFights, stepLiveFights } from "./liveFights";
 import { recomputeDerived } from "./rules/derived";
-import { saveGame } from "./save";
+import { zeroResources } from "./rules/resources";
+import { PERSISTED_KEYS, saveGame } from "./save";
 import { useGameStore } from "./store";
+import type { GameState } from "./types";
 
 export interface CatchupState {
 	progress: number;
@@ -34,55 +30,25 @@ export function useGameLifecycle(): {
 				// 1. Advance game tick (the accumulator drains exact TICK_MS steps)
 				useGameStore.getState().tick(TICK_MS);
 
-				// 2. Create engines for squads that just entered fighting state
-				const stateAfterTick = useGameStore.getState();
-				for (const squad of stateAfterTick.squads) {
-					if (
-						squad.state === "fighting" &&
-						squad.fightSeed !== undefined &&
-						squad.targetDungeonId &&
-						!stateAfterTick.combatEngines.has(squad.id)
-					) {
-						const def = DUNGEON_DEFS[squad.targetDungeonId];
-						if (!def) continue;
-						const engine = new CombatEngine({
-							width: COMBAT_W,
-							height: COMBAT_H,
-							seed: squad.fightSeed,
-						});
-						engine.setSide(
-							"a",
-							buildAttackerConfig(squad.composition, stateAfterTick.derived),
-						);
-						engine.setSide(
-							"b",
-							buildDefenderConfig(def, stateAfterTick.derived),
-						);
-						engine.start();
-						stateAfterTick.addCombatEngine(squad.id, engine);
-					}
-				}
-
-				// 3. Advance all active engines and resolve any finished fights
+				// 2. Advance the running engines and resolve any finished fights
 				const { combatEngines, derived, resolveFight, removeCombatEngine } =
 					useGameStore.getState();
-				const simMs = TICK_MS * derived.combatSpeedMultiplier;
+				for (const f of stepLiveFights(
+					combatEngines,
+					derived.combatSpeedMultiplier,
+				)) {
+					resolveFight(f.squadId, f.winner, f.survivorsByType);
+					removeCombatEngine(f.squadId);
+				}
 
-				for (const [squadId, engine] of combatEngines) {
-					let remaining = simMs;
-					while (remaining >= ENGINE_DT && engine.getWinner() === null) {
-						engine.tick(ENGINE_DT);
-						remaining -= ENGINE_DT;
-					}
-					if (remaining > 0 && engine.getWinner() === null) {
-						engine.tick(remaining);
-					}
-					const winner = engine.getWinner();
-					if (winner !== null) {
-						const survivorsByType = engine.getCounts().a;
-						resolveFight(squadId, winner, survivorsByType);
-						removeCombatEngine(squadId);
-					}
+				// 3. Start engines for squads that just entered fighting. Last, so a
+				// new fight's first step falls on the next tick — see beginLiveFights.
+				const current = useGameStore.getState();
+				for (const [squadId, engine] of beginLiveFights(
+					current,
+					current.combatEngines,
+				)) {
+					current.addCombatEngine(squadId, engine);
 				}
 			}, TICK_MS);
 		}
@@ -103,8 +69,7 @@ export function useGameLifecycle(): {
 			const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
 			const emptyStats: CatchupStats = {
 				eventsProcessed: 0,
-				bonesGained: 0,
-				soulsGained: 0,
+				gained: zeroResources(),
 			};
 			let lastStats: CatchupStats = emptyStats;
 			let overlayShown = false;
@@ -116,10 +81,10 @@ export function useGameLifecycle(): {
 					onProgress: showOverlay
 						? (cursor, target, stats) => {
 								if (stats) lastStats = stats;
+								// Gains alone, not events: an absence that only banked passive
+								// income is still worth reporting.
 								const hasActivity =
-									!!stats &&
-									stats.eventsProcessed > 0 &&
-									(stats.bonesGained > 0 || stats.soulsGained > 0);
+									!!stats && Object.values(stats.gained).some((v) => v > 0);
 								if (hasActivity) {
 									overlayShown = true;
 									setCatchup({
@@ -133,16 +98,24 @@ export function useGameLifecycle(): {
 				},
 			);
 
-			const recomputed = recomputeDerived(rawResult);
+			// Every persisted slice, not a hand-picked few: catchup advances gacha
+			// and meta too, and a slice left behind is reverted by the next autosave.
+			const patch: Partial<GameState> = {
+				derived: recomputeDerived(rawResult),
+			};
+			for (const key of PERSISTED_KEYS) {
+				Object.assign(patch, { [key]: rawResult[key] });
+			}
+			// The window catchup just paid for ends now. Leaving the pre-catchup
+			// stamp on disk would credit the same absence twice if the tab closed
+			// before the first live tick.
+			patch.meta = { ...rawResult.meta, lastTickAt: Date.now() };
+
 			useGameStore.setState({
-				resources: rawResult.resources,
-				squads: rawResult.squads,
-				dungeons: rawResult.dungeons,
-				meta: rawResult.meta,
-				derived: recomputed,
+				...patch,
 				combatEngines: new Map<string, CombatEngine>(),
 			});
-			saveGame({ ...rawResult, derived: recomputed });
+			saveGame({ ...rawResult, ...patch });
 
 			if (showOverlay && overlayShown) {
 				setCatchup((prev) => (prev ? { ...prev, done: true } : null));

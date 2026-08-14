@@ -51,6 +51,12 @@ export type SimUnit = {
 	mods: UnitMods | null;
 	/** Set once a `revive` mod has brought this unit back. */
 	revived: boolean;
+	/**
+	 * Seconds until this unit may swing again, floored at 0. Seeded to a random
+	 * fraction of one interval by `finalizeSpawn` so a side doesn't strike in
+	 * lockstep.
+	 */
+	swingCooldown: number;
 };
 
 // Death flash particle

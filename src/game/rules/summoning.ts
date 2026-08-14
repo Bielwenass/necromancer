@@ -1,5 +1,4 @@
 import { SUMMON_COSTS, SUMMON_SCALING_K, UNSCALED_COSTS } from "../data/units";
-import { UNIT_POOL } from "../slices/helpers";
 import type { GameState, Resources, UnitType } from "../types";
 
 /**
@@ -23,7 +22,7 @@ export function ownedUnitCount(
 ): number {
 	return state.squads.reduce(
 		(n, squad) => n + squad.composition[type],
-		state.units[UNIT_POOL[type]],
+		state.units[type],
 	);
 }
 
@@ -64,13 +63,4 @@ export function summonCost(
 		cost[key] = total;
 	}
 	return cost;
-}
-
-export function isUnitUnlocked(
-	type: UnitType,
-	derived: GameState["derived"],
-): boolean {
-	if (type === "zombie") return derived.zombiesUnlocked;
-	if (type === "wraith") return derived.wraithsUnlocked;
-	return true;
 }

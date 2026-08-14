@@ -6,7 +6,7 @@ Definitions live in `game/data/relics.ts` (`RELIC_BASES`, `AFFIX_DEFS`); rolling
 
 ## Anatomy
 
-A relic instance = a **base** + a **rarity** + one rolled **main affix** + 0–3 rolled **minor affixes** + an optional **signature affix**, plus a derived `quality` and an `upgradeLevel` (0–5).
+A relic instance = a **base** + a **rarity** + one rolled **main affix** + 0–2 rolled **minor affixes** + an optional **signature affix**, plus a derived `quality` and an `upgradeLevel` (0–5). Three affixes is the ceiling, so a card can be read at a glance.
 
 The base determines which slots accept it, its main affix id and range, its glyph, and the pool its minors are drawn from. 22 bases across four slot families:
 
@@ -19,7 +19,7 @@ The base determines which slots accept it, its main affix id and range, its glyp
 
 ## Rolling
 
-Minor affix count by rarity: common 0, uncommon 1, rare 2, epic 3, legendary 3.
+Minor affix count by rarity: common 0, uncommon 1, rare 1, epic 2, legendary 2. A base's signature displaces a minor rather than adding a row, so three affixes is the ceiling at every rarity.
 
 Each affix rolls a position and interpolates its range:
 
@@ -30,11 +30,11 @@ value = min + (max - min) × pos
 
 Because the rarity boost is added to a 0–1 roll, **`pos` can exceed 1 and values can exceed the range maximum** — that is the intended payoff for high rarities, not a bug.
 
-Minors are drawn without replacement from the base's pool. If a drawn minor matches the base's main affix id, its value is folded into the main affix instead of being added as a separate line. `quality` is the mean of all roll positions × 100.
+Minors are drawn without replacement from the base's pool. A drawn minor matching the base's main affix id folds into the main affix instead of taking its own line — deliberate variance, and the only way a relic ends up exceptional at one stat, so a rolled main value may legitimately exceed `mainAffixRange`. `quality` is the mean of all roll positions × 100, signature included.
 
 ### Signatures and rarity gating
 
-An affix with a `minRarity` is **gated**: it is filtered out of every minor pool, and the only route to one is a base that names it as `signatureAffixId`. When such a relic rolls at or above that rarity it gets the affix outright, into `relic.uniqueAffix`, on top of its normal minors.
+An affix with a `minRarity` is **gated**: it is filtered out of every minor pool, and the only route to one is a base that names it as `signatureAffixId`. When such a relic rolls at or above that rarity it gets the affix outright, into `relic.uniqueAffix`, in place of one of its minors.
 
 | Base | Signature | Gate | Effect |
 |---|---|---|---|
@@ -43,6 +43,7 @@ An affix with a `minRarity` is **gated**: it is filtered out of every minor pool
 | Plague Stone | Bloodfeast | legendary | zombie lifesteal |
 | Rot Censer | Death Aura | epic | zombies damage every enemy in reach |
 | Ghost Cinder | Vanguard Drums | epic | wraith damage in the opening seconds |
+| Mourner's Veil | Second Death | legendary | wraiths revive once, at a share of max HP |
 
 This is what makes a legendary of a particular base worth chasing over a better-rolled common one, and it is the only place the strongest effects live.
 
@@ -54,13 +55,13 @@ This is what makes a legendary of a particular base worth chasing over a better-
 value = rolled × (1 + upgradeLevel × 0.1) / 100
 ```
 
-Each effect then lands that value on a `derived` scalar (`global`), a per-unit stat (`unit`), or nothing (`elsewhere`). `scale` multiplies it per effect, which is what makes **trade-off affixes** possible: one roll, a positive effect at full scale and a negative one at a fraction of it. Reckless Rites, Gravebound, Brittle Edge, Frenzied Rot and Hollow Vessel are built this way, and `formatAffixValue` prints both halves (`+24% / −12%`) so a card can't advertise only the upside.
+Each effect then lands that value on a `derived` scalar (`global`) or a per-unit stat (`unit`). `scale` multiplies it per effect, which is what makes **trade-off affixes** possible: one roll, a positive effect at full scale and a negative one at a fraction of it. Reckless Rites, Gravebound, Brittle Edge, Frenzied Rot and Hollow Vessel are built this way, and `formatAffixValue` prints both halves (`+24% / −12%`) so a card can't advertise only the upside.
 
 `scale` also carries the one flat affix: Dread Command rolls a `1` and scales by 100 to undo the percentage conversion.
 
 Hovering an affix row on a relic card opens a tooltip built by `describeAffixEffects` (`rules/describe.ts`), which walks the same `effects` array and names the stat each half lands on, followed by the affix's `description`. It rounds each magnitude the way `formatAffixValue` prints it, so the tooltip and the stat row above it can't disagree.
 
-**No affix is unimplemented.** Combat-facing affixes land on the combat modifier fields of `UnitDerivedStats` (`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`, `executioner`, `spectral`, `lastStand`), which the simulation reads per unit — see [combat.md](combat.md#modifiers). The two enemy debuffs (`enemyHpPenalty`, `enemyDmgPenalty`) are applied in `buildDefenderConfig`, outside the engine entirely.
+Combat-facing affixes land on the combat modifier fields of `UnitDerivedStats` (`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`, `executioner`, `spectral`, `lastStand`), which the simulation reads per unit — see [combat.md](combat.md#modifiers). The two enemy debuffs (`enemyHpPenalty`, `enemyDmgPenalty`) are applied in `buildDefenderConfig`, outside the engine entirely.
 
 ## Sacrifice
 
@@ -82,5 +83,4 @@ Saves predating the guard may still hold a relic in a slot its base doesn't list
 
 ## Known gaps
 
-- **Sets don't exist.** No base sets `set:`, so `RelicBase.set` and `RelicCard`'s set label never render anything.
-- **Duplicates aren't merged.** Every pull pushes a new inventory entry; `duplicateCount` is never incremented, so `InvCard`'s `×n` badge and `RelicDetail`'s `n/5 DUPES` pip row are permanently stuck at zero.
+- **Duplicates aren't merged.** `duplicateCount` is never incremented, so `InvCard`'s `×n` badge and `RelicDetail`'s `n/5 DUPES` pip row are permanently stuck at zero.

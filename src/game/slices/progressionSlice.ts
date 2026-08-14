@@ -1,11 +1,13 @@
 import { DIG_BONE_YIELD } from "../data/economy";
 import {
 	canPurchaseUpgrade,
+	upgradeTimesBought as timesBought,
 	UPGRADE_NODES,
 	upgradeCost,
 } from "../rules/derived";
 import { applyCost, canAffordCost } from "../rules/resources";
-import { isUnitUnlocked, summonCost } from "../rules/summoning";
+import { summonCost } from "../rules/summoning";
+import { isUnitUnlocked } from "../rules/units";
 import {
 	type CryptKey,
 	cryptCost,
@@ -33,9 +35,24 @@ export const createProgressionSlice: SliceCreator<ProgressionSlice> = (
 			const node = UPGRADE_NODES.find((n) => n.id === nodeId);
 			if (!node) return prev;
 
+			const bought = timesBought(prev, nodeId);
+			const upgrades =
+				bought === 0
+					? {
+							...prev.upgrades,
+							purchased: [...prev.upgrades.purchased, nodeId],
+						}
+					: {
+							...prev.upgrades,
+							repeats: {
+								...prev.upgrades.repeats,
+								[nodeId]: (prev.upgrades.repeats?.[nodeId] ?? 0) + 1,
+							},
+						};
+
 			return withDerived(prev, {
-				resources: applyCost(upgradeCost(node), prev.resources),
-				upgrades: { purchased: [...prev.upgrades.purchased, nodeId] },
+				resources: applyCost(upgradeCost(node, bought), prev.resources),
+				upgrades,
 			});
 		});
 	},

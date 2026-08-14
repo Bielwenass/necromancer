@@ -1,4 +1,3 @@
-import { BANNERS_PER_TIER } from "../data/economy";
 import type {
 	CombatOutcome,
 	DungeonDef,
@@ -23,24 +22,18 @@ export interface FightResolution {
 	kind: "cleared" | "retreat" | "destroyed";
 	composition: Record<UnitType, number>;
 	loot: Partial<Resources> | null;
-	bannersAwarded: number;
-	clearCountDelta: number;
 	/**
-	 * True when the squad should be treated as manually recalled. A wiped
-	 * squad's remnant sets this so auto-deploy doesn't march it straight back
-	 * into the fight that just killed everyone else.
+	 * Treat the squad as manually recalled. A wiped squad's remnant sets this so
+	 * auto-deploy doesn't march it back into the fight that killed everyone else.
 	 */
 	suppressAutoDeploy: boolean;
 }
 
 /**
- * Losses that claw their way home as skeletons, one independent roll per unit
- * lost. Resolved out here rather than in the engine: a unit that dies mid-fight
- * is genuinely gone from the battle, and only walks back out of the tomb once
- * the fighting stops.
- *
- * Capped at the squad's own size limit, since the returning squad has to be a
- * legal one.
+ * Losses that claw their way home as skeletons, one roll per unit lost. Out here
+ * rather than in the engine: a unit that dies mid-fight is gone from the battle
+ * and only walks back out once the fighting stops. Capped at the squad's size
+ * limit, since the returning squad has to be a legal one.
  */
 function reanimated(
 	before: Record<UnitType, number>,
@@ -65,11 +58,8 @@ function reanimated(
 }
 
 /**
- * The rules for turning a combat result into game state — shared verbatim by
- * the live store action and the offline catchup.
- *
- * `rand` is threaded through to `generateLoot` and the reanimation rolls: the
- * live path leaves it at `Math.random`, catchup passes a seeded generator.
+ * Turning a combat result into game state, shared verbatim by both paths. `rand`
+ * is threaded through to `generateLoot` and the reanimation rolls.
  */
 export function resolveFightOutcome(
 	before: Record<UnitType, number>,
@@ -89,8 +79,6 @@ export function resolveFightOutcome(
 				kind: "destroyed",
 				composition: remnant,
 				loot: null,
-				bannersAwarded: 0,
-				clearCountDelta: 0,
 				suppressAutoDeploy: true,
 			};
 		}
@@ -98,8 +86,6 @@ export function resolveFightOutcome(
 			kind: "retreat",
 			composition: remnant,
 			loot: null,
-			bannersAwarded: 0,
-			clearCountDelta: 0,
 			suppressAutoDeploy: true,
 		};
 	}
@@ -107,17 +93,10 @@ export function resolveFightOutcome(
 	const composition = compositionAfterFight(before, outcome.survivorsByType);
 	composition.skeleton += reanimated(before, composition, derived, rand);
 
-	// The bonus banner is rolled after the loot so that adding it can't shift the
-	// loot roll of an existing seed.
-	const loot = generateLoot(def.id, clearCount, derived, rand);
-	const bonusBanner = rand() < derived.bannerChanceBonus ? 1 : 0;
-
 	return {
 		kind: "cleared",
 		composition,
-		loot,
-		bannersAwarded: def.tier * BANNERS_PER_TIER + bonusBanner,
-		clearCountDelta: 1,
+		loot: generateLoot(def.id, clearCount, derived, rand),
 		suppressAutoDeploy: false,
 	};
 }

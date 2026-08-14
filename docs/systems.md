@@ -14,7 +14,7 @@ Every number lives in `src/game/data/` (combat feel excepted — that is `src/co
 
 **The corpse and soul economies are gated.** A new necromancer's clears pay bones and banners and nothing else. `generateLoot` skips the corpse and soul rolls entirely until `derived.corpsesUnlocked` / `soulsUnlocked` are set, by the Grave Harvest and Soul Snare nodes; `projectLoot` projects zero to match, and the Crypt card and top bar simply don't quote a locked line. Both gates sit early in the necromancy branch, and the unit that spends each resource is priced in it — so neither unit can be unlocked before the economy feeding it exists.
 
-Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / TICKS_PER_SECOND × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it — Bone Garden and Apotheosis. `soulsPerTick` is structurally present but always 0.
+Passive income is **garden-only**: `bonesPerTick = (Σ plot baseYield × level) / TICKS_PER_SECOND × bonesPassiveMult`. There is no flat base rate. `bonesPassiveMult` is the product of the upgrades that multiply it — Bone Garden and Apotheosis.
 
 `GARDEN_PLOTS` holds four plots. All of them grow **bones**; they differ in the resource that buys them — a plot's id *is* that resource (`garden.souls`), it is unlocked and upgraded for `baseCost × growth^level` of it, and `workshop.garden` is keyed the same way. Scarcer currencies buy a higher `baseYield`, which is what gives souls, dust, and corpses a bones-side sink.
 
@@ -36,7 +36,8 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
                                                                undying return empty-handed)
 ```
 
-- Travel: `position += 1 / effectiveTravelTicks(def, derived.squadTravelSpeedBonus)` per tick, and the mirror of that on the way back. `rules/travel.ts` owns that formula (`travelTimeTicks / (1 + bonus)`) and is the single source the live tick, the offline catchup, and the Crypt timers all read — so ETAs and the "Ns travel" label show the upgraded duration, not the base one.
+- Travel: a squad carries `phaseStartTick` and `phaseEndTick`, absolute ticks, and arrives when `meta.tickCount` reaches the deadline. `travelLegTicks` (`rules/travel.ts`) owns the formula — `ceil(travelTimeTicks / (1 + bonus))`, floored at one — and is the single source the live tick, the offline catchup and the Crypt timers all read, so ETAs and the "Ns travel" label show the upgraded duration. Deadlines rather than a 0-1 fraction because "which squads transition at tick T" then has one answer both paths can ask; a leg already in flight keeps its deadline, so a travel-speed upgrade applies from the next one.
+- A `fighting` squad has no `phaseEndTick`: a fight ends when it is decided, not on a clock. Nothing may record a fight as decided-but-unapplied, which is what makes a save taken mid-fight safe.
 - On return, `pendingLoot` is deposited with yield bonuses applied, then unlock conditions are re-checked.
 - With Standing Orders (`c1`), a returning squad re-dispatches to the same dungeon unless the player recalled it manually (`manualRecall`). Recalling a squad that is *already* returning only sets that flag — it keeps its `pendingLoot`, since it finished the run; a squad pulled out of travel or a fight drops it.
 - Each squad remembers the strength it was raised at in `roster`. `replenishSquad` drafts the shortfall back out of the reserves — idle squads only, capped by the pool and by `maxSquadSize`, and partial when the reserves are short. `replenishDelta` (`rules/units.ts`) computes it and the Crypt reads the same function for the `REFILL ×N` button. Nothing else writes `roster`, so reanimated units above it are a bonus rather than a new baseline.
@@ -47,9 +48,9 @@ idle ──dispatch──► traveling ──arrive──► fighting ──engi
 
 15 dungeons across 4 tiers, defined in `game/data/dungeons.ts`. Each has an enemy roster, a loot table, and a travel time; there is no HP pool or cooldown.
 
-Unlocks are **data**: each def carries an `unlock` rule — `always`, `clears` (every listed dungeon, N times each), or `allOfTier`. `checkUnlockConditions` (`rules/unlocks.ts`) evaluates it generically and `describeUnlock` (`rules/describe.ts`) renders the sentence the player reads, so the gate and its description cannot disagree.
+Unlocks are **data**: each def carries an `unlock` rule — (every listed dungeon, N times each). `checkUnlockConditions` (`rules/unlocks.ts`) evaluates it generically and `describeUnlock` (`rules/describe.ts`) renders the sentence the player reads, so the gate and its description cannot disagree.
 
-Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount) × 0.07 × (1 + clearMultBonus)`, from `clearMultiplier` (`rules/loot.ts`), which the live roll, the catchup roll, and the UI all call. The Tomb Robber affix feeds `clearMultBonus`, steepening the curve rather than shifting it — so it pays nothing on a dungeon's first clear. Clearing awards `tier` banners, plus one more on a `bannerChanceBonus` roll.
+Repeat clears scale loot: `clearBonus = 1 + sqrt(clearCount) × 0.07 × (1 + clearMultBonus)`, from `clearMultiplier` (`rules/loot.ts`), which the live roll, the catchup roll, and the UI all call. The Tomb Robber affix feeds `clearMultBonus`, steepening the curve rather than shifting it — so it pays nothing on a dungeon's first clear. Banners drop out of the same `generateLoot` roll as everything else — `tier` per clear plus one on a `bannerChanceBonus` roll — and travel home in `pendingLoot`. `depositLoot` banks every resource in a haul, each scaled by its own yield bonus; banners and dust have none.
 
 **Corpses are not in the loot table.** They come off the kill count: every felled enemy rolls `CORPSE_DROP_CHANCE` (`data/economy.ts`) independently, so a dungeon's corpse yield is a function of its roster size, and `clearBonus` deliberately does not touch it. A win means side B is at zero, so the roll runs over the dungeon's whole roster (`dungeonEnemyCount`).
 
@@ -73,30 +74,23 @@ Three pools in `POOL_CONFIGS` (`data/gacha.ts`) — Banner (banners), Carrion (c
 
 The Dark Pact node feeds `derived.pityReduction`, and every read of an interval goes through `effectivePityInterval(poolId, reduction)` — the roll and the `PityMeter` both, so the bar can't promise a threshold the roll doesn't use. It floors at 1.
 
-The Phylactery node grants free **banner-pool ×1** pulls: `accrueFreePulls` banks one per `FREE_PULL_INTERVAL_TICKS` up to `FREE_PULL_CAP`, and progress stops at the cap rather than banking a backlog. It is written to be batch-exact — one call for a thousand ticks lands where a thousand calls for one do — which is what lets the live tick and the offline catchup share it, and `parityCheck` asserts that equality directly. Charges are never spent on a ×10. Renaming a pool id therefore orphans the saved counters for it — `buildHydratedState` merges `pityCounters` over the defaults so the new ids start at zero rather than `undefined`, which is what the `bone`/`soul` → `banner`/`carrion` rename relied on. Weights are relative and normalised at roll time; the UI reads displayed percentages through `poolOdds()` rather than treating a weight as a percentage. See [relics.md](relics.md) for what a pull produces.
+The Phylactery node grants free **banner-pool ×1** pulls: `accrueFreePulls` banks one per `FREE_PULL_INTERVAL_TICKS` up to `FREE_PULL_CAP`, and progress stops at the cap rather than banking a backlog. It is written to be batch-exact — one call for a thousand ticks lands where a thousand calls for one do — which is what lets the live tick and the offline catchup share it, and `rules/gacha.test.ts` asserts that equality directly. Charges are never spent on a ×10. Renaming a pool id therefore orphans the saved counters for it — `buildHydratedState` merges `pityCounters` over the defaults so the new ids start at zero rather than `undefined`, which is what the `bone`/`soul` → `banner`/`carrion` rename relied on. Weights are relative and normalised at roll time; the UI reads displayed percentages through `poolOdds()` rather than treating a weight as a percentage. See [relics.md](relics.md) for what a pull produces.
 
 ## Offline catchup
 
-`game/catchupOffline.ts` re-simulates up to 8 hours of absence by jumping between squad events on a min-heap instead of stepping ticks, resolving fights headlessly with a seeded engine.
+`game/catchupOffline.ts` re-simulates up to 8 hours of absence. It does not have its own state machine: it calls `advance` (`game/advance.ts`), the same function the live tick calls, and differs **only in pacing** — where the live tick asks for one tick, catchup asks for the whole span to the next `nextDeadline`. Nothing paid across a span varies within it (passive income is linear, free pulls are exact over any span, and unlocks turn only on clear counts, which change only at the events themselves), so a jump lands exactly where stepping would have.
 
-The two paths differ in **sequencing only** — 100 ms steps versus jumps between events — and share every rule through `rules/`:
+The one thing that genuinely differs is **who decides a fight is over**, and it is the whole of the `FightDriver` interface. Offline (`HeadlessFights`) runs the battle to completion on arrival, so it knows the end tick up front; live the player is watching, and `squadSlice.resolveFight` applies the verdict when the engine reports one. Both then call the same `applyFightResolution`.
 
-| Rule | Both paths call |
-|---|---|
-| Loot roll | `generateLoot`, with catchup passing a seeded `rand` |
-| Loot deposit | `depositLoot` |
-| Passive income | `accruePassive` |
-| Travel speed | `effectiveTravelTicks` |
-| Auto-deploy | `shouldAutoDeploy` |
-| Fight outcome, banners, wipes, reanimation | `resolveFightOutcome` |
-| Unlocks | `checkUnlockConditions` |
-| Free Ritual pulls | `accrueFreePulls` (catchup batches the whole window) |
+That asymmetry is not a choice: a 100v100 fight is about a second of blocking JS and a 250v250 nearly four, so the live path cannot resolve one up front without freezing the tab.
 
-Add a rule to `rules/` and call it from both sides rather than writing it twice — the hand-mirrored copies this table used to list are exactly what drifted.
+Add a rule to `rules/` — or a transition to `advance` — and both sides get it. Never write it twice.
 
-Two intentional deviations from house style live in `catchupOffline.ts`: it mutates its own cloned working state for speed, and it uses seeded `mulberry32` rather than `Math.random`. Keep both.
+Three intentional deviations from house style live in the catchup path. It mutates its own cloned working state for speed. It resolves fights headlessly rather than watching them. And `HeadlessFights` caches a fight's result per `dungeonId|composition`, deliberately omitting the `clearCount` the seed includes — reuse is bounded to lossless wins, where everyone survives whatever the seed and only the duration is borrowed, and without it a farmed dungeon would re-simulate every clear and an 8h window would cost minutes. `simulateOffline` takes `fightCache: false` to turn it off. Keep all three.
 
-`src/game/parityCheck.ts` (`bunx tsx src/game/parityCheck.ts`) is the guard. It asserts catchup's determinism, exact live/offline agreement over a fight-free window, structural agreement over a fight window, and the fight rule's own branches. Resource totals can't be compared directly across a fight window — the live path is deliberately non-deterministic.
+`src/game/parity.test.ts` (`bun test parity`) is the guard, and it drives the shipped code rather than a copy of it. Because every seed is derived from persisted state, it asserts **whole-state equality** between the two paths across a fight window, not a tolerance — plus catchup's determinism, the split property (an offline window followed by a live one equals one straight run), and that a window ending mid-fight banks nothing early. The rules it leans on are covered beside them, in `rules/*.test.ts`; shared fixtures live in `src/game/testing/scenario.ts`.
+
+Two things still cannot be exact, by construction: time beyond `MAX_OFFLINE_MS` is forfeited, and a fight straddling the window boundary is restarted rather than resumed, since the engine's state is not in `GameState`. The state stays consistent — no double loot, no double clear — the fight just costs its duration again.
 
 ## Upgrade tree
 
@@ -108,13 +102,10 @@ Three branches, 6 tiers each, ending in a capstone. Each owns a question: **summ
 | `unit` | one stat across the listed unit types |
 | `flag` | a boolean in `derived` |
 | `slot` | opens a relic slot |
-| `elsewhere` | nothing here — combat owns it, or it isn't built |
 
 `recomputeDerived` folds them with one applier, so **there is no per-node code to forget**: a node with no effect is a type error, not a silent no-op. Relic affixes carry the same shape in `AFFIX_DEFS` (`data/relics.ts`), except that the magnitude comes from the roll rather than the data.
 
-**No node is unimplemented.** Every declared effect is read somewhere.
-
-Costs are a `Partial<Resources>`, priced through the same `canAffordCost`/`applyCost` as every other purchase, and climb roughly threefold per tier — a tier-1 node is a handful of clears, a capstone is a campaign.
+Costs are a `Partial<Resources>`, priced through the same `canAffordCost`/`applyCost` as every other purchase, and climb steeply per tier — a tier-1 node is a handful of clears, a capstone is a campaign. The board totals ~23,500 banners, sized so the finite tree completes late in tier 4 rather than on day one. One node carries `repeatGrowth` and can be bought over and over, its price multiplied each time: the tree is finite and a long run is not, so without it banners would stop being worth earning.
 
 Two ordering rules keep the tree honest:
 

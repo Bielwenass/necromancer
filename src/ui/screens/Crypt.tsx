@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { COMBAT_CONFIG } from "../../combat/config";
 import { DUNGEON_DEFS } from "../../game/data/dungeons";
 import { projectLoot, shouldAutoDeploy } from "../../game/rules/loot";
-import {
-	effectiveTravelTicks,
-	squadRemainingTicks,
-} from "../../game/rules/travel";
+import { dungeonOccupancy } from "../../game/rules/squads";
+import { squadRemainingTicks, travelLegTicks } from "../../game/rules/travel";
 import { replenishDelta, squadSize } from "../../game/rules/units";
 import { useGameStore } from "../../game/store";
 import type { DungeonDef } from "../../game/types";
@@ -25,6 +23,7 @@ interface CryptProps {
 
 export function Crypt({ onTabChange }: CryptProps) {
 	const squads = useGameStore((s) => s.squads);
+	const meta = useGameStore((s) => s.meta);
 	const dungeons = useGameStore((s) => s.dungeons);
 	const units = useGameStore((s) => s.units);
 	const derived = useGameStore((s) => s.derived);
@@ -96,10 +95,8 @@ export function Crypt({ onTabChange }: CryptProps) {
 							def={def}
 							ds={ds}
 							squads={squads}
-							travelTicks={effectiveTravelTicks(
-								def,
-								derived.squadTravelSpeedBonus,
-							)}
+							travelTicks={travelLegTicks(def, derived.squadTravelSpeedBonus)}
+							tickCount={meta.tickCount}
 							loot={projectLoot(def, ds.clearCount, derived)}
 							onDispatch={(id) => setDispatchTarget(id)}
 						/>
@@ -156,11 +153,6 @@ export function Crypt({ onTabChange }: CryptProps) {
 							const def = squad.targetDungeonId
 								? (DUNGEON_DEFS[squad.targetDungeonId] ?? null)
 								: null;
-							// A squad with no target is idle, and `squadRemainingTicks`
-							// returns null for an idle squad whatever it is handed.
-							const travelTicks = def
-								? effectiveTravelTicks(def, derived.squadTravelSpeedBonus)
-								: 0;
 							const dungeonState = dungeons.find(
 								(d) => d.id === squad.targetDungeonId,
 							);
@@ -169,12 +161,20 @@ export function Crypt({ onTabChange }: CryptProps) {
 									key={squad.id}
 									squad={squad}
 									def={def}
-									remainingTicks={squadRemainingTicks(squad, travelTicks)}
+									remainingTicks={squadRemainingTicks(squad, meta.tickCount)}
 									index={i}
 									refillCount={squadSize(
 										replenishDelta(squad, units, derived.maxSquadSize),
 									)}
-									willRedeploy={shouldAutoDeploy(derived, squad, dungeonState)}
+									willRedeploy={shouldAutoDeploy(
+										derived,
+										squad,
+										dungeonState,
+										// This squad is still holding its own target while it walks
+										// home, so it has to be excluded or it would read as
+										// blocked by itself.
+										dungeonOccupancy(squads, squad.id),
+									)}
 									onDisband={() => deleteSquad(squad.id)}
 									onRecall={() => recallSquad(squad.id)}
 									onReplenish={() => replenishSquad(squad.id)}

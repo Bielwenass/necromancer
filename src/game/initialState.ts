@@ -44,13 +44,13 @@ function buildInitialState(): GameState {
 
 /**
  * Build the state the store starts from. A save is spread over the defaults, so
- * top-level state fields added since the save was written get their default for
- * free. That does *not* hold inside a nested object — a saved `resources` or
- * `gacha` replaces the default wholesale — so every key added to one of those
- * needs a line here, the way `freePulls` does below.
+ * top-level fields added since it was written get their default for free. That
+ * does *not* hold inside a nested object — a saved `resources` or `gacha`
+ * replaces the default wholesale — so every key added to one needs a line here,
+ * the way `freePulls` does below.
  *
- * Only saves at the current `SAVE_VERSION` reach this: a bump rejects older ones
- * outright, which is what keeps this free of migration code.
+ * Only saves at the current `SAVE_VERSION` reach this, which is what keeps it
+ * free of migration code.
  */
 export function buildHydratedState(): GameState {
 	const saved = loadGame();

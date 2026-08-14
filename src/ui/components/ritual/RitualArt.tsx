@@ -1,10 +1,7 @@
 /**
- * The highlight artwork on a ritual panel.
- *
- * The source PNGs are white line art on transparency, so only their alpha
- * carries the drawing. Rendering them through a CSS mask over a solid fill
- * tints the art to the pool accent exactly, instead of leaving three white
- * plates in an otherwise warm palette.
+ * The highlight artwork on a ritual panel. The source PNGs are white line art
+ * on transparency, so only their alpha carries the drawing; rendering them
+ * through a CSS mask over a solid fill tints the art to the pool accent.
  */
 export function RitualArt({ src, color }: { src: string; color: string }) {
 	return (
@@ -14,8 +11,8 @@ export function RitualArt({ src, color }: { src: string; color: string }) {
 			style={{
 				background: color,
 				// Runtime values: the imported asset URL and the pool accent.
-				// Autoprefixer only sees the stylesheet, so the inline mask
-				// carries its own -webkit- spelling for older Safari.
+				// Autoprefixer only sees the stylesheet, so the inline mask carries
+				// its own -webkit- spelling for older Safari.
 				WebkitMaskImage: `url(${src})`,
 				maskImage: `url(${src})`,
 			}}

@@ -15,18 +15,20 @@ Combat is a boids-style particle simulation, and it **decides** dungeon outcomes
 
 ## How a fight resolves
 
-1. A travelling squad reaches position 1 in `gameTick`; state becomes `fighting` and a `fightSeed` is drawn.
-2. `useGameLifecycle` sees the state change and builds a `CombatEngine`, side `a` from `buildAttackerConfig(squad.composition, derived)` and side `b` from `buildDefenderConfig(DUNGEON_DEFS[id], derived)`.
-3. The engine advances in 16 ms steps each 100 ms game tick, scaled by `derived.combatSpeedMultiplier`. It is stored in `store.combatEngines`, keyed by squad id.
-4. When `getWinner()` is non-null, `store.resolveFight` applies it: on a win, survivor counts become the squad's new composition, loot is generated, `clearCount` increments, the squad returns, and the dungeon's `tier` is awarded as banners. On a loss or draw the squad is removed entirely — the offline catchup does the same.
+1. A travelling squad reaches its `phaseEndTick` in `advance`; state becomes `fighting` and `fightSeed` is *derived* from `dungeonId | composition | clearCount`.
+2. `beginLiveFights` (`game/liveFights.ts`) builds a `CombatEngine` from that seed, side `a` from `buildAttackerConfig(squad.composition, derived)` and side `b` from `buildDefenderConfig(DUNGEON_DEFS[id], derived)`. It is stored in `store.combatEngines`, keyed by squad id.
+3. `stepLiveFights` advances every engine by one game tick of sim time, scaled by `derived.combatSpeedMultiplier`. It runs *before* `beginLiveFights` each tick, so a new engine takes its first step on the tick after the one that started it — which is what makes a watched fight last exactly the `durationTicks` a headless run reports.
+4. When `getWinner()` is non-null, `store.resolveFight` hands it to `applyFightResolution` (`game/advance.ts`): on a win, survivor counts become the squad's new composition, loot is generated, `clearCount` increments, and the squad walks the haul home. On a loss or draw the squad is removed entirely. Offline catchup calls the very same function.
 
-There is no fight timer and no dungeon HP pool — the simulation runs in real time and its result *is* the outcome.
+The simulation runs in real time and its result *is* the outcome. There is a fight timer: past `MAX_FIGHT_MS` the engine calls the fight itself, for whichever side holds the larger share of its starting muster (`leadingSide`). Both the live loop and the catchup inherit it, so no squad can be stranded in `fighting`.
 
-`CombatWindow` renders whichever engine belongs to its squad. Once the fight leaves the store it keeps ticking that engine locally, restarting it every 1.5 s, purely as looping visuals. It must never feed back into game state.
+`CombatWindow` renders whichever engine belongs to its squad. Once the fight leaves the store it keeps ticking that engine locally, restarting it after `rendering.replayRestartDelayMs`, purely as looping visuals. It must never feed back into game state.
 
 ## Unit stats
 
-Attacker stats come entirely from `derived`, as `flat * (1 + bonus)` per unit type, where `flat` is the workshop base plus per-level gains from `UNIT_STAT_CONFIG` and `bonus` accumulates upgrades and relic affixes. Enemy stats are literal values on each dungeon's `enemies` array. Both live in code, not here — see `game/data/units.ts` and `game/data/dungeons.ts`.
+Attacker stats come entirely from `derived`, as `flat * (1 + bonus)` per unit type, where `flat` is `base × statGrowth^level` from `UNIT_STAT_CONFIG` and `bonus` accumulates upgrades and relic affixes.
+
+Damage is dealt in discrete blows: a unit strikes its nearest target in reach every `attackIntervalMs` for `dmg × interval`, rather than `dmg × dt` every tick. Average DPS is identical — `dmg` is still a per-second rate — but the overkill on a blow that outsizes its victim is wasted, so a squad that has outgrown a dungeon stops deleting it instantly and settles at one kill per unit per interval. Enemy stats are literal values on each dungeon's `enemies` array. Both live in code, not here — see `game/data/units.ts` and `game/data/dungeons.ts`.
 
 Two things are folded in *outside* the engine, in `dungeonCombat.ts`, because both are knowable before the first tick and so cost the simulation nothing:
 
@@ -51,11 +53,13 @@ Beyond the stat line, a unit type carries up to ten **combat modifiers** — the
 
 Every damage modifier is additive into a single multiplier, so stacking two can't compound the way multiplying them would.
 
-`aura` is the only one with a real cost: it widens the fine-query radius to `auraRadius`. That happens **only** when `finalizeSpawn` saw an aura (`SimState.hasAura`), so a fight without one queries at exactly the radius it always did. The benchmark measures all three cases at 500v500 — currently 2.09 ms/tick with no modifiers, 2.39 with the in-loop ones, 3.19 with an aura (neighbours 25.9 → 53.6).
+`aura` is the only one with a real cost: it widens the fine-query radius to `auraRadius`. That happens **only** when `finalizeSpawn` saw an aura (`SimState.hasAura`), so a fight without one queries at exactly the radius it always did. The benchmark measures all three cases at 500v500 — currently 3.54 ms/tick with no modifiers, 3.97 with the in-loop ones, 6.02 with an aura (neighbours 15.6 → 50.6).
 
 ## Determinism
 
-The engine takes an optional `seed`; with one it uses `mulberry32`, otherwise `Math.random`. Live fights seed from `squad.fightSeed`. Offline catchup derives its seed from `squadId|dungeonId|clearCount` so a mid-window refresh reproduces identical results.
+The engine takes an optional `seed`; with one it uses `mulberry32`, otherwise `Math.random`. Both paths seed from the same pure functions in `rules/seeds.ts` — the fight from `dungeonId | composition | clearCount`, the loot from `squadId | dungeonId | clearCount` — so the same clear plays out and pays the same whether it was watched or replayed offline, and a mid-window refresh reproduces itself rather than rerolling. `clearCount` is in the fight key purely so a farmed dungeon does not replay one canonical battle forever.
+
+`CombatEngine.tick` always advances in whole `ENGINE_DT` steps and carries any remainder into the next call. That is what makes the same seed produce the same fight regardless of driver: the live loop feeds 100 ms per game tick, which is not a multiple of the step, while headless callers feed exact steps and so never accumulate a carry at all.
 
 ## Performance
 
@@ -65,4 +69,4 @@ Tune one `config.ts` value at a time: watch a 20v20 where individual behaviour i
 
 ## Offline catchup
 
-`game/catchupOffline.ts` resolves fights headlessly, capped at `MAX_HEADLESS_TICKS`, and caches outcomes per `dungeonId|composition` — but only for lossless wins, since those are the repeatable "always wins" case. It is a parallel implementation of the live rules; see [systems.md](systems.md#offline-catchup) for what must stay mirrored.
+`game/catchupOffline.ts` resolves fights headlessly, capped at `MAX_HEADLESS_TICKS` (derived from `MAX_FIGHT_MS`), and caches outcomes per `dungeonId|composition` — but only for lossless wins, since those are the repeatable "always wins" case. It is not a parallel implementation: it drives the same `advance` the live tick does, supplying a `FightDriver` that knows a fight's length up front. See [systems.md](systems.md#offline-catchup).
