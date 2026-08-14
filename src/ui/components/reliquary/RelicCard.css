@@ -1,8 +1,12 @@
 /* ── RelicCard ──────────────────────────────────────────────────── */
 
+/* The stage is the container every card size reads from: text and spacing are
+   set in cqw, so one layout holds from the 124px grid tile to a 500px lab card.
+   It sits here rather than on .relic-card, which must stay a clean 3D context. */
 .relic-stage {
 	display: block;
 	position: relative;
+	container-type: inline-size;
 	perspective: 1400px;
 	user-select: none;
 	--reveal-duration: 950ms;
@@ -12,27 +16,6 @@
 	cursor: pointer;
 }
 
-/* outer rarity glow — behind the card */
-.relic-glow {
-	position: absolute;
-	inset: -24%;
-	pointer-events: none;
-	border-radius: 50%;
-	transition: opacity 0.3s ease;
-	z-index: 0;
-}
-
-/* mid-flip light burst — peaks at edge-on rotation */
-.rc-flash {
-	position: absolute;
-	inset: -25%;
-	border-radius: 50%;
-	pointer-events: none;
-	opacity: 0;
-	filter: blur(28px);
-	z-index: 0;
-}
-
 /* the card itself — 3D stage that holds front + back faces */
 .relic-card {
 	position: relative;
@@ -40,8 +23,15 @@
 	aspect-ratio: 320 / 460;
 	transform-style: preserve-3d;
 	transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+	/* Carries the tilt between pose writes, so pointer moves still turn smoothly. */
 	transition: transform 80ms linear;
 	z-index: 1;
+}
+
+/* A promoted layer per card is only worth its memory while the card moves; a
+   wall of settled grid tiles keeps none. */
+.relic-stage[data-variant="pull"] .relic-card,
+.relic-card[data-hovered="1"] {
 	will-change: transform;
 }
 
@@ -49,59 +39,33 @@
    Card parked at rotateY(180), opacity 0 on the visual layers — quietly
    ready to flip in. */
 .relic-stage[data-phase="hidden"] .relic-card {
-	transform: rotateY(180deg) translateY(8px) scale(0.78);
+	transform: rotateY(180deg) scale(0.9);
 	transition: none;
 }
 /* ── reveal: flipping phase ──────────────────────────────────────
    Keyframes drive the back→front flip with a small overshoot on
-   landing. The visual flash + glow bloom run in parallel. */
+   landing. */
 .relic-stage[data-phase="flipping"] .relic-card {
-	animation: rc-flip var(--reveal-duration) cubic-bezier(0.34, 1.06, 0.42, 1)
+	animation: rc-flip var(--reveal-duration) cubic-bezier(0, 0.15, 1, 0.9)
 		forwards;
 }
-.relic-stage[data-phase="flipping"] .rc-flash {
-	animation: rc-flash var(--reveal-duration) cubic-bezier(0.4, 0, 0.5, 1)
-		forwards;
-}
-.relic-stage[data-phase="flipping"] .relic-glow {
-	animation: rc-glow-bloom var(--reveal-duration) cubic-bezier(0.5, 0, 0.3, 1)
-		forwards;
-}
+
 .relic-stage[data-phase="flipping"] {
 	pointer-events: none;
 }
 
 @keyframes rc-flip {
 	0% {
-		transform: rotateY(180deg) translateY(8px) scale(0.78);
+		transform: rotateY(180deg) scale(0.9);
 	}
 	50% {
-		transform: rotateY(90deg) translateY(-6px) scale(1.06);
+		transform: rotateY(90deg) scale(1.06);
 	}
 	78% {
-		transform: rotateY(-8deg) translateY(0) scale(1.04);
+		transform: rotateY(-8deg) scale(1.03);
 	}
 	100% {
-		transform: rotateY(0deg) translateY(0) scale(1);
-	}
-}
-@keyframes rc-flash {
-	0%,
-	20% {
-		opacity: 0;
-		transform: scale(0.4);
-	}
-	50% {
-		opacity: 1;
-		transform: scale(1.15);
-	}
-	72% {
-		opacity: 0.4;
-		transform: scale(1.3);
-	}
-	100% {
-		opacity: 0;
-		transform: scale(1.5);
+		transform: rotateY(0deg) scale(1);
 	}
 }
 @keyframes rc-glow-bloom {
@@ -126,7 +90,7 @@
 .rc-back {
 	position: absolute;
 	inset: 0;
-	border-radius: 11px;
+	border-radius: 13px;
 	transform: translateZ(0.01px);
 	-webkit-backface-visibility: hidden;
 	backface-visibility: hidden;
@@ -139,7 +103,7 @@
    inner layers use mix-blend-mode (the back-of-the-front shows through
    mirror-text style). We instead toggle each face explicitly via the
    animation. Midpoint (50%) is the edge-on rotation where neither face
-   would normally be visible — the rc-flash covers the swap. */
+   would normally be visible. */
 .rc-front {
 	opacity: 1;
 	visibility: visible;
@@ -159,12 +123,10 @@
 }
 
 .relic-stage[data-phase="flipping"] .rc-back {
-	animation: rc-face-back var(--reveal-duration)
-		cubic-bezier(0.34, 1.06, 0.42, 1) forwards;
+	animation: rc-face-back var(--reveal-duration) linear forwards;
 }
 .relic-stage[data-phase="flipping"] .rc-front {
-	animation: rc-face-front var(--reveal-duration)
-		cubic-bezier(0.34, 1.06, 0.42, 1) forwards;
+	animation: rc-face-front var(--reveal-duration) linear forwards;
 }
 @keyframes rc-face-back {
 	0%,
@@ -189,6 +151,18 @@
 		opacity: 1;
 		visibility: visible;
 	}
+}
+
+/* Back face up: the back plane turns to face the viewer, so tilt and drift apply
+   to it unchanged. Only for a settled card; the reveal owns the other phases. */
+.relic-stage[data-face="back"][data-phase="revealed"] .rc-back {
+	transform: translateZ(0.01px);
+	opacity: 1;
+	visibility: visible;
+}
+.relic-stage[data-face="back"][data-phase="revealed"] .rc-front {
+	opacity: 0;
+	visibility: hidden;
 }
 
 .rc-face-inner {
@@ -216,8 +190,7 @@
 
 /* ── BACK FACE elements ─────────────────────────────────────────────
    The back shares .rc-base, .rc-face-inner, .rc-noise, .rc-frame and
-   .rc-content with the front — same material, same footprint, same
-   padding grid. Only the seal and its two labels are its own. */
+   .rc-content with the front */
 .rc-back-seal {
 	position: absolute;
 	inset: 0;
@@ -275,17 +248,18 @@
 	pointer-events: none;
 }
 
+/* No `filter` anywhere in this stack: each one gives the layer its own render
+   surface, and the pose repaints all of them every frame. The spectrum's lift
+   is baked into the gradient's own chroma and lightness. */
 .rc-foil-spectrum {
 	background: var(--foil-bg, transparent);
 	mix-blend-mode: color-dodge;
-	filter: saturate(1.25) brightness(1.05);
 }
 
 .rc-foil-bars {
-	background-size: 260% 260%;
+	background-size: 160%;
 	background-position: calc(50% + var(--bar-x, 0%)) calc(50% + var(--bar-y, 0%));
 	mix-blend-mode: overlay;
-	filter: blur(0.4px);
 }
 
 .rc-foil-sparkle {
@@ -309,9 +283,10 @@
 .rc-foil-burst {
 	background: radial-gradient(
 		circle 30% at var(--mx, 50%) var(--my, 50%),
-		rgba(255, 255, 255, 0.55) 0%,
-		rgba(255, 220, 240, 0.25) 25%,
-		rgba(180, 220, 255, 0.1) 55%,
+		rgba(255, 255, 255, 0.5) 0%,
+		rgba(255, 235, 245, 0.34) 14%,
+		rgba(255, 220, 240, 0.22) 30%,
+		rgba(180, 220, 255, 0.08) 58%,
 		transparent 100%
 	);
 	mix-blend-mode: plus-lighter;
@@ -326,6 +301,9 @@
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
 	background-size: 180px 180px;
 	mix-blend-mode: overlay;
+	/* Last in the face's stack: the frame, the seal and the text take the same
+	   speckle as the substrate under them. */
+	z-index: 3;
 }
 
 /* SVG frame decoration */
@@ -367,15 +345,6 @@
 	animation: rc-edge-pulse 2.8s ease-in-out infinite;
 }
 
-/* Hidden phase: cancel the animation above, or its keyframed opacity would win
-   over a plain declaration. Placed after that rule so equal specificity
-   resolves in this one's favour.
-   `.relic-glow` is handled in the component, which owns its inline opacity. */
-.relic-stage[data-phase="hidden"] .rc-edge-shimmer {
-	animation: none;
-	opacity: 0;
-}
-
 /* ── content ────────────────────────────────────────────────────── */
 .rc-content {
 	position: absolute;
@@ -383,6 +352,8 @@
 	display: flex;
 	flex-direction: column;
 	padding: 7% 6%;
+	/* Everything below is em: one number sets the whole card's type scale. */
+	font-size: 5.7cqw;
 	color: var(--rarity-color, #a8a39a);
 }
 
@@ -438,6 +409,7 @@
 	border: 1px solid
 		color-mix(in srgb, var(--rarity-color, #a8a39a) 18%, transparent);
 	margin-bottom: 3%;
+	opacity: 0.85;
 	overflow: hidden;
 	display: flex;
 	align-items: center;
@@ -483,9 +455,9 @@
 
 .rc-art-sigil {
 	font-family: var(--f-display, serif);
-	font-size: 2.4em;
+	font-size: 3.5em;
 	color: var(--rarity-color, #a8a39a);
-	opacity: 0.2;
+	opacity: 0.3;
 	position: relative;
 	z-index: 1;
 	letter-spacing: 0.06em;
@@ -501,10 +473,12 @@
    resorting to !important. */
 .rc-title .rc-name {
 	font-family: var(--f-display, serif);
+	font-size: 1.5em;
 	letter-spacing: 0.05em;
 	line-height: 1.2;
 	margin: 0;
 	font-weight: 500;
+	color: var(--accent-1, #a8a39a);
 }
 
 .rc-flavor {
@@ -598,7 +572,7 @@
 .rc-stat-k {
 	font-family: var(--f-mono, monospace);
 	color: var(--accent-1, #cfc7b8);
-	letter-spacing: 0.08em;
+	letter-spacing: 0.07em;
 	flex: 1;
 }
 
@@ -626,16 +600,6 @@
 	opacity: 0.55;
 }
 
-/* specular light */
-.rc-gloss {
-	position: absolute;
-	inset: 0;
-	mix-blend-mode: soft-light;
-	z-index: 9;
-	pointer-events: none;
-	transition: opacity 300ms ease;
-}
-
 /* ── selected state ─────────────────────────────────────────────── */
 .relic-stage[data-selected="1"] .rc-front > .rc-face-inner {
 	box-shadow:
@@ -643,13 +607,114 @@
 		0 4px 32px rgba(0, 0, 0, 0.55);
 }
 
-/* ── inventory variant: condensed layout ────────────────────────── */
-.relic-stage[data-variant="inventory"] .rc-art {
-	flex-basis: 44%;
+/* ── compact layout (inventory grid) ────────────────────────────────
+   A tile is ~124px across, where the pull card's type scale is unreadable and
+   its affix list has nowhere to go. Bigger relative type, one plate, the main
+   roll spelled out and the rest as pips. */
+.rc-compact {
+	font-size: 8.4cqw;
+	padding: 8% 7%;
+	line-height: 1.3;
 }
 
-.relic-stage[data-variant="inventory"] .rc-flavor,
-.relic-stage[data-variant="inventory"] .rc-stats,
-.relic-stage[data-variant="inventory"] .rc-serial {
-	display: none;
+.rc-compact-head {
+	display: flex;
+	align-items: center;
+	gap: 4%;
+	margin-bottom: 4%;
+	flex-shrink: 0;
+}
+
+.rc-compact-slot {
+	font-family: var(--f-mono, monospace);
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--accent-1, #cfc7b8);
+	opacity: 0.8;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rc-compact .rc-art {
+	flex: 0 0 42%;
+	margin-bottom: 5%;
+}
+
+.rc-compact .rc-art-sigil {
+	font-size: 3em;
+}
+
+.rc-compact-name {
+	font-family: var(--f-display, serif);
+	font-size: 1.25em;
+	line-height: 1.15;
+	letter-spacing: 0.02em;
+	margin: 0;
+	color: var(--accent-1, #cfc7b8);
+	/* Two lines, then cut: every base name fits, none pushes the roll off. */
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
+
+.rc-compact-foot {
+	margin-top: auto;
+	flex-shrink: 0;
+}
+
+.rc-compact-label {
+	display: block;
+	font-family: var(--f-mono, monospace);
+	font-size: 0.92em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--accent-2, #7e7669);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rc-compact-row {
+	display: flex;
+	align-items: baseline;
+	gap: 4%;
+}
+
+.rc-compact-val {
+	font-family: var(--f-mono, monospace);
+	font-size: 1.25em;
+	letter-spacing: 0.02em;
+	color: var(--rarity-color, #a8a39a);
+}
+
+.rc-compact-up {
+	font-family: var(--f-mono, monospace);
+	font-size: 0.62em;
+	color: var(--c-coin, #d4a857);
+	letter-spacing: 0.06em;
+}
+
+/* One pip per further affix, the signature turned on its corner. */
+.rc-compact-pips {
+	display: flex;
+	align-items: center;
+	gap: 0.25em;
+	margin-left: auto;
+}
+
+.rc-compact-pips span {
+	width: 0.65em;
+	height: 0.65em;
+	background: var(--rarity-color, #a8a39a);
+	opacity: 0.55;
+}
+
+.rc-compact-pips span[data-sig="1"] {
+	width: 0.5em;
+	height: 0.5em;
+	opacity: 0.55;
+	transform: rotate(45deg);
 }

@@ -150,5 +150,5 @@ export function formatAffixValue(
 	// A single effect prints one value; `dreadCommand`'s scale is a unit
 	// conversion.
 	if (scales.length < 2) return one(boosted);
-	return scales.map((s) => one(boosted * s)).join(" / ");
+	return scales.map((s) => one(boosted * s)).join("/");
 }

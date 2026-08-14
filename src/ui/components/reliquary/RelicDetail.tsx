@@ -3,8 +3,6 @@ import { dustValue } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
 import { rarityColor } from "../../theme";
 import { ConfirmAction } from "../common/ConfirmAction";
-import { Meter } from "../common/Meter";
-import { StatRow } from "../common/StatRow";
 import { RelicCard } from "./RelicCard";
 
 export function RelicDetail({
@@ -24,12 +22,12 @@ export function RelicDetail({
 	onConfirmSacrifice: () => void;
 	onCancelSacrifice: () => void;
 }) {
-	const c = rarityColor(relic.rarity);
+	const _c = rarityColor(relic.rarity);
 	const base = RELIC_BASES.find((b) => b.id === relic.baseId);
 	const dust = dustValue([relic]);
 
 	return (
-		<div className="px-4 py-5 flex flex-col h-full">
+		<div className="px-4 py-5 flex flex-col h-full overflow-y-auto">
 			{/* Card preview */}
 			<div className="flex justify-center">
 				<div className="w-[300px]">
@@ -42,7 +40,7 @@ export function RelicDetail({
 			</div>
 
 			{/* Quality */}
-			<div className="mt-8">
+			{/* <div className="mt-8">
 				<StatRow
 					label="QUALITY"
 					value={
@@ -55,10 +53,10 @@ export function RelicDetail({
 					valueStyle={{ color: c }}
 				/>
 				<Meter value={relic.quality / 100} color={c} className="mt-1 h-[5px]" />
-			</div>
+			</div> */}
 
 			{/* Fusion progress */}
-			<div className="mt-3">
+			{/* <div className="mt-3">
 				<StatRow
 					label="FUSION PROGRESS"
 					value={`${relic.duplicateCount}/5`}
@@ -81,7 +79,7 @@ export function RelicDetail({
 						);
 					})}
 				</div>
-			</div>
+			</div> */}
 
 			{/* Action buttons */}
 			<div className="mt-auto flex gap-2 pt-4">

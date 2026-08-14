@@ -84,8 +84,7 @@ export const RELIC_BASES: RelicBase[] = [
 		mainAffixRange: [10, 25],
 		minorAffixPool: ["soulHarvest", "soulYield", "boneYield", "corpseYield"],
 		glyph: "flame",
-		description:
-			"Burning bones raise a smoke the departing cannot cross. They linger, and are taken.",
+		description: "Burning bones raise a smoke the departing cannot cross.",
 	},
 	{
 		id: "pale-sigil",
@@ -135,8 +134,7 @@ export const RELIC_BASES: RelicBase[] = [
 		mainAffixRange: [15, 45],
 		minorAffixPool: ["tombRobber", "reapersDue", "boneYield", "soulYield"],
 		glyph: "urn",
-		description:
-			"A vessel that remembers every tomb you have already emptied, and where you missed.",
+		description: "A vessel that remembers every tomb you have already emptied.",
 	},
 	{
 		id: "wax-effigy",
@@ -224,8 +222,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"brittleEdge",
 		],
 		glyph: "blade",
-		description:
-			"A scepter carved from a mighty femur. Skeletons endure more punishment.",
+		description: "A scepter carved from a mighty femur. Skeletons endure more.",
 	},
 	{
 		id: "rib-cuirass",
@@ -374,7 +371,7 @@ export const RELIC_BASES: RelicBase[] = [
 		signatureAffixId: "vanguardDrums",
 		glyph: "drop",
 		description:
-			"Ash from a ghost-fire that never burned out. Wraiths blur across the field.",
+			"Ash from an eternal ghost-fire. Wraiths blur across the field.",
 	},
 	{
 		id: "soul-reed",

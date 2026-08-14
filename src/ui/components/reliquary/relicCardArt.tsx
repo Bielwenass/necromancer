@@ -16,8 +16,7 @@ export type RarityConfig = {
 	deep: string;
 	accents: [string, string];
 	foilHues: number[];
-	glowMul: number;
-	foilMul: number;
+	foilMult: number;
 	edgeAnim: boolean;
 };
 
@@ -33,9 +32,8 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		color: "#a8a39a",
 		deep: "#3a352e",
 		accents: ["#cfc7b8", "#7e7669"],
-		foilHues: [40, 60, 30],
-		glowMul: 0.2,
-		foilMul: 0.15,
+		foilHues: [40, 60, 50],
+		foilMult: 0.15,
 		edgeAnim: false,
 	},
 	uncommon: {
@@ -45,8 +43,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		deep: "#1f3a26",
 		accents: ["#b6d4a6", "#5a8b66"],
 		foilHues: [110, 140, 180],
-		glowMul: 0.5,
-		foilMul: 0.25,
+		foilMult: 0.25,
 		edgeAnim: false,
 	},
 	rare: {
@@ -56,8 +53,7 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		deep: "#15243c",
 		accents: ["#a8c8ef", "#4d75ad"],
 		foilHues: [180, 220, 260],
-		glowMul: 0.7,
-		foilMul: 0.55,
+		foilMult: 0.55,
 		edgeAnim: true,
 	},
 	epic: {
@@ -66,9 +62,8 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		color: "#b083d6",
 		deep: "#2c1a3d",
 		accents: ["#d9b8f0", "#7e54a6"],
-		foilHues: [270, 300, 360],
-		glowMul: 0.85,
-		foilMul: 0.75,
+		foilHues: [270, 300, 340, 315],
+		foilMult: 0.65,
 		edgeAnim: true,
 	},
 	legendary: {
@@ -77,9 +72,8 @@ export const RARITIES: Record<Rarity, RarityConfig> = {
 		color: "#f3c0a8",
 		deep: "#6a2e1e",
 		accents: ["#ffc099", "#fa8163"],
-		foilHues: [80, 60, 30, 110, 50, 10],
-		glowMul: 1.05,
-		foilMul: 1.0,
+		foilHues: [55, 80, 110, 70, 115, 90],
+		foilMult: 0.8,
 		edgeAnim: true,
 	},
 };
@@ -124,7 +118,7 @@ export function buildFoil(
 
 export function buildBars(hues: number[], sat: number, light: number): string {
 	const bars: string[] = [];
-	const step = 100 / hues.length;
+	const step = 45 / hues.length;
 	hues.forEach((h, i) => {
 		const start = i * step;
 		bars.push(`transparent ${start.toFixed(1)}%`);

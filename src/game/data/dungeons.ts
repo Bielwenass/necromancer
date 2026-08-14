@@ -38,8 +38,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [],
 	},
 
-	// Chaff: thirteen biters and a few wretches. The kill count makes it the
-	// tier's corpse mine.
 	"wolf-den": {
 		id: "wolf-den",
 		name: "Wolf Den",
@@ -67,8 +65,6 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [{ dungeonId: "paupers-tomb", count: 3 }],
 	},
 
-	// Half Wolf Den's bodies, each worth fearing, and the tier's richest bone
-	// haul.
 	"abandoned-chapel": {
 		id: "abandoned-chapel",
 		name: "Abandoned Chapel",

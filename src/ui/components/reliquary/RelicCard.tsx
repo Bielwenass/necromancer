@@ -21,20 +21,16 @@ import {
 
 export interface RelicCardTweaks {
 	tilt: number;
-	glow: number;
 	foil: number;
-	gloss: number;
 	noise: number;
 	idleDrift: boolean;
 	edgeShimmer: boolean;
 	revealDuration: number;
 }
 
-const DEFAULT_TWEAKS: RelicCardTweaks = {
+export const DEFAULT_TWEAKS: RelicCardTweaks = {
 	tilt: 12,
-	glow: 0.1,
 	foil: 0.6,
-	gloss: 0.1,
 	noise: 0.6,
 	idleDrift: true,
 	edgeShimmer: true,
@@ -56,6 +52,8 @@ export interface RelicCardProps {
 	/** 'pull' = full card for gacha reveal; 'inventory' = condensed for item grid */
 	variant?: "pull" | "inventory";
 	selected?: boolean;
+	/** Which face is up while not revealing; the reveal always turns back → front. */
+	face?: "front" | "back";
 	tweaks?: Partial<RelicCardTweaks>;
 	onClick?: () => void;
 	revealing?: boolean;
@@ -70,6 +68,7 @@ export function RelicCard({
 	relic,
 	variant = "pull",
 	selected = false,
+	face = "front",
 	tweaks: tweakOverrides,
 	onClick,
 	revealing = false,
@@ -100,7 +99,6 @@ export function RelicCard({
 		...VARIANT_TWEAKS[variant],
 		...tweakOverrides,
 	};
-	const glow = tweaks.glow * R.glowMul;
 	const foil = tweaks.foil * R.foilMul;
 	const dur = tweaks.revealDuration;
 
@@ -233,20 +231,12 @@ export function RelicCard({
 			data-variant={variant}
 			data-selected={selected ? "1" : "0"}
 			data-phase={phase}
+			data-face={face}
 			onMouseEnter={() => canHover && phase === "revealed" && setHovered(true)}
 			onMouseMove={onMove}
 			onMouseLeave={onLeave}
 			onClick={onClick}
 		>
-			{/* outer rarity glow */}
-			<div
-				className="relic-glow"
-				style={{
-					opacity: phase === "hidden" ? 0 : glow * (hovered ? 1.0 : 0.55),
-					background: `radial-gradient(closest-side, ${R.color}, transparent 70%)`,
-				}}
-			/>
-
 			<div
 				ref={cardRef}
 				className="relic-card"
@@ -415,20 +405,6 @@ export function RelicCard({
 								<div className="rc-serial">№ {serial}</div>
 							</footer>
 						</div>
-
-						{/* specular gloss */}
-						<div
-							className="rc-gloss"
-							style={{
-								opacity: tweaks.gloss * (hovered ? 1.0 : 0.4),
-								background: `radial-gradient(
-                circle at var(--mx) var(--my),
-                rgba(255,255,255,0.55) 0%,
-                rgba(255,255,255,0.10) 18%,
-                transparent 42%
-              )`,
-							}}
-						/>
 					</div>
 				</div>
 			</div>
