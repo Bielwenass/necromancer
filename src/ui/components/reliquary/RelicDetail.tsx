@@ -1,7 +1,6 @@
 import { RELIC_BASES, SLOT_LABELS } from "../../../game/data/relics";
 import { dustValue } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
-import { rarityColor } from "../../theme";
 import { ConfirmAction } from "../common/ConfirmAction";
 import { RelicCard } from "./RelicCard";
 
@@ -22,7 +21,7 @@ export function RelicDetail({
 	onConfirmSacrifice: () => void;
 	onCancelSacrifice: () => void;
 }) {
-	const _c = rarityColor(relic.rarity);
+	// const _c = rarityColor(relic.rarity);
 	const base = RELIC_BASES.find((b) => b.id === relic.baseId);
 	const dust = dustValue([relic]);
 
