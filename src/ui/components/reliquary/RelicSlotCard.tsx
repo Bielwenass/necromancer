@@ -11,7 +11,6 @@ export function RelicSlotCard({
 }: {
 	slotLabel: string;
 	relic: Relic | null;
-	/** Slot exists but has not been opened by the upgrade tree yet. */
 	locked: boolean;
 	selected: boolean;
 	onSelect: () => void;

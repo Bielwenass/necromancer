@@ -1,9 +1,7 @@
 import type { DerivedFlagKey, Resources, UnitType } from "../types";
 
-/** Canonical unit order. Squad compositions are keyed by exactly these. */
 export const UNIT_TYPES = ["skeleton", "zombie", "wraith"] as const;
 
-/** The `derived` flag that opens each unit type; skeletons start open. */
 export const UNIT_UNLOCK_FLAG: Record<UnitType, DerivedFlagKey | null> = {
 	skeleton: null,
 	zombie: "zombiesUnlocked",
@@ -11,10 +9,8 @@ export const UNIT_UNLOCK_FLAG: Record<UnitType, DerivedFlagKey | null> = {
 };
 
 /**
- * The colour a unit type is drawn in everywhere — squad dots, filter chips,
- * reserve rows and the combat canvas alike. The canvas can't read a CSS
- * variable, so the hex lives here and `ui/theme.ts` re-exports it. Never mirror
- * these into CSS.
+ * The colour a unit type is drawn in everywhere. The combat canvas can't read a
+ * CSS variable, so the hex lives here and `ui/theme.ts` re-exports it.
  */
 export const UNIT_COLORS: Record<UnitType, string> = {
 	skeleton: "#e8dcc0",
@@ -22,27 +18,17 @@ export const UNIT_COLORS: Record<UnitType, string> = {
 	wraith: "#7eb0d6",
 };
 
-/**
- * Units that reform after a fight however it went — bound spirit rather than
- * flesh, so they come home at full count from a clear *and* from a wipe.
- */
+/** Units that come home at full count from a clear and from a wipe. */
 export const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>([
 	"wraith",
 ]);
 
 /**
- * Per-unit workshop tracks. `baseBones` × `growth^level` is the price curve,
- * `base` is the stat at level zero, and `statGrowth` is what a level multiplies
- * it by.
- *
- * Both curves are geometric on purpose. A flat gain against a compounding price
- * makes a stat grow as the *logarithm* of bones spent, which cannot keep pace
- * with a compounding dungeon ladder. Two geometric curves make it a power of
- * bones spent instead, at exponent `ln(statGrowth) / ln(growth)`.
- *
- * Keep `statGrowth` below `growth`, or a track pays for itself and the workshop
- * becomes the only purchase worth making. Speed is deliberately near-flat: it
- * decides engagement rather than attrition, and compounds badly.
+ * Per-unit workshop tracks: price `baseBones × growth^level`, stat
+ * `base × statGrowth^level`. Both geometric, so a stat grows as a power of bones
+ * spent and keeps pace with a compounding dungeon ladder. Keep `statGrowth`
+ * below `growth`, or the track pays for itself. Speed is near-flat: it decides
+ * engagement and compounds badly.
  */
 export const UNIT_STAT_CONFIG = {
 	skeleton: {
@@ -118,18 +104,13 @@ export const UNIT_STAT_CONFIG = {
 
 export type StatKey = "hp" | "dmg" | "speed";
 
-/** Per-unit base summoning price, before the owned-count scaling curve. */
 export const SUMMON_COSTS: Record<UnitType, Partial<Resources>> = {
 	skeleton: { bones: 10 },
 	zombie: { bones: 5, corpses: 1 },
 	wraith: { bones: 20, souls: 1 },
 };
 
-/**
- * Resources exempt from the owned-count scaling — they stay at list price no
- * matter how large the army is. Wraith souls are the only one: souls are a rare
- * drop, so scaling them would gate wraiths on soul income instead of price.
- */
+/** Exempt from owned-count scaling; wraith souls, a rare drop, are the only one. */
 export const UNSCALED_COSTS: Record<UnitType, readonly (keyof Resources)[]> = {
 	skeleton: [],
 	zombie: [],

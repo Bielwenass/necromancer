@@ -56,7 +56,6 @@ export class CombatEngine {
 	private events: EventQueue;
 	private deathFlashes: DeathFlash[] = [];
 	private t: number = 0;
-	/** Sim time fed in but not yet worth a whole `ENGINE_DT` step. */
 	private carryMs: number = 0;
 	private running: boolean = false;
 	private winner: Side | "draw" | null = null;
@@ -106,11 +105,9 @@ export class CombatEngine {
 
 	/**
 	 * Advance the fight by `deltaMs`, always in whole `ENGINE_DT` steps, carrying
-	 * the remainder into the next call rather than taking a short step. That is
-	 * what lets one seed produce one fight whoever is driving: the live loop feeds
-	 * 100ms per game tick, not a multiple of the step, and without the carry would
-	 * diverge from a headless run. A driver feeding exact steps accumulates no
-	 * carry, so nothing it measures moves.
+	 * the remainder. That is what lets one seed produce one fight whoever is
+	 * driving: the live loop feeds 100ms per game tick, which is not a multiple of
+	 * the step, while a driver feeding exact steps carries nothing.
 	 */
 	tick(deltaMs: number): void {
 		if (!this.running || this.winner !== null) return;
@@ -139,7 +136,6 @@ export class CombatEngine {
 		this.stats.wallTimeMs += performance.now() - wallStart;
 	}
 
-	/** Post-step bookkeeping: death flashes, then the win check. */
 	private settleFrame(): void {
 		for (const ev of this.events.drainFlash()) {
 			if (ev.type === "kill") {
@@ -152,25 +148,17 @@ export class CombatEngine {
 
 		const countA = getTotalUnitCount(this.simState, "a");
 		const countB = getTotalUnitCount(this.simState, "b");
-		if (countA <= 0 && countB <= 0) {
-			this.winner = "draw";
-			this.events.emit({ type: "battle_end", winner: "draw", t: this.t });
-		} else if (countA <= 0) {
-			this.winner = "b";
-			this.events.emit({ type: "battle_end", winner: "b", t: this.t });
-		} else if (countB <= 0) {
-			this.winner = "a";
-			this.events.emit({ type: "battle_end", winner: "a", t: this.t });
+		if (countA <= 0 || countB <= 0) {
+			this.winner = countA > 0 ? "a" : countB > 0 ? "b" : "draw";
 		} else if (this.t >= MAX_FIGHT_MS) {
-			// Neither side is gone and the fight has run its length. Call it on the
-			// share of each muster still standing rather than letting it grind on —
-			// a squad stuck in `fighting` forever never comes home.
+			// Neither side is gone and the fight has run its length, so it is called
+			// on the share of each muster standing; a squad stuck in `fighting` never
+			// comes home.
 			this.winner = leadingSide(this.simState);
-			this.events.emit({
-				type: "battle_end",
-				winner: this.winner,
-				t: this.t,
-			});
+		}
+		// Reached with a null winner, so a decision here is a new one.
+		if (this.winner !== null) {
+			this.events.emit({ type: "battle_end", winner: this.winner, t: this.t });
 		}
 
 		this.stats.numTicks++;

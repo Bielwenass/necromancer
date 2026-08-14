@@ -12,7 +12,6 @@ export type SlotId =
 	| "III1"
 	| "III2";
 export type PoolId = "banner" | "carrion" | "forbidden";
-/** Which family of slots a relic base belongs to — the crypt or one unit type. */
 export type RelicSlotType = "crypt" | UnitType;
 
 export interface Affix {
@@ -27,11 +26,6 @@ export interface Relic {
 	rarity: Rarity;
 	mainAffix: Affix;
 	minorAffixes: Affix[];
-	/**
-	 * The base's signature power, present only when the relic rolled at or above
-	 * the rarity that affix demands. The only route to a gated affix, which every
-	 * minor pool filters out.
-	 */
 	uniqueAffix?: Affix;
 	upgradeLevel: number; // 0-5
 	duplicateCount: number;
@@ -47,27 +41,12 @@ export interface RelicBase {
 	mainAffixId: string;
 	mainAffixRange: [number, number];
 	minorAffixPool: string[];
-	/**
-	 * The affix this base awakens at high rarity. Its own `minRarity` decides
-	 * which rarities get it, so the gate isn't restated per base.
-	 */
 	signatureAffixId?: string;
 	glyph: string;
 	description: string;
 }
 
-export interface AffixDef {
-	id: string;
-	label: string;
-	unit: string; // '%' or '' for flat
-	range: [number, number];
-}
-
-/**
- * A scalar `recomputeDerived` accumulates. `bonesPassiveMult` is internal — it
- * multiplies the garden's output into `bonesPerTick` rather than surviving into
- * `derived` under its own name.
- */
+/** A scalar `recomputeDerived` accumulates. */
 export type GlobalStatKey =
 	| "bonesPassiveMult"
 	| "boneYieldBonus"
@@ -96,11 +75,6 @@ export type DerivedFlagKey =
 	| "autoDeploy"
 	| "phylactery";
 
-/**
- * A fixed effect declared by an upgrade node. `pctOfSelf` raises a stat by a
- * share of its own running value, which is how a percentage squad-size bonus
- * has to work.
- */
 export type UpgradeEffect =
 	| {
 			kind: "global";
@@ -118,11 +92,8 @@ export type UpgradeEffect =
 	| { kind: "slot"; slot: SlotId };
 
 /**
- * Where a relic affix's *rolled* value lands — only the target, since the
- * magnitude comes off the roll. Affix values are percentages converted to a
- * decimal; `scale` multiplies that decimal, which is what makes a trade-off
- * affix possible: one roll, a positive effect at full scale and a negative one
- * at a fraction of it.
+ * Where a relic affix's rolled value lands. Values are percentages as a decimal,
+ * multiplied by `scale`; a negative `scale` makes a trade-off affix.
  */
 export type AffixEffect =
 	| {
@@ -147,20 +118,14 @@ export interface Squad {
 	id: string;
 	name: string;
 	composition: Record<UnitType, number>;
-	/**
-	 * The strength the squad was raised at. `composition` shrinks as units die;
-	 * `replenishSquad` refills back up to this and nothing else writes it.
-	 */
+	/** The strength the squad was raised at; only `replenishSquad` refills to it. */
 	roster: Record<UnitType, number>;
 	targetDungeonId: string | null;
 	state: SquadState;
 	/**
-	 * The current phase's bounds, in absolute `meta.tickCount`. Both absent for an
-	 * idle squad; `phaseEndTick` is also absent while `fighting`, since a fight
-	 * ends when it is decided rather than on a clock.
-	 *
-	 * Deadlines rather than a 0-1 fraction so "which squads transition at tick T"
-	 * has one answer. UI travel progress is derived from these.
+	 * The phase's bounds, in absolute `meta.tickCount`. Both absent when idle;
+	 * `phaseEndTick` also absent while `fighting`, a fight ending when it is
+	 * decided. Absolute deadlines give "who transitions at tick T" one answer.
 	 */
 	phaseStartTick?: number;
 	phaseEndTick?: number;
@@ -200,28 +165,20 @@ export interface UpgradeNode {
 	id: string;
 	branch: "summoning" | "command" | "necromancy";
 	name: string;
-	/**
-	 * Qualitative flavour only — the mechanical line is generated from `effects`
-	 * by `describeUpgradeEffects`, so magnitudes must never be restated here.
-	 */
+	/** Qualitative colour only; `describeUpgradeEffects` states the magnitudes. */
 	description?: string;
 	flavor?: string;
 	tier: number;
 	cost: Partial<Resources>;
 	effects: UpgradeEffect[];
 
-	// Ids that must already be purchased.
 	prerequisites: string[];
 	icon: string;
 	capstone?: boolean;
-	/**
-	 * Present on a node that can be bought over and over, its price multiplied by
-	 * this each time and its effects applied once per purchase.
-	 */
+	/** Buyable repeatedly: price × this per purchase, effects once each. */
 	repeatGrowth?: number;
 }
 
-/** A garden plot is identified by the resource that buys it. */
 export type GardenPlotId = Exclude<keyof Resources, "banners">;
 
 export interface Resources {
@@ -237,18 +194,16 @@ export interface WorkshopState {
 	zombie: { hp: number; dmg: number; speed: number };
 	wraith: { hp: number; dmg: number; speed: number };
 	crypt: { squadSize: number; travelSpeed: number };
-	/** Plot level keyed by the resource that buys it; 0 = not purchased. */
 	garden: Record<GardenPlotId, number>;
 }
 
 export type Units = Record<UnitType, number>;
 
 /**
- * Everything a unit type is worth in a fight. The first six are the stat line —
- * a flat value from the workshop raised by a percentage from upgrades and
- * relics. The rest are *combat modifiers*, read per unit by the simulation and
- * inert outside a fight. Each is a fraction, and zero — "this unit doesn't have
- * it" — is the common case the hot loop is optimised for.
+ * Everything a unit type is worth in a fight. The first six are the stat line: a
+ * flat workshop value raised by a percentage from upgrades and relics. The rest
+ * are combat modifiers read per unit by the simulation; zero is the common case
+ * the hot loop is optimised for.
  */
 export interface UnitDerivedStats {
 	hpFlat: number;
@@ -262,19 +217,19 @@ export interface UnitDerivedStats {
 	lifesteal: number;
 	/** Share of max HP regained per second of combat. */
 	regen: number;
-	/** Damage bonus at zero HP, scaling linearly with HP missing. */
+	/** Damage bonus at zero HP, scaling with HP missing. */
 	berserk: number;
-	/** Share of max HP a unit returns at, once, instead of dying. */
+	/** Share of max HP a unit returns at, once, in place of dying. */
 	revive: number;
 	/** Damage bonus during the opening seconds of a fight. */
 	vanguard: number;
-	/** Share of the unit's damage dealt per second to *every* enemy in reach. */
+	/** Share of the unit's damage dealt per second to every enemy in reach. */
 	aura: number;
 	/** Damage bonus per unit of local numerical advantage. */
 	overwhelm: number;
-	/** Damage bonus against targets at low HP, scaling with HP missing. */
+	/** Damage bonus against a low-HP target, scaling with HP missing. */
 	executioner: number;
-	/** Damage bonus against targets at high HP, scaling with HP remaining. */
+	/** Damage bonus against a high-HP target, scaling with HP remaining. */
 	spectral: number;
 	/** Damage bonus once the unit's own side is nearly wiped out. */
 	lastStand: number;
@@ -291,13 +246,11 @@ export interface GameState {
 	};
 	upgrades: {
 		purchased: string[];
-		/** Times each `repeatGrowth` node has been bought, past the first. */
 		repeats?: Record<string, number>;
 	};
 	gacha: {
 		pityCounters: Record<PoolId, number>;
 		lastPulledRelics: Relic[] | null;
-		/** Banner-pool pulls owed by the Phylactery, and progress toward the next. */
 		freePulls: number;
 		freePullTicks: number;
 	};
@@ -311,21 +264,15 @@ export interface GameState {
 	derived: {
 		bonesPerTick: number;
 		boneYieldBonus: number;
-		/** Added to the souls banked per drop, rather than to the drop chance. */
+		/** Multiplies souls on deposit; the drop chance is untouched. */
 		soulsYieldBonus: number;
-		/**
-		 * Multiplies corpses on deposit like the other yield bonuses; the per-kill
-		 * drop chance itself is flat.
-		 */
+		/** Multiplies corpses on deposit; the per-kill drop chance is flat. */
 		corpseYieldBonus: number;
 		maxSquadSize: number;
 		maxSquads: number;
 		zombiesUnlocked: boolean;
 		wraithsUnlocked: boolean;
-		/**
-		 * Whether a clear drops the resource at all. Both start closed — the early
-		 * tree opens them, so a new necromancer banks bones and banners only.
-		 */
+		/** Whether a clear drops the resource at all. Both start closed. */
 		corpsesUnlocked: boolean;
 		soulsUnlocked: boolean;
 		autoDeploy: boolean;
@@ -345,7 +292,7 @@ export interface GameState {
 		enemyDmgPenalty: number;
 		/** Share taken off every Ritual pool's pity interval. */
 		pityReduction: number;
-		/** Relic slots the player has opened, beyond the ones open from the start. */
+		/** Relic slots opened past those open from the start. */
 		unlockedSlots: SlotId[];
 
 		skeleton: UnitDerivedStats;

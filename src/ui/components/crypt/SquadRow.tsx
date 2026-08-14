@@ -5,22 +5,16 @@ import { SQUAD_STATE_GLYPH, squadColor } from "./squadDisplay";
 
 interface SquadRowProps {
 	squad: Squad;
-	/** The dungeon the squad is headed to or coming back from, if any. */
 	def: DungeonDef | null;
-	/** Ticks left on the current leg — see squadRemainingTicks. */
 	remainingTicks: number | null;
-	/** Zebra striping index. */
 	index: number;
-	/** Units the reserves can give back to this squad — see replenishDelta. */
 	refillCount: number;
-	/** Whether auto-deploy would send this squad out again on arrival. */
 	willRedeploy: boolean;
 	onDisband: () => void;
 	onRecall: () => void;
 	onReplenish: () => void;
 }
 
-/** One legion in the right-hand list: avatar, name, state, and its actions. */
 export function SquadRow({
 	squad,
 	def,

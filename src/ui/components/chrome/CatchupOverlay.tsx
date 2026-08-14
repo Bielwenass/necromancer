@@ -1,5 +1,5 @@
 import type { CatchupState } from "../../../game/useGameLifecycle";
-import { RESOURCE_KEYS, resourceMeta } from "../../resources";
+import { RESOURCE_KEYS, RESOURCE_META } from "../../resources";
 import { Modal } from "../common/Modal";
 
 interface CatchupOverlayProps {
@@ -8,9 +8,9 @@ interface CatchupOverlayProps {
 }
 
 /**
- * Shown while the offline catchup replays time away from the game. It is
- * undismissable until `done` — closing early would strand a half-applied
- * simulation, so no `onClose` is handed to the modal before then.
+ * Shown while the offline catchup replays time away from the game. Undismissable
+ * until `done`: closing early would strand a half-applied simulation, so the
+ * modal gets no `onClose` before then.
  */
 export function CatchupOverlay({ catchup, onDismiss }: CatchupOverlayProps) {
 	const gains = RESOURCE_KEYS.filter((key) => catchup.stats.gained[key] > 0);
@@ -41,7 +41,7 @@ export function CatchupOverlay({ catchup, onDismiss }: CatchupOverlayProps) {
 							+{catchup.stats.gained[key].toLocaleString()}
 						</div>
 						<div className="mono text-xs text-dim tracking-wider mt-0.5 uppercase">
-							{resourceMeta(key).label}
+							{RESOURCE_META[key].label}
 						</div>
 					</div>
 				))}

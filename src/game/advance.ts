@@ -12,42 +12,30 @@ import type { CombatOutcome, DungeonState, GameState, Squad } from "./types";
 /**
  * The squad state machine, shared by both paths: the live tick calls `advance`
  * for one tick, offline catchup for a whole span between deadlines. Everything
- * here mutates the draft it is handed and never `derived`; cloning is the
- * caller's job.
- *
- * The only asymmetry is who decides a fight is over, and that is the whole of
- * `FightDriver`.
+ * mutates the draft it is handed and never `derived`; cloning is the caller's
+ * job. The one asymmetry is `FightDriver`, who decides a fight is over.
  */
 
 export interface FightDriver {
-	/**
-	 * A squad reached its dungeon at `atTick`. Returns the tick the fight ends,
-	 * or null when only the caller can know — the live path, where the engine the
-	 * player is watching decides.
-	 */
+	/** Tick the fight ends, or null on the live path where the engine decides. */
 	begin(
 		state: GameState,
 		squad: Squad,
 		dungeon: DungeonState,
 		atTick: number,
 	): number | null;
-	/** The outcome of a fight this driver scheduled to end at or before `tick`. */
 	outcomeAt(squadId: string, tick: number): CombatOutcome | null;
 	/** Earliest scheduled fight end, or Infinity when none is pending. */
 	nextEndTick(): number;
 }
 
-/** Fights are driven from outside `advance`, so it schedules nothing. */
 export const LIVE_FIGHTS: FightDriver = {
 	begin: () => null,
 	outcomeAt: () => null,
 	nextEndTick: () => Number.POSITIVE_INFINITY,
 };
 
-/**
- * A working copy `advance` may mutate freely — exactly the slices it writes.
- * `derived` is shared by reference because nothing here may touch it.
- */
+/** A working copy of exactly the slices `advance` writes; `derived` is shared. */
 export function cloneForAdvance(state: GameState): GameState {
 	return {
 		...state,
@@ -64,11 +52,7 @@ export function cloneForAdvance(state: GameState): GameState {
 	};
 }
 
-/**
- * The next tick at which anything is due. Offline catchup advances to this and
- * no further, which is what makes a jump indistinguishable from stepping every
- * tick in between.
- */
+/** The next tick anything is due; catchup advances to this and no further. */
 export function nextDeadline(state: GameState, fights: FightDriver): number {
 	let earliest = fights.nextEndTick();
 	for (const squad of state.squads) {
@@ -80,11 +64,9 @@ export function nextDeadline(state: GameState, fights: FightDriver): number {
 }
 
 /**
- * Turn a decided fight into state: survivors, haul, the clear, and the walk
- * home. Shared by the live store action and the offline driver.
- *
- * Returns `"removed"` when the squad was wiped with nothing undying left — it
- * has already been dropped from `draft.squads`.
+ * Turn a decided fight into state: survivors, loot, the clear, and the walk home.
+ * `"removed"` means the squad was wiped with nothing undying left and is already
+ * out of `draft.squads`.
  */
 export function applyFightResolution(
 	draft: GameState,
@@ -103,7 +85,6 @@ export function applyFightResolution(
 		lootRand(squad.id, dungeon.id, dungeon.clearCount),
 	);
 
-	// Removed outright rather than walking an empty squad home.
 	if (res.kind === "destroyed") {
 		draft.squads = draft.squads.filter((s) => s.id !== squad.id);
 		return "removed";
@@ -122,11 +103,9 @@ export function applyFightResolution(
 }
 
 /**
- * Advance `draft` from its current `meta.tickCount` to `toTick`.
- *
- * `toTick` must be greater than the current tick and must not step over a
- * deadline — see `nextDeadline`. Everything paid out across the span is exactly
- * batchable, so one call for N ticks lands where N calls for one would.
+ * Advance `draft` from `meta.tickCount` to `toTick`, which must be later and must
+ * not step over a deadline (see `nextDeadline`). Everything paid across the span
+ * is batchable, so one call for N ticks lands where N calls for one land.
  */
 export function advance(
 	draft: GameState,
@@ -143,9 +122,9 @@ export function advance(
 		accrueFreePulls(draft.gacha, derived.phylactery, span),
 	);
 
-	// ── Pass 1: every transition due at `toTick`, in squad order ──
-	// A squad wiped here is filtered out of `draft.squads` by
-	// `applyFightResolution`; the loop keeps walking the array it started on.
+	// Pass 1: every transition due at `toTick`, in squad order.
+	// `applyFightResolution` filters a wiped squad out of `draft.squads`; the loop
+	// keeps walking the array it started on.
 	const arrivedHome: Squad[] = [];
 
 	for (const squad of draft.squads) {
@@ -166,15 +145,13 @@ export function advance(
 		} else if (squad.state === "traveling" && due) {
 			squad.state = "fighting";
 			squad.phaseStartTick = toTick;
-			// Derived rather than drawn, and stamped on both paths, so a window
-			// ending mid-fight resumes the same battle.
+			// Derived from state, so a window ending mid-fight resumes the same battle.
 			squad.fightSeed = deriveFightSeed(
 				def.id,
 				squad.composition,
 				dungeon.clearCount,
 			);
-			// A fighting squad carries no deadline: no state can say "decided but
-			// not yet applied".
+			// No deadline while fighting: no state can say "decided but not applied".
 			squad.phaseEndTick = undefined;
 			fights.begin(draft, squad, dungeon, toTick);
 		} else if (squad.state === "returning" && due) {
@@ -189,15 +166,12 @@ export function advance(
 		}
 	}
 
-	// ── Pass 2: redeploy ──
-	// Separate from pass 1 because only one squad may hold a dungeon, so an
-	// arrival has to see the claims of squads that landed alongside it. Claiming
-	// as we go in `draft.squads` order settles the tie identically every time:
-	// earlier in the list, which is creation order, wins.
+	// Pass 2: only one squad may hold a dungeon, so an arrival sees the claims of
+	// squads that landed alongside it. `draft.squads` order settles the tie.
 	const occupied = dungeonOccupancy(draft.squads);
 	for (const squad of arrivedHome) {
 		const dungeon = draft.dungeons.find((d) => d.id === squad.targetDungeonId);
-		// Read before being cleared: the flag describes the trip that just ended.
+		// Read before clearing: the flag describes the trip that just ended.
 		const redeploy = shouldAutoDeploy(derived, squad, dungeon, occupied);
 		squad.manualRecall = false;
 		if (!redeploy || squad.targetDungeonId === null) continue;
@@ -211,8 +185,7 @@ export function advance(
 		occupied.add(squad.targetDungeonId);
 	}
 
-	// After the redeploy: unlocks are one-way and turn only on clear counts, and
-	// auto-deploy only re-reads the arriving squad's own target, already unlocked.
+	// Safe after the redeploy: unlocks are one-way and turn only on clear counts.
 	draft.dungeons = checkUnlockConditions(draft.dungeons);
 
 	draft.meta.tickCount = toTick;

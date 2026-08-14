@@ -10,11 +10,7 @@ import { rarityRank, rollRelic } from "./relics";
 
 export { POOL_CONFIGS };
 
-/**
- * A pool's drop table as displayed percentages. Weights are relative and
- * normalised here — they happen to sum to 100 in every pool today, and reading
- * one as a percentage would break silently the first time it didn't.
- */
+/** A pool's drop table as percentages; the relative weights are normalised. */
 export function poolOdds(poolId: PoolId): { rarity: Rarity; pct: number }[] {
 	const { odds } = POOL_CONFIGS[poolId];
 	const total = odds.reduce((s, o) => s + o.weight, 0);
@@ -31,7 +27,6 @@ function rollRarity(config: PoolConfig): Rarity {
 	return config.odds[config.odds.length - 1].rarity;
 }
 
-/** Up to two rolls for `rarity` or better, falling back to `rarity` itself. */
 function guaranteeAtLeast(rarity: Rarity, config: PoolConfig): Rarity {
 	const rolled = rollRarity(config);
 	if (rarityRank(rolled) >= rarityRank(rarity)) return rolled;
@@ -40,16 +35,12 @@ function guaranteeAtLeast(rarity: Rarity, config: PoolConfig): Rarity {
 	return rarity;
 }
 
-/** Every base is eligible at every rarity, hence the unused parameter. */
 function pickBase(_rarity: Rarity): string {
 	const bases = RELIC_BASES;
 	return bases[Math.floor(Math.random() * bases.length)].id;
 }
 
-/**
- * Pulls between guarantees, after the Dark Pact discount. Never below one, so a
- * stacked discount can't turn the counter into a guarantee on every pull.
- */
+/** Pulls between guarantees, after Dark Pact. Floored at one. */
 export function effectivePityInterval(
 	poolId: PoolId,
 	pityReduction: number,
@@ -60,9 +51,8 @@ export function effectivePityInterval(
 }
 
 /**
- * Advance the Phylactery by `ticks` and hand back the new counters. Batch-exact,
- * which is what lets the live tick and the offline catchup share it. At the cap
- * progress stops rather than banking a backlog, so a week away is worth a night.
+ * Advance the Phylactery by `ticks`. Batch-exact, so the live tick and offline
+ * catchup share it; progress stops at the cap.
  */
 export function accrueFreePulls(
 	gacha: Pick<GameState["gacha"], "freePulls" | "freePullTicks">,
@@ -106,8 +96,8 @@ export function executePull(
 	for (let i = 0; i < count; i++) {
 		let rarity: Rarity;
 
-		// A natural roll at or above the pity rarity resets the counter too, so
-		// the guarantee never fires right after the player already got one.
+		// A natural roll at or above the pity rarity resets the counter, so the
+		// guarantee never fires right after one.
 		if (config.pityRarity && pityInterval > 0) {
 			pity++;
 			if (pity >= pityInterval) {
@@ -128,7 +118,7 @@ export function executePull(
 	}
 
 	// A ×10 that rolled nothing at the guaranteed rarity has its last relic
-	// replaced, rather than an extra one appended.
+	// replaced.
 	const x10Guarantee = config.x10Guarantee;
 	if (count === 10 && x10Guarantee) {
 		const hasGuarantee = relics.some(

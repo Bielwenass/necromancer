@@ -27,8 +27,8 @@ export function RevealOverlay({
 	};
 
 	return (
-		// Only dismissable once every card has turned — closing mid-reveal would
-		// skip cards the player never saw.
+		// Only dismissable once every card has turned; closing mid-reveal would skip
+		// cards the player never saw.
 		<Modal
 			label="Ritual results"
 			onClose={allRevealed ? onClose : undefined}

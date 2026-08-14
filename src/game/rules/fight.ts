@@ -8,15 +8,14 @@ import type {
 import { generateLoot } from "./loot";
 import { compositionAfterFight, remnantAfterWipe, squadSize } from "./units";
 
-/** The `derived` projection, as read by everything that resolves a fight. */
 type Derived = GameState["derived"];
 
 /**
  * What a finished fight does to the squad and the ledger.
  *
- * - `cleared` — side A won: survivors walk home with loot and banners.
- * - `retreat` — side A lost but its undying reformed: they walk home empty.
- * - `destroyed` — side A lost with nothing undying left; the squad is gone.
+ * - `cleared`: side A won, survivors walk home with loot and banners.
+ * - `retreat`: side A lost, its undying reformed and walk home empty.
+ * - `destroyed`: side A lost with nothing undying left; the squad is gone.
  */
 export interface FightResolution {
 	kind: "cleared" | "retreat" | "destroyed";
@@ -24,16 +23,15 @@ export interface FightResolution {
 	loot: Partial<Resources> | null;
 	/**
 	 * Treat the squad as manually recalled. A wiped squad's remnant sets this so
-	 * auto-deploy doesn't march it back into the fight that killed everyone else.
+	 * auto-deploy leaves it out of the fight that killed everyone else.
 	 */
 	suppressAutoDeploy: boolean;
 }
 
 /**
- * Losses that claw their way home as skeletons, one roll per unit lost. Out here
- * rather than in the engine: a unit that dies mid-fight is gone from the battle
- * and only walks back out once the fighting stops. Capped at the squad's size
- * limit, since the returning squad has to be a legal one.
+ * Losses that claw their way home as skeletons, one roll per unit lost. Outside
+ * the engine, so a unit that dies mid-fight is gone from the battle. Capped to a
+ * legal returning squad.
  */
 function reanimated(
 	before: Record<UnitType, number>,
@@ -57,10 +55,7 @@ function reanimated(
 	return Math.max(0, Math.min(raised, room));
 }
 
-/**
- * Turning a combat result into game state, shared verbatim by both paths. `rand`
- * is threaded through to `generateLoot` and the reanimation rolls.
- */
+/** Turns a combat result into game state, shared verbatim by both paths. */
 export function resolveFightOutcome(
 	before: Record<UnitType, number>,
 	def: DungeonDef,
@@ -70,9 +65,8 @@ export function resolveFightOutcome(
 	rand: () => number = Math.random,
 ): FightResolution {
 	if (outcome.winner !== "a") {
-		// A wipe destroys the squad — except for its undying, who reform on the
-		// spot and walk home empty-handed. With none of them the squad is simply
-		// gone, and nothing is left to carry loot or claim a banner.
+		// A wipe leaves only the undying, who reform and walk home empty-handed;
+		// with none of them the squad is gone.
 		const remnant = remnantAfterWipe(before);
 		if (squadSize(remnant) === 0) {
 			return {

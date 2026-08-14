@@ -9,8 +9,6 @@ import {
 } from "../data/relics";
 import type { Affix, Rarity, Relic, RelicSlotType, SlotId } from "../types";
 
-export { DUST_VALUES };
-
 let relicCounter = 0;
 
 function rollPosition(rarity: Rarity): number {
@@ -21,15 +19,10 @@ function rollValue(range: [number, number], pos: number): number {
 	return range[0] + (range[1] - range[0]) * pos;
 }
 
-/** Where a rarity sits on the ladder. Used to compare gacha guarantees. */
 export function rarityRank(r: Rarity): number {
 	return RARITY_ORDER.indexOf(r);
 }
 
-/**
- * Whether a relic of `rarity` is allowed to carry this affix. An affix with no
- * `minRarity` is open to everything.
- */
 export function affixAllowedAt(affixId: string, rarity: Rarity): boolean {
 	const min = AFFIX_DEFS[affixId]?.minRarity;
 	return min === undefined || rarityRank(rarity) >= rarityRank(min);
@@ -42,9 +35,7 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	const mainPos = rollPosition(rarity);
 	let mainValue = rollValue(base.mainAffixRange, mainPos);
 
-	// The base's signature power, if this relic rolled rare enough for it. Rolled
-	// before the minors because it takes one of their slots rather than adding a
-	// row — three affixes is the ceiling, so a signature costs a minor.
+	// Rolled first because it takes a minor's slot; three affixes is the ceiling.
 	const sigId = base.signatureAffixId;
 	const sigDef = sigId ? AFFIX_DEFS[sigId] : undefined;
 	let uniqueAffix: Affix | undefined;
@@ -58,8 +49,8 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	}
 
 	const minorCount = Math.max(0, MINOR_COUNT[rarity] - (uniqueAffix ? 1 : 0));
-	// A gated affix is never drawn here — a base grants its signature outright or
-	// not at all, so the two can't compete for the same slot.
+	// Gated affixes are never drawn here, so a signature and the minors can't
+	// compete for one slot.
 	const pool = base.minorAffixPool.filter(
 		(id) =>
 			id !== base.signatureAffixId && AFFIX_DEFS[id]?.minRarity === undefined,
@@ -73,9 +64,8 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 		if (!affixDef) continue;
 		const pos = rollPosition(rarity);
 		const value = rollValue(affixDef.range, pos);
-		// Drawing the base's own main affix concentrates the roll instead of
-		// taking a row: fewer, bigger numbers, and a value that may legitimately
-		// exceed `mainAffixRange`. That spike is the point.
+		// The base's own main affix folds in, so a rolled value may exceed
+		// `mainAffixRange`.
 		if (base.mainAffixId === affixId) {
 			mainValue += value;
 		} else {
@@ -110,7 +100,6 @@ export function rollRelic(baseId: string, rarity: Rarity): Relic {
 	};
 }
 
-/** Every affix on a relic, signature included, in display order. */
 export function allAffixes(relic: Relic): Affix[] {
 	return [
 		relic.mainAffix,
@@ -119,26 +108,20 @@ export function allAffixes(relic: Relic): Affix[] {
 	];
 }
 
-/** Dust paid for sacrificing a batch of relics. */
 export function dustValue(relics: Pick<Relic, "rarity">[]): number {
 	return relics.reduce((sum, r) => sum + DUST_VALUES[r.rarity], 0);
 }
 
-/** Affix multiplier from a relic's upgrade level. */
 export function relicUpgradeMultiplier(upgradeLevel: number): number {
 	return 1 + upgradeLevel * RELIC_UPGRADE_STEP;
 }
 
-/**
- * A relic may only occupy a slot listed on its base. Unknown bases are rejected
- * rather than allowed through, so a bad `baseId` can't quietly equip anywhere.
- */
+/** A relic occupies only a slot listed on its base; unknown bases, nowhere. */
 export function canEquipInSlot(baseId: string, slotId: SlotId): boolean {
 	const base = RELIC_BASES.find((b) => b.id === baseId);
 	return base?.slotIds.includes(slotId) ?? false;
 }
 
-/** The slot family a relic belongs to, or null when its base is unknown. */
 export function getRelicSlotType(baseId: string): RelicSlotType | null {
 	return RELIC_BASES.find((b) => b.id === baseId)?.slot ?? null;
 }
@@ -147,12 +130,11 @@ export function getAffixLabel(affixId: string): string {
 	return AFFIX_DEFS[affixId]?.label ?? affixId;
 }
 
-/** The affix's qualitative line, where its table entry carries one. */
 export function getAffixDescription(affixId: string): string | undefined {
 	return AFFIX_DEFS[affixId]?.description;
 }
 
-/** The rolled value as the card shows it. A trade-off affix reads as both halves "+24% / −12%" */
+/** The rolled value as the card shows it; a trade-off reads "+24% / −12%". */
 export function formatAffixValue(
 	affixId: string,
 	value: number,
@@ -162,12 +144,11 @@ export function formatAffixValue(
 	const unit = def?.unit ?? "";
 	const boosted = value * relicUpgradeMultiplier(upgradeLevel);
 	const one = (n: number) =>
-		// U+2212 MINUS SIGN, matching the effect descriptions.
 		`${n < 0 ? "−" : "+"}${Math.round(Math.abs(n))}${unit}`;
 
 	const scales = (def?.effects ?? []).map((e) => e.scale ?? 1);
-	// `dreadCommand` scales by 100 to express a flat count; that is a unit
-	// conversion, not a second term, so a single effect always prints as one.
+	// A single effect prints one value; `dreadCommand`'s scale is a unit
+	// conversion.
 	if (scales.length < 2) return one(boosted);
 	return scales.map((s) => one(boosted * s)).join(" / ");
 }

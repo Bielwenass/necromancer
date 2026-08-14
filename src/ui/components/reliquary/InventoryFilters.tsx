@@ -12,8 +12,8 @@ const SLOT_FILTERS: {
 	color: string;
 	Icon: IconComponent;
 }[] = [
-	// The crypt has no squad color of its own; the coin gold reads as distinct
-	// from UNIT_COLORS.skeleton, which is the same bone tone as --ink-bone.
+	// The crypt has no squad color; coin gold reads distinct from
+	// UNIT_COLORS.skeleton, which shares the bone tone of --ink-bone.
 	{ id: "crypt", color: "var(--c-coin)", Icon: IconCrypt },
 	{ id: "skeleton", color: UNIT_COLORS.skeleton, Icon: IconSkeleton },
 	{ id: "zombie", color: UNIT_COLORS.zombie, Icon: IconZombie },
@@ -30,18 +30,19 @@ export function InventoryFilters({
 	sacrificeCount,
 	sacrificeDust,
 	confirming,
-	onSacrifice,
+	onRequestSacrifice,
+	onConfirmSacrifice,
 	onCancelSacrifice,
 }: {
 	filterSlot: RelicSlotType | null;
 	filterRarity: Rarity | null;
 	onFilterSlot: (slot: RelicSlotType | null) => void;
 	onFilterRarity: (rarity: Rarity | null) => void;
-	/** How many unequipped relics the current filters match. */
 	sacrificeCount: number;
 	sacrificeDust: number;
 	confirming: boolean;
-	onSacrifice: () => void;
+	onRequestSacrifice: () => void;
+	onConfirmSacrifice: () => void;
 	onCancelSacrifice: () => void;
 }) {
 	const filtered = filterSlot !== null || filterRarity !== null;
@@ -88,8 +89,8 @@ export function InventoryFilters({
 				<div className="flex gap-2 items-center">
 					<ConfirmAction
 						confirming={confirming}
-						onRequest={onSacrifice}
-						onConfirm={onSacrifice}
+						onRequest={onRequestSacrifice}
+						onConfirm={onConfirmSacrifice}
 						onCancel={onCancelSacrifice}
 						label={
 							<>

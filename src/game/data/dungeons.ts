@@ -3,38 +3,19 @@ import type { DungeonDef } from "../types";
 /**
  * The dungeon ladder.
  *
- * **Difficulty** is `total enemy HP × total enemy DPS` — what a melee attrition
- * fight turns on, and nearly the same expression on the player's side
- * (`squad^1.9 × dmg × hp`, the exponent measured in `balanceCheck` section 8).
- * It steps **×1.8 per dungeon within a tier** and **×16 at each tier boundary**,
- * ~5×10⁶ across the whole ladder — what the workshop's geometric curves can
- * deliver, see `UNIT_STAT_CONFIG`.
+ * Difficulty is `total enemy HP × total enemy DPS`, stepping ×1.8 per dungeon
+ * within a tier and ×16 at each tier boundary. Roster shape moves the thresholds
+ * too, so chaff rooms are scaled up and elite rooms down. One enemy blow must
+ * stay well under a player unit's HP or the dungeon can never run unattended;
+ * `balanceCheck` asserts it.
  *
- * Nominal power is an input rather than the answer, because roster shape moves
- * the thresholds too: a crowd of weak enemies is ground down with fewer losses
- * than the same HP × DPS in heavier bodies, so chaff rooms are scaled up and
- * elite rooms down to land where the ladder wants them.
- *
- * HP and DPS grow together. Growing damage faster is not an option: a single
- * enemy blow must stay well under a player unit's HP or the dungeon can never
- * run unattended whatever the squad size, and `balanceCheck` asserts that bound.
- *
- * **Each tier is also a menu**, steering every currency with a lever that
- * already exists rather than a per-resource multiplier in the loot table:
- *
- * - **corpses** — one roll per felled enemy, so roster shape *is* the dial.
- * - **bones** — `lootTable.bonesMin/Max`.
- * - **souls** — `lootTable.soulChance`.
- * - **banners** — a flat `tier` per clear, so only a shorter round trip earns
- *   them faster. `travelTimeTicks` is the dial, deliberately not monotone with
- *   difficulty.
- *
- * Per tier the four rooms are, in order: bones, corpses, banners, souls.
+ * Each tier is also a menu, steering a currency through a lever that exists:
+ * corpses by roster shape, bones by `lootTable.bonesMin/Max`, souls by
+ * `lootTable.soulChance`, banners by `travelTimeTicks`. Per tier the four rooms
+ * are, in order: bones, corpses, banners, souls.
  */
 export const DUNGEON_DEFS: Record<string, DungeonDef> = {
-	// ═══════════════════════════════════════════════════════════════
-	// TIER 1 — Skirmish scale. A handful of units. The first hour.
-	// ═══════════════════════════════════════════════════════════════
+	// ══ TIER 1: skirmish scale. A handful of units. The first hour. ══
 
 	"paupers-tomb": {
 		id: "paupers-tomb",
@@ -57,8 +38,8 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [],
 	},
 
-	// Chaff: thirteen biters and a few wretches. Nothing here is dangerous
-	// alone, and the kill count is what makes it the tier's corpse mine.
+	// Chaff: thirteen biters and a few wretches. The kill count makes it the
+	// tier's corpse mine.
 	"wolf-den": {
 		id: "wolf-den",
 		name: "Wolf Den",
@@ -86,8 +67,8 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [{ dungeonId: "paupers-tomb", count: 3 }],
 	},
 
-	// The counterweight to Wolf Den: half the bodies, each worth fearing, and
-	// the tier's richest bone haul.
+	// Half Wolf Den's bodies, each worth fearing, and the tier's richest bone
+	// haul.
 	"abandoned-chapel": {
 		id: "abandoned-chapel",
 		name: "Abandoned Chapel",
@@ -148,12 +129,10 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [{ dungeonId: "abandoned-chapel", count: 3 }],
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// TIER 2 — Company scale. Squads of ~30–70. The first day.
-	// ═══════════════════════════════════════════════════════════════
+	// ══ TIER 2: company scale. Squads of ~30–70. The first day. ══
 
-	// The short march. Same banners per clear as anything else in the tier,
-	// and by far the most of them per hour.
+	// The short march: the tier's usual banners per clear, and by far the most of
+	// them per hour.
 	"watchers-spire": {
 		id: "watchers-spire",
 		name: "Watcher's Spire",
@@ -271,9 +250,7 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		],
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// TIER 3 — Massed combat. Squads of ~100–300. Days two to four.
-	// ═══════════════════════════════════════════════════════════════
+	// ══ TIER 3: massed combat. Squads of ~100–300. Days two to four. ══
 
 	"ossuary-of-vael": {
 		id: "ossuary-of-vael",
@@ -410,9 +387,7 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		],
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// TIER 4 — Hordes. Squads of ~300–700. The second week.
-	// ═══════════════════════════════════════════════════════════════
+	// ══ TIER 4: hordes. Squads of ~300–700. The second week. ══
 
 	"bone-cathedral": {
 		id: "bone-cathedral",
@@ -480,11 +455,9 @@ export const DUNGEON_DEFS: Record<string, DungeonDef> = {
 		unlockCondition: [{ dungeonId: "bone-cathedral", count: 3 }],
 	},
 
-	// The elite room of the last tier — a third of the bodies of Throne of
-	// Marrow, each several times the weight, and the shortest march in Tier 4.
-	// Its stats sit below its slot in the power ladder on purpose: heavy enemies
-	// raise both thresholds for the same HP×DPS, so by *measured* difficulty it
-	// lands where it should.
+	// The elite room of the last tier, and the shortest march in it. Its stats sit
+	// below its ladder slot on purpose: heavy enemies raise both thresholds for
+	// the same HP×DPS.
 	"ashen-vigil": {
 		id: "ashen-vigil",
 		name: "Ashen Vigil",

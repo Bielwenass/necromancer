@@ -17,7 +17,6 @@ export function UnitReserveRow({
 	color: string;
 	canSummon: (v: number) => boolean;
 	onSummon: () => void;
-	/** Total price of raising `v` more, which climbs with the army's size. */
 	costFor: (v: number) => string;
 }) {
 	const can1 = canSummon(1);

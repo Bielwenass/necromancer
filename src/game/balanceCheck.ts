@@ -1,17 +1,8 @@
 /**
- * Balance calibration harness — whether the numbers in `data/` produce the game
- * they are meant to. Run: `bunx tsx src/game/balanceCheck.ts`, optionally with a
- * tier number. It drives the real `CombatEngine` through the real
- * `recomputeDerived`, so what it measures is what a player meets.
- *
- * Two thresholds per dungeon, and the gap between them is the design surface:
- *
- * - **WIN** — the smallest squad that clears reliably.
- * - **AUTO** — the smallest squad that clears without losing a *mortal* unit,
- *   so it runs unattended forever. Undying losses are free and not counted.
- *
- * Thresholds that coincide make a dungeon binary; a wide gap is the stretch a
- * player earns automation across.
+ * Balance calibration harness. `bunx tsx src/game/balanceCheck.ts [tier]`. Drives
+ * the real engine through the real `recomputeDerived`. Two thresholds per
+ * dungeon: WIN is the smallest squad that clears reliably, AUTO the smallest
+ * that clears without losing a mortal unit. The gap is the design surface.
  */
 
 import { COMBAT_CONFIG } from "../combat/config";
@@ -45,11 +36,8 @@ function check(name: string, ok: boolean, detail = ""): void {
 	}
 }
 
-// ── Building a necromancer ───────────────────────────────────
-
 type Comp = Record<UnitType, number>;
 
-/** An all-skeleton squad — the reference composition every threshold uses. */
 export function comp(skeleton: number, zombie = 0, wraith = 0): Comp {
 	return { skeleton, zombie, wraith };
 }
@@ -58,15 +46,12 @@ const mortalSize = (c: Comp) =>
 	UNIT_TYPES.filter((t) => !UNDYING_TYPES.has(t)).reduce((n, t) => n + c[t], 0);
 
 interface Build {
-	/** Upgrade node ids owned. Defaults to the whole tree. */
 	purchased?: string[];
-	/** Level of every unit stat track. */
-	w?: number;
-	/** Crypt squad-size level — what actually caps the squad. */
-	crypt?: number;
+	w: number;
+	crypt: number;
 }
 
-function makeState({ purchased, w = 0, crypt = 0 }: Build): GameState {
+function makeState({ purchased, w, crypt }: Build): GameState {
 	const base: Omit<GameState, "derived"> = {
 		resources: { bones: 0, souls: 0, dust: 0, corpses: 0, banners: 0 },
 		units: { skeleton: 0, zombie: 0, wraith: 0 },
@@ -91,8 +76,6 @@ function makeState({ purchased, w = 0, crypt = 0 }: Build): GameState {
 	};
 	return { ...base, derived: recomputeDerived(base as GameState) };
 }
-
-// ── One fight ────────────────────────────────────────────────
 
 interface FightResult {
 	win: boolean;
@@ -124,8 +107,7 @@ function fight(
 
 	const win = engine.getWinner() === "a";
 	const survivors = engine.getCounts().a;
-	// Mirrors `compositionAfterFight`: the undying reform at full pre-fight
-	// strength whatever happened, so only the mortals can actually be lost.
+	// Mirrors `compositionAfterFight`: the undying always reform.
 	let home = 0;
 	for (const type of UNIT_TYPES) {
 		if (UNDYING_TYPES.has(type)) continue;
@@ -166,29 +148,19 @@ function sweep(
 	};
 }
 
-// ── Thresholds ───────────────────────────────────────────────
-
 interface Thresholds {
 	win: number | null;
 	auto: number | null;
-	/** Fight length in sim-seconds at the AUTO squad, the steady-state case. */
 	durationSec: number;
 }
 
-/**
- * Smallest squad clearing `>=90%`, then smallest clearing losslessly. Probed
- * geometrically and bisected rather than scanned — a fight is expensive, and
- * the curve is monotone enough that bisection lands within a unit or two.
- */
+/** Smallest squad clearing `>=90%`, then the smallest clearing losslessly. */
 function thresholds(
 	def: DungeonDef,
 	state: GameState,
 	cap: number,
 ): Thresholds {
-	// Five seeds lands a threshold within a unit or two — finer than the numbers
-	// being tuned. Big fights get three: a fight's outcome is an average over
-	// every unit in it, so variance falls as the armies grow, and five would put
-	// a Tier 4 sweep out of reach for iterating.
+	// Variance falls as the armies grow, so big fights get fewer seeds.
 	const foes = def.enemies.reduce((n, e) => n + e.amount, 0);
 	const seedsFor = (n: number) => (n + foes > 400 ? 3 : 5);
 	const wins = (n: number) =>
@@ -206,8 +178,7 @@ function thresholds(
 	}
 	const win = lo;
 
-	// AUTO is not reliably monotone at single-unit resolution, so this walks up
-	// geometrically rather than bisecting a predicate that can flicker.
+	// AUTO is not reliably monotone at single-unit resolution, so walk up.
 	for (let n = win; n <= cap; n = Math.max(n + 1, Math.ceil(n * 1.12))) {
 		const a = sweep(comp(n), def, state, seedsFor(n));
 		if (a.winRate >= 0.9 && a.mortalLost < 0.5) {
@@ -217,13 +188,9 @@ function thresholds(
 	return { win, auto: null, durationSec: 0 };
 }
 
-// ── The elite one-shot invariant ─────────────────────────────
-
 /**
- * With discrete swings an enemy's blow is `dmg × interval` in one go. A dungeon
- * where that exceeds a good fraction of a player unit's HP can never be
- * automated — it deletes a unit per blow however large the squad — which breaks
- * the clear-it-by-hand-then-automate arc every dungeon is supposed to have.
+ * Ceiling on one enemy blow (`dmg × interval`) as a share of a player unit's HP.
+ * Above it a dungeon deletes a unit per blow at any squad size.
  */
 const ONE_SHOT_LIMIT = 0.25;
 
@@ -238,9 +205,6 @@ function worstEnemySwing(def: DungeonDef, state: GameState): number {
 	return worst;
 }
 
-// ── Report ───────────────────────────────────────────────────
-
-/** Enemy power as the ladder variable: total HP × total DPS — see the plan. */
 function enemyPower(def: DungeonDef): number {
 	let hp = 0;
 	let dps = 0;
@@ -251,11 +215,7 @@ function enemyPower(def: DungeonDef): number {
 	return hp * dps;
 }
 
-/**
- * What a player plausibly has on first reaching each tier. Thresholds are
- * meaningless without it — measuring Tier 4 against a naked build reports a wall
- * nobody stands in front of.
- */
+/** What a player plausibly has on first reaching each tier. */
 const TIER_ENTRY: Record<number, Build> = {
 	1: { purchased: ["s1", "s3"], w: 3, crypt: 8 },
 	2: { purchased: ["s1", "s2", "s3", "c3", "c4", "s7"], w: 12, crypt: 30 },
@@ -265,12 +225,8 @@ const TIER_ENTRY: Record<number, Build> = {
 };
 
 /**
- * The build at dungeon `index` of `tier`, interpolated between that tier's entry
- * gear and the next tier's, since a player grows *through* a tier.
- *
- * Only a fraction of the way. The full span would model someone who has already
- * earned the next tier's gear, and their growth would cancel the difficulty ramp
- * exactly — which is how every dungeon in a tier ends up feeling the same.
+ * The build at dungeon `index` of `tier`, a fraction of the way toward the next
+ * tier's entry gear. A full span would cancel the difficulty ramp exactly.
  */
 function buildFor(tier: number, index: number): Build {
 	const a = TIER_ENTRY[tier];
@@ -279,21 +235,16 @@ function buildFor(tier: number, index: number): Build {
 	const lerp = (x: number, y: number) => Math.round(x + (y - x) * f);
 	return {
 		purchased: a.purchased,
-		w: lerp(a.w ?? 0, b.w ?? 0),
-		crypt: lerp(a.crypt ?? 0, b.crypt ?? 0),
+		w: lerp(a.w, b.w),
+		crypt: lerp(a.crypt, b.crypt),
 	};
 }
 
-/**
- * Below this the two thresholds can't meaningfully separate — a squad of six
- * has no room to be a squad of six-and-a-half — so the band assertion only
- * applies once a dungeon needs a real force.
- */
 const BAND_MIN_SQUAD = 8;
 
 const TICKS_PER_HOUR = 3600 * TICKS_PER_SECOND;
 
-/** Measured fight lengths per tier, in ticks — see section 1's `fight` column. */
+/** Measured fight lengths per tier, in ticks; see section 1's `fight` column. */
 const FIGHT_TICKS: Record<number, number> = {
 	1: 180,
 	2: 170,
@@ -301,17 +252,10 @@ const FIGHT_TICKS: Record<number, number> = {
 	4: 300,
 };
 
-// ── What a bigger squad is actually worth ────────────────────
-
 /**
- * Lanchester's square law would make squad size worth double any per-unit stat,
- * but it doesn't hold here: only units in contact can swing, so a rank at the
- * back contributes nothing until someone in front of it dies. The real exponent
- * prices the squad-size track against the stat tracks, so it is measured.
- *
- * Method: hold the build fixed, scale one dungeon's HP and damage together to
- * move its power by a known factor, and see how the required squad responds.
- * If `squad ∝ power^a` then `power ∝ squad^(1/a)`, and `1/a` is the exponent.
+ * Only units in contact can swing, so the exponent pricing squad size against the
+ * stat tracks is measured: scale a dungeon's power and watch the required squad.
+ * If `squad ∝ power^a`, the exponent is `1/a`.
  */
 function scaledDungeon(def: DungeonDef, powerMult: number): DungeonDef {
 	// Power is HP × damage, so each carries half of a change.
@@ -327,8 +271,7 @@ function scaledDungeon(def: DungeonDef, powerMult: number): DungeonDef {
 
 function reportSquadExponent(): void {
 	console.log("\n8. What a bigger squad is worth\n");
-	// Two scales: crowding is what bends the curve away from the square law, and
-	// it bites harder the bigger the armies get.
+	// Two scales: crowding bends the curve away from the square law.
 	for (const [tier, id] of [
 		[2, "watchers-spire"],
 		[3, "ossuary-of-vael"],
@@ -358,7 +301,6 @@ function measureExponent(tier: number, def: DungeonDef): void {
 		check("enough points to fit an exponent", false, `${points.length}`);
 		return;
 	}
-	// Least-squares slope of ln(squad) against ln(power).
 	const n = points.length;
 	const lx = points.map((p) => Math.log(p.mult));
 	const ly = points.map((p) => Math.log(p.win));
@@ -385,35 +327,17 @@ function measureExponent(tier: number, def: DungeonDef): void {
 	);
 }
 
-// ── Pacing ───────────────────────────────────────────────────
+/** Hours of play per tier; a semi-active day is ~12 simulated hours. */
+const TARGET_HOURS: Record<number, number> = { 1: 5, 2: 26, 3: 80, 4: 200 };
 
-/**
- * How long each tier takes, analytically: whether a player can afford the build
- * that beats a dungeon in the time the design intends. No fights are run — it
- * prices the reference builds against the bone income of the tier below.
- *
- * Hours are of *play*, against a semi-active player — four active hours plus one
- * eight-hour offline claim a day, so about twelve simulated hours per calendar
- * day.
- */
-const TARGET_HOURS: Record<number, number> = {
-	1: 5, // a couple of hours
-	2: 26, // 16-24h of calendar time, ~2 days
-	3: 80, // a few days
-	4: 200, // one to two weeks
-};
-
-/** Squads fielded concurrently at each tier — one dungeon each, by the rule. */
+/** Squads fielded concurrently at each tier, one dungeon each. */
 const SQUADS_AT: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 5 };
 
-/** Unit tracks a player can spend on: zombies open at s4, wraiths at s9. */
-function spendableTracks(tier: number): UnitType[] {
-	return UNIT_TYPES.slice(0, Math.min(3, tier)) as UnitType[];
-}
-
-function buildCostBones(w: number, crypt: number, tier: number): number {
+/** Bones to reach a tier's entry build. Zombies open at s4, wraiths at s9. */
+function buildCostBones(tier: number): number {
+	const { w, crypt } = TIER_ENTRY[tier];
 	let bones = 0;
-	for (const unit of spendableTracks(tier)) {
+	for (const unit of UNIT_TYPES.slice(0, Math.min(3, tier))) {
 		for (const stat of ["hp", "dmg"] as const) {
 			for (let l = 0; l < w; l++)
 				bones += unitStatCost(unit, stat, l).bones ?? 0;
@@ -425,6 +349,10 @@ function buildCostBones(w: number, crypt: number, tier: number): number {
 	return bones;
 }
 
+/**
+ * Whether the build that beats a tier is affordable in the intended time.
+ * Analytic: it prices the reference builds against the tier below's bone income.
+ */
 function reportPacing(): void {
 	console.log("\n7. Pacing — can the build be afforded in time?\n");
 	console.log(
@@ -434,38 +362,30 @@ function reportPacing(): void {
 
 	let cumulative = 0;
 	let bannersEarned = 0;
+	const cumulativeAt: Record<number, number> = {};
+
 	for (const tier of [1, 2, 3, 4]) {
 		const defs = Object.values(DUNGEON_DEFS).filter((d) => d.tier === tier);
 		let bonesPerHour = 0;
 		let bannersPerHour = 0;
 		for (const d of defs) {
-			// A round trip is out, fight, and back — the dungeon is held for all of it.
-			const cycle = 2 * d.travelTimeTicks + FIGHT_TICKS[tier];
-			const clears = TICKS_PER_HOUR / cycle;
-			const bones =
+			// A round trip is out, fight, and back; the dungeon is held for all of it.
+			const clears =
+				TICKS_PER_HOUR / (2 * d.travelTimeTicks + FIGHT_TICKS[tier]);
+			bonesPerHour +=
+				clears *
 				((d.lootTable.bonesMin + d.lootTable.bonesMax) / 2) *
 				clearMultiplier(500);
-			bonesPerHour += clears * bones;
 			bannersPerHour += clears * d.tier;
 		}
-		// Only as many rooms are worked as there are squads to work them.
 		const share = SQUADS_AT[tier] / defs.length;
 		bonesPerHour *= share;
 		bannersPerHour *= share;
 
-		const cost =
-			buildCostBones(
-				TIER_ENTRY[tier + 1].w ?? 0,
-				TIER_ENTRY[tier + 1].crypt ?? 0,
-				tier + 1,
-			) -
-			buildCostBones(
-				TIER_ENTRY[tier].w ?? 0,
-				TIER_ENTRY[tier].crypt ?? 0,
-				tier,
-			);
+		const cost = buildCostBones(tier + 1) - buildCostBones(tier);
 		const hours = cost / bonesPerHour;
 		cumulative += hours;
+		cumulativeAt[tier] = cumulative;
 		bannersEarned += hours * bannersPerHour;
 
 		console.log(
@@ -479,34 +399,11 @@ function reportPacing(): void {
 	}
 
 	console.log("");
-	let running = 0;
 	for (const tier of [1, 2, 3, 4]) {
-		const defs = Object.values(DUNGEON_DEFS).filter((d) => d.tier === tier);
-		let bph = 0;
-		for (const d of defs) {
-			const cycle = 2 * d.travelTimeTicks + FIGHT_TICKS[tier];
-			bph +=
-				(TICKS_PER_HOUR / cycle) *
-				((d.lootTable.bonesMin + d.lootTable.bonesMax) / 2) *
-				clearMultiplier(500);
-		}
-		bph *= SQUADS_AT[tier] / defs.length;
-		running +=
-			(buildCostBones(
-				TIER_ENTRY[tier + 1].w ?? 0,
-				TIER_ENTRY[tier + 1].crypt ?? 0,
-				tier + 1,
-			) -
-				buildCostBones(
-					TIER_ENTRY[tier].w ?? 0,
-					TIER_ENTRY[tier].crypt ?? 0,
-					tier,
-				)) /
-			bph;
 		check(
 			`T${tier} complete within ${TARGET_HOURS[tier]}h of play`,
-			running <= TARGET_HOURS[tier],
-			`${running.toFixed(1)}h`,
+			cumulativeAt[tier] <= TARGET_HOURS[tier],
+			`${cumulativeAt[tier].toFixed(1)}h`,
 		);
 	}
 
@@ -520,7 +417,7 @@ function reportPacing(): void {
 		bannersEarned >= treeCost,
 		`${Math.round(bannersEarned)} earned vs ${treeCost} to buy`,
 	);
-	// ...but not so cheap it is done in the opening tiers.
+	// ...and not so cheap it is done in the opening tiers.
 	check(
 		"the tree is not finished before tier 4",
 		treeCost > bannersEarned * 0.5,
@@ -528,13 +425,7 @@ function reportPacing(): void {
 	);
 }
 
-/**
- * Optional tier filter: `balanceCheck.ts 2` measures Tier 2 alone. A full run
- * drives thousands of real fights, so this is the difference between a minute
- * and an afternoon while iterating.
- */
 function tierFilter(): number | null {
-	// Reached through `globalThis` because the repo carries no node types.
 	const argv =
 		(globalThis as { process?: { argv?: string[] } }).process?.argv ?? [];
 	const n = Number(argv[2]);
@@ -571,8 +462,7 @@ function main(): void {
 
 	for (const def of DEFS) {
 		const state = makeState(buildFor(def.tier, indexInTier.get(def.id) ?? 0));
-		// The build's own squad limit is the cap that matters: a threshold above it
-		// is a dungeon the player cannot field enough bodies for.
+		// A threshold above the build's squad limit is unfieldable.
 		const t = thresholds(def, state, state.derived.maxSquadSize);
 		const unitHp = effectiveUnitStats(state.derived, "skeleton").hp;
 		const swingRatio = worstEnemySwing(def, state) / unitHp;
@@ -596,10 +486,8 @@ function main(): void {
 
 	console.log("\n2. The opening fight falls to the squad you are given");
 	{
-		// The literal starting state rather than a modelled build: no upgrades, no
-		// workshop levels, `BASE_MAX_SQUAD_SIZE` bodies. If this fails the game
-		// cannot be started at all.
-		const fresh = makeState({ purchased: [] });
+		// The literal starting state. If this fails the game cannot be started.
+		const fresh = makeState({ purchased: [], w: 0, crypt: 0 });
 		const opener = DUNGEON_DEFS[STARTING_DUNGEON_ID];
 		const a = sweep(comp(BASE_MAX_SQUAD_SIZE), opener, fresh, 9);
 		check(
@@ -607,7 +495,6 @@ function main(): void {
 			a.winRate >= 0.9,
 			`${(a.winRate * 100).toFixed(0)}% win rate`,
 		);
-		// It should still cost something, or there is nothing to grow out of.
 		check(
 			`${opener.name} costs losses at that size`,
 			a.mortalLost > 0.2,
@@ -632,16 +519,14 @@ function main(): void {
 		for (let i = 1; i < reached.length; i++) {
 			const prev = reached[i - 1];
 			const cur = reached[i];
-			// Only compare inside a tier — across tiers the build changes too.
+			// Only compare inside a tier; across tiers the build changes too.
 			if (prev.def.tier !== cur.def.tier) continue;
 			if ((cur.t.auto ?? 0) < (prev.t.auto ?? 0)) {
 				monotone = false;
 				detail = `${prev.def.name} ${prev.t.auto} → ${cur.def.name} ${cur.t.auto}`;
 			}
 		}
-		// Non-decreasing rather than strictly increasing: small squads can tie at a
-		// whole number of units, which is resolution rather than flatness. The
-		// tier-wide ramp below is what enforces the climb.
+		// Non-decreasing: small squads tie at whole-unit resolution.
 		check("no dungeon in a tier is easier than the last", monotone, detail);
 
 		for (const tier of [1, 2, 3, 4]) {
@@ -651,9 +536,7 @@ function main(): void {
 			if (inTier.length < 2) continue;
 			const first = inTier[0].t.auto ?? 1;
 			const last = inTier[inTier.length - 1].t.auto ?? 1;
-			// Power steps ×1.8 per dungeon and required squad goes as its square
-			// root, so ×5.8 of power across a tier is ×2.4 of squad. On AUTO rather
-			// than WIN: within a tier the climb shows up as what automation costs.
+			// ×1.8 power per dungeon, squad as its square root: ×2.4 across a tier.
 			const ramp = last / first;
 			check(
 				`T${tier} ramps across the tier`,
@@ -693,7 +576,6 @@ function main(): void {
 		);
 	}
 
-	// Analytic and cheap, so it runs even on a tier-filtered invocation.
 	reportSquadExponent();
 	reportPacing();
 

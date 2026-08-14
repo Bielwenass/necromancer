@@ -5,7 +5,6 @@ import type { SideConfig, UnitMods } from "./types";
 export const COMBAT_W = 360;
 export const COMBAT_H = 180;
 
-/** Where each side musters, as mirrored bands at the edges of the arena. */
 export const ATTACKER_SPAWN = { x: 10, y: 10, w: 55, h: COMBAT_H - 20 };
 export const DEFENDER_SPAWN = {
 	x: COMBAT_W - 65,
@@ -15,9 +14,8 @@ export const DEFENDER_SPAWN = {
 };
 
 /**
- * A unit type's stats as combat uses them: the flat value from the workshop,
- * raised by the percentage bonuses from upgrades and relics. The Reliquary's
- * stat panel reads it too, so the panel and the engine can't disagree.
+ * A unit type's stats as combat uses them: the flat workshop value raised by the
+ * percentage bonuses. The Reliquary's stat panel reads it too, so the two agree.
  */
 export function effectiveUnitStats(
 	derived: GameState["derived"],
@@ -31,7 +29,6 @@ export function effectiveUnitStats(
 	};
 }
 
-/** The combat modifiers a unit type carries, or null when it carries none. */
 export function unitMods(
 	derived: GameState["derived"],
 	type: UnitType,
@@ -49,19 +46,13 @@ export function unitMods(
 		spectral: d.spectral,
 		lastStand: d.lastStand,
 	};
-	// The overwhelmingly common case is a unit with nothing, and the simulation
-	// branches on `mods === null` to skip its modifier work entirely.
 	for (const value of Object.values(mods)) {
 		if (value !== 0) return mods;
 	}
 	return null;
 }
 
-/**
- * Whether a squad fields all three unit types, which is what the Group Tactics
- * upgrade pays for. Composition is known here, so the bonus needs nothing from
- * the engine.
- */
+/** Whether a squad fields all three unit types, which Group Tactics pays for. */
 export function hasAllUnitTypes(
 	composition: Record<UnitType, number>,
 ): boolean {
@@ -93,13 +84,9 @@ export function buildAttackerConfig(
 }
 
 /**
- * The dungeon's side of the fight, shared by the live loop, offline catchup and
- * the benchmark so none writes the spawn rectangle out by hand.
- *
- * Enemy debuff affixes are applied here rather than in the engine, keeping them
- * free of simulation cost and identical on both paths. The roster is rebuilt
- * rather than passed through: `def.enemies` belongs to the dungeon table and
- * must not be scaled in place.
+ * The dungeon's side of the fight. Enemy debuff affixes are applied here, so
+ * they cost nothing per tick and are identical on both paths. The roster is
+ * rebuilt: `def.enemies` is table data, never scaled in place.
  */
 export function buildDefenderConfig(
 	def: DungeonDef,

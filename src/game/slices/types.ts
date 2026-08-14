@@ -6,7 +6,6 @@ import type { ProgressionSlice } from "./progressionSlice";
 import type { RelicSlice } from "./relicSlice";
 import type { SquadSlice } from "./squadSlice";
 
-/** The full store: game state plus every slice's actions and runtime. */
 export type StoreState = GameState &
 	CombatSlice &
 	SquadSlice &
@@ -15,8 +14,7 @@ export type StoreState = GameState &
 	PersistenceSlice;
 
 /**
- * Each slice is a `StateCreator` over the *whole* store, so a slice may read
- * state owned by another slice via `get()` while only declaring the actions it
- * contributes.
+ * Each slice is a `StateCreator` over the whole store, so it may read another
+ * slice's state via `get()` while declaring only the actions it contributes.
  */
 export type SliceCreator<T> = StateCreator<StoreState, [], [], T>;

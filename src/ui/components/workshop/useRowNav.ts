@@ -10,11 +10,10 @@ interface RowNav {
 
 /**
  * Keyboard companion to click-to-pin: ↑/↓ move the pin within the active
- * section, Enter buys the pinned row. Hovering deliberately does nothing —
- * the detail panel only changes when the player asks it to.
+ * section, Enter buys the pinned row. Hovering deliberately does nothing.
  *
- * The handler reads its inputs through a ref so the listener is attached once,
- * not re-bound on every tick-driven re-render of the screen.
+ * The handler reads its inputs through a ref, so the listener is attached once
+ * and survives every tick-driven re-render of the screen.
  */
 export function useRowNav(nav: RowNav) {
 	const latest = useRef(nav);

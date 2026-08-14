@@ -2,25 +2,17 @@ import type { PoolId, Rarity, Resources } from "../types";
 
 export interface PoolConfig {
 	/**
-	 * Relative weights, normalised at roll time. They happen to sum to 100 in
-	 * every pool today, but nothing requires that — read the displayed odds
-	 * through `poolOdds()` rather than treating a weight as a percentage.
+	 * Relative weights, normalised at roll time; nothing requires them to sum to
+	 * 100. Read displayed odds through `poolOdds()`.
 	 */
 	odds: { rarity: Rarity; weight: number }[];
-	/** Rarity forced when the counter hits `pityInterval`; null disables pity. */
 	pityRarity: Rarity | null;
 	pityInterval: number;
-	/** Floor guaranteed somewhere in a ×10 pull. */
 	x10Guarantee: Rarity | null;
 	cost1: { resource: keyof Resources; amount: number };
 	cost10: { resource: keyof Resources; amount: number };
 }
 
-/**
- * The Phylactery's cadence: one free banner-pool pull per interval, banked up to
- * the cap. The cap is what makes an overnight absence worth returning from
- * without letting a week away pay for a hundred pulls.
- */
 export const FREE_PULL_INTERVAL_TICKS = 3000;
 export const FREE_PULL_CAP = 10;
 

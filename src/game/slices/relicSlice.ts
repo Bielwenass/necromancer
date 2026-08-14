@@ -1,5 +1,5 @@
 import { executePull, POOL_CONFIGS } from "../rules/gacha";
-import { canEquipInSlot, DUST_VALUES } from "../rules/relics";
+import { canEquipInSlot, dustValue } from "../rules/relics";
 import type { PoolId, SlotId } from "../types";
 import { withDerived, withoutRelic } from "./helpers";
 import type { SliceCreator } from "./types";
@@ -22,9 +22,8 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 			if (!canEquipInSlot(relic.baseId, slotId)) return prev;
 			if (!prev.derived.unlockedSlots.includes(slotId)) return prev;
 
-			// Clear the relic's previous slot first, so moving it between slots
-			// can't leave it equipped twice. Whatever occupied `slotId` is simply
-			// displaced and stays in the inventory.
+			// Clear the previous slot first, so a move can't equip it twice. Whatever
+			// held `slotId` is displaced into the inventory.
 			const equipped = withoutRelic(prev.relics.equipped, relicId);
 			equipped[slotId] = relicId;
 
@@ -61,10 +60,7 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 			const sacrificed = prev.relics.inventory.filter((r) => doomed.has(r.id));
 			if (sacrificed.length === 0) return prev;
 
-			const dust = sacrificed.reduce(
-				(sum, r) => sum + DUST_VALUES[r.rarity],
-				0,
-			);
+			const dust = dustValue(sacrificed);
 			let equipped = prev.relics.equipped;
 			for (const r of sacrificed) equipped = withoutRelic(equipped, r.id);
 
@@ -83,8 +79,7 @@ export const createRelicSlice: SliceCreator<RelicSlice> = (set, get) => ({
 			const config = POOL_CONFIGS[poolId];
 			const { resource, amount } = count === 1 ? config.cost1 : config.cost10;
 
-			// A Phylactery charge covers one banner pull outright. Charges are never
-			// spent on a ×10, so they can't be pooled into a bulk discount.
+			// A Phylactery charge covers one banner pull and is never spent on a ×10.
 			const free =
 				poolId === "banner" && count === 1 && prev.gacha.freePulls > 0;
 			if (!free && prev.resources[resource] < amount) return prev;

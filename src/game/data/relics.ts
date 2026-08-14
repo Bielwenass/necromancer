@@ -1,11 +1,5 @@
 import type { AffixEffect, Rarity, RelicBase, SlotId } from "../types";
 
-/**
- * Slots open before any upgrade is bought — one crypt slot and the first slot
- * of each summoning circle. Every other slot is unlocked by a node in the
- * necromancy branch. A circle's slots stay hidden until its unit is unlocked,
- * so opening `II1` costs nothing while zombies are still buried.
- */
 export const BASE_UNLOCKED_SLOTS: readonly SlotId[] = [
 	"C1",
 	"I1",
@@ -13,7 +7,6 @@ export const BASE_UNLOCKED_SLOTS: readonly SlotId[] = [
 	"III1",
 ];
 
-/** Short name for a slot, as the Reliquary and the upgrade tree both print it. */
 export const SLOT_LABELS: Record<SlotId, string> = {
 	C1: "C-I",
 	C2: "C-II",
@@ -26,7 +19,6 @@ export const SLOT_LABELS: Record<SlotId, string> = {
 	III2: "W-II",
 };
 
-/** Rarity from worst to best. Everything that ranks rarities derives from this. */
 export const RARITY_ORDER = [
 	"common",
 	"uncommon",
@@ -36,10 +28,8 @@ export const RARITY_ORDER = [
 ] as const;
 
 /**
- * Minor affixes a relic of each rarity rolls on top of its main affix. A base's
- * signature displaces a minor rather than adding a row, so three affixes is the
- * ceiling at every rarity. A drawn minor matching the base's main affix folds
- * into it, so a relic can show fewer rows and hit harder on one stat.
+ * Minor affixes on top of the main affix. A signature displaces a minor, so three
+ * affixes is the ceiling; a minor matching the main affix folds into it.
  */
 export const MINOR_COUNT: Record<Rarity, number> = {
 	common: 0,
@@ -50,9 +40,8 @@ export const MINOR_COUNT: Record<Rarity, number> = {
 };
 
 /**
- * Added to every affix's roll position, so a rarer relic rolls higher within
- * the same range. A boost can push the position past 1, which is deliberate:
- * a legendary may roll above its affix's nominal maximum.
+ * Added to every affix's roll position, so a rarer relic rolls higher in the same
+ * range. It may push the position past 1, above the affix's nominal maximum.
  */
 export const POS_BOOST_RARITY: Record<Rarity, number> = {
 	common: 0.0,
@@ -62,7 +51,6 @@ export const POS_BOOST_RARITY: Record<Rarity, number> = {
 	legendary: 0.5,
 };
 
-/** Dust paid for sacrificing a relic of each rarity. */
 export const DUST_VALUES: Record<Rarity, number> = {
 	common: 1,
 	uncommon: 2,
@@ -71,17 +59,10 @@ export const DUST_VALUES: Record<Rarity, number> = {
 	legendary: 30,
 };
 
-/**
- * Affix multiplier per relic upgrade level: `1 + level × step`. Read by both
- * the display formatter and `recomputeDerived`, so a card can't promise a
- * number combat doesn't use. Inert today; nothing writes `upgradeLevel`.
- */
 export const RELIC_UPGRADE_STEP = 0.1;
 
 export const RELIC_BASES: RelicBase[] = [
-	// ═══════════════════════════════════════════════════════════════
-	// CRYPT-BOUND (C1, C2, C3) — Global / economy / meta affixes
-	// ═══════════════════════════════════════════════════════════════
+	// ── CRYPT-BOUND (C1, C2, C3): global, economy, meta ──
 	{
 		id: "marrow-halo",
 		name: "Marrow Halo",
@@ -192,9 +173,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"Raised over a field of the dead, it draws more from the harvest.",
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// SKELETON CIRCLE (I1, I2) — Cheap mass, kill volume
-	// ═══════════════════════════════════════════════════════════════
+	// ── SKELETON CIRCLE (I1, I2): cheap mass, kill volume ──
 	{
 		id: "coldring",
 		name: "Coldring",
@@ -285,9 +264,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"A single fang torn from a forgotten king. The swarm follows its bite.",
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// ZOMBIE CIRCLE (II1, II2) — Wall, tank, attrition
-	// ═══════════════════════════════════════════════════════════════
+	// ── ZOMBIE CIRCLE (II1, II2): wall, tank, attrition ──
 	{
 		id: "plague-stone",
 		name: "Plague Stone",
@@ -362,9 +339,7 @@ export const RELIC_BASES: RelicBase[] = [
 			"A bell-clapper of dried flesh. Wounds it, and it answers louder.",
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// WRAITH CIRCLE (III1, III2) — Assassination, fragility, soul-bound
-	// ═══════════════════════════════════════════════════════════════
+	// ── WRAITH CIRCLE (III1, III2): assassination, fragility, soul-bound ──
 	{
 		id: "wraith-lens",
 		name: "Wraith Lens",
@@ -460,26 +435,19 @@ export const RELIC_BASES: RelicBase[] = [
 
 export interface AffixDefinition {
 	label: string;
-	/** `%` or `''` for a flat count. */
 	unit: string;
 	range: [number, number];
 	/**
 	 * Where the rolled value lands. More than one entry makes a trade-off affix:
-	 * every effect reads the same roll, and a negative `scale` turns part of it
-	 * into a cost.
+	 * every effect reads the same roll, a negative `scale` turning it into a cost.
 	 */
 	effects: AffixEffect[];
-	/**
-	 * Locks the affix to relics of this rarity or better. A gated affix is never
-	 * drawn into a minor slot — the only way to one is a base that names it as
-	 * its `signatureAffixId`.
-	 */
+	/** Locks the affix out of every minor pool; only a `signatureAffixId` grants it. */
 	minRarity?: Rarity;
 	description?: string;
 }
 
 export const AFFIX_DEFS: Record<string, AffixDefinition> = {
-	// ── Economy (Crypt slot) ───────────────────────────────────────
 	boneYield: {
 		label: "Bone Yield",
 		unit: "%",
@@ -533,7 +501,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "Skeletons cost less bone to raise.",
 	},
 
-	// ── Squad / dispatch (Crypt slot) ──────────────────────────────
 	squadTravelSpeed: {
 		label: "Squad Travel Speed",
 		unit: "%",
@@ -549,7 +516,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "Increases max squad size while equipped.",
 	},
 
-	// ── Enemy debuffs (Crypt slot) ─────────────────────────────────
 	enemyFrailty: {
 		label: "Frailty",
 		unit: "%",
@@ -565,13 +531,10 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "Dungeon defenders strike for less.",
 	},
 
-	// ── Trade-offs — one roll, paid for out of another stat ────────
-	// A fight's outcome tracks damage × HP, so trading one for the other evenly
-	// is power-neutral however large the roll. These roll several times a pure
-	// affix's ceiling against a shallow scale instead, making one a clear gain;
-	// the cost lands where the product doesn't show, as a squad that still wins
-	// but bleeds units doing it — which is what pushes a dungeon back out of
-	// reach of running unattended.
+	// ── Trade-offs: one roll, paid for out of another stat ──
+	// A fight tracks damage × HP, so an even trade is power-neutral at any roll.
+	// These roll high against a shallow scale: a clear gain whose cost hides in the
+	// product, in a squad that wins while bleeding units.
 	recklessRites: {
 		label: "Reckless Rites",
 		unit: "%",
@@ -642,7 +605,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "A wraith poured into one place strikes harder, and drifts.",
 	},
 
-	// ── Skeleton (Skeleton slot) ───────────────────────────────────
 	skeletonDamage: {
 		label: "Skeleton Damage",
 		unit: "%",
@@ -690,7 +652,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 			"Bonus damage once your side is reduced to a fraction of what marched in.",
 	},
 
-	// ── Zombie (Zombie slot) ───────────────────────────────────────
 	zombieDamage: {
 		label: "Zombie Damage",
 		unit: "%",
@@ -721,7 +682,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "Zombie damage rises as their own HP falls.",
 	},
 
-	// ── Wraith (Wraith slot) ───────────────────────────────────────
 	wraithDamage: {
 		label: "Wraith Damage",
 		unit: "%",
@@ -758,7 +718,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		description: "Wraiths finish wounded targets far faster.",
 	},
 
-	// ── Signatures — gated, and reachable only through a base ──────
+	// Signatures - gated, and reachable only through a base
 	warHorn: {
 		label: "War Horn",
 		unit: "%",
@@ -814,9 +774,8 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		range: [60, 100],
 		minRarity: "legendary",
 		effects: [{ kind: "unit", units: ["wraith"], stat: "revive" }],
-		// Rolls far higher than `lichBond` because it is worth less per point:
-		// wraiths already reform between battles, so all of its value is staying
-		// on the field long enough to screen.
+		// Rolls high because wraiths already reform between battles, leaving this
+		// worth only the screening it buys mid-fight.
 		description:
 			"The first time a wraith is unmade in a battle, it gathers again at this much HP.",
 	},
@@ -825,8 +784,8 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		unit: "",
 		range: [1, 1],
 		minRarity: "legendary",
-		// A flat count rather than a percentage, so `scale` undoes the conversion
-		// to a decimal that every other affix wants.
+		// A flat count, so `scale` undoes the decimal conversion every other affix
+		// wants.
 		effects: [{ kind: "global", stat: "maxSquads", op: "add", scale: 100 }],
 		description: "One more warband may take the field.",
 	},

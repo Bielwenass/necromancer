@@ -3,11 +3,10 @@ import { rarityColor, rarityName } from "../../theme";
 import { SectionLabel } from "../common/SectionLabel";
 
 interface DropOddsTableProps {
-	/** Normalised percentages from `poolOdds()` — never raw pool weights. */
+	/** Normalised percentages from `poolOdds()`; never raw pool weights. */
 	odds: { rarity: Rarity; pct: number }[];
 }
 
-/** The stacked odds bar and its per-rarity breakdown. */
 export function DropOddsTable({ odds }: DropOddsTableProps) {
 	return (
 		<div className="mt-5">

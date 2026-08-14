@@ -1,7 +1,6 @@
 import { NodeIcon } from "../icons";
 import type { IconComponent } from "../icons/IconProps";
 
-/** Renders either a named `NodeIcon` kind or a resource icon component. */
 export function WorkshopRowIcon({
 	kind,
 	size = 16,

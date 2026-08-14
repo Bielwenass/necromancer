@@ -10,9 +10,8 @@ import type { StoreState } from "./slices/types";
 export type { StoreState } from "./slices/types";
 
 /**
- * One store composed from four action slices plus persistence. Slices are split
- * by domain only — they share a single state object, so any slice may read the
- * whole store through `get()`.
+ * One store composed from four action slices plus persistence. Slices split by
+ * domain over a single state object, so any slice may read it all via `get()`.
  */
 export const useGameStore = create<StoreState>()((...args) => ({
 	...buildHydratedState(),

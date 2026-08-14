@@ -7,20 +7,18 @@ import forbiddenArt from "../../assets/rituals/forbidden.png";
 export interface PoolMeta {
 	name: string;
 	blurb: string;
-	/** White-on-transparent line art, tinted to `accent` by `RitualArt`. */
 	art: string;
 	accent: string;
 	/**
-	 * The accent at low alpha, washed over the panel and the ×10 button.
-	 * Alpha is tuned per accent, not shared — a lighter accent reads
-	 * brighter at the same value.
+	 * The accent at low alpha, washed over the panel and the ×10 button. Alpha is
+	 * tuned per accent: a lighter accent reads brighter at the same value.
 	 */
 	tint: string;
 }
 
 /**
- * Presentation for each gacha pool. The odds, costs and pity rules themselves
- * live in `POOL_CONFIGS` (`game/data/gacha.ts`) — this is only how a pool looks.
+ * Presentation for each gacha pool; the odds, costs and pity rules live in
+ * `POOL_CONFIGS` (`game/data/gacha.ts`).
  */
 export const POOL_META: Record<PoolId, PoolMeta> = {
 	banner: {

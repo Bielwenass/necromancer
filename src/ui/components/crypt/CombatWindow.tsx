@@ -3,27 +3,20 @@ import { COMBAT_CONFIG } from "../../../combat/config";
 import { COMBAT_H, COMBAT_W } from "../../../combat/dungeonCombat";
 import type { CombatEngine } from "../../../combat/engine";
 import { useGameStore } from "../../../game/store";
-import type { DungeonDef, Squad } from "../../../game/types";
+import type { Squad } from "../../../game/types";
 
-// Backing-store scale for a crisp render on high-DPI screens. The sim's
-// logical coordinate space (COMBAT_W × COMBAT_H) stays fixed — only the
-// canvas's physical pixel buffer and a matching ctx transform grow.
+// Backing-store scale for high-DPI screens. The sim's logical space
+// (COMBAT_W × COMBAT_H) is untouched; this moves the pixel buffer and transform.
 const CANVAS_DPR = Math.min(window.devicePixelRatio || 1, 3);
 
-export function CombatWindow({
-	squad,
-	def: _def,
-}: {
-	squad: Squad;
-	def: DungeonDef;
-}) {
+export function CombatWindow({ squad }: { squad: Squad }) {
 	const storeEngine = useGameStore((s) => s.combatEngines.get(squad.id));
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const rafRef = useRef<number>(0);
 	const engineRef = useRef<CombatEngine | null>(null);
 	const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// Keep local ref alive after engine is removed from store (for visual replay).
+	// Held past the store's removal so the replay has something to draw.
 	useEffect(() => {
 		if (storeEngine) {
 			engineRef.current = storeEngine;
@@ -34,11 +27,11 @@ export function CombatWindow({
 		}
 	}, [storeEngine]);
 
-	// RAF render loop — persists for the lifetime of the component.
+	// RAF render loop, alive for the component's lifetime.
 	useEffect(() => {
 		const lastTsRef = { current: 0 };
-		const lastSimTRef = { current: -1 }; // sim time at last detected tick
-		const lastTickWallRef = { current: 0 }; // wall time (ms) when last tick was detected
+		const lastSimTRef = { current: -1 };
+		const lastTickWallRef = { current: 0 };
 		const squadId = squad.id;
 
 		function loop(ts: number): void {
@@ -52,7 +45,7 @@ export function CombatWindow({
 				const isLive = store.combatEngines.has(squadId);
 
 				if (!isLive) {
-					// Visual replay: tick the engine ourselves with real delta time.
+					// Replay: the engine is driven here off wall-clock delta.
 					if (lastTsRef.current === 0) lastTsRef.current = ts;
 					const speed = store.derived.combatSpeedMultiplier;
 					const dt = Math.min(ts - lastTsRef.current, 50) * speed;
@@ -62,7 +55,7 @@ export function CombatWindow({
 					lastTsRef.current = ts;
 				}
 
-				// Detect lifecycle-hook ticks by watching sim time, then extrapolate positions.
+				// Sim time moving marks a lifecycle tick; extrapolate between them.
 				let extrapolationDt = 0;
 				if (isLive) {
 					const simT = eng.getT();

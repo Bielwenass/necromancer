@@ -9,10 +9,10 @@ interface UnitStatBlockProps {
 /**
  * The flat stat and its relic/upgrade bonus, per unit type.
  *
- * The total is taken from `effectiveUnitStats` — the same function that builds
- * the combat side — and the bonus is the remainder, so `flat + bonus` is
- * exactly the number the engine will fight with. Never derive the two halves
- * here; that is how the panel and the engine drift apart.
+ * The total comes from `effectiveUnitStats`, the same function that builds the
+ * combat side, and the bonus is the remainder, so `flat + bonus` is the number
+ * the engine fights with. Deriving the two halves here is how the panel and the
+ * engine drift apart.
  */
 export function UnitStatBlock({ unitType, derived }: UnitStatBlockProps) {
 	const d = derived[unitType];

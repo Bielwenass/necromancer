@@ -30,16 +30,13 @@ import type {
 } from "./types";
 
 /**
- * Offline catchup runs the same simulation the live tick does — `advance` — and
- * differs only in pacing: rather than stepping every tick it jumps to the next
- * tick at which something is due.
- *
- * Two deliberate deviations from house style: it mutates its own cloned working
- * state for speed, and it resolves fights headlessly. Keep both.
+ * Offline catchup runs the same `advance` the live tick does and differs only in
+ * pacing, jumping to the next tick at which something is due. Two deliberate
+ * deviations from house style, both to keep: it mutates its own cloned working
+ * state for speed, and it resolves fights headlessly.
  */
 
 type FightOutcome = CombatOutcome & {
-	/** Game ticks, factoring `derived.combatSpeedMultiplier`. */
 	durationTicks: number;
 };
 
@@ -51,13 +48,8 @@ export interface CatchupStats {
 export interface CatchupOptions {
 	/** Yield to the event loop every N spans advanced. Default 50. */
 	yieldEveryNEvents?: number;
-	/**
-	 * Reuse an earlier clear's result for a repeat of the same fight. On by
-	 * default — without it a farmed dungeon re-simulates every clear. The parity
-	 * tests turn it off to get every fight rolled from its own seed.
-	 */
+	/** Reuse a clear's result for a repeat. The parity tests turn it off. */
 	fightCache?: boolean;
-	/** Progress callback for the catchup overlay UI. */
 	onProgress?: (cursor: number, target: number, stats?: CatchupStats) => void;
 }
 
@@ -73,10 +65,7 @@ function isLossless(
 	return true;
 }
 
-/**
- * Fights nobody watched. Each runs to completion the moment the squad arrives,
- * which is what gives the offline path a deadline to jump to.
- */
+/** Fights nobody watched, each run to completion the moment the squad arrives. */
 class HeadlessFights implements FightDriver {
 	private pending = new Map<
 		string,
@@ -119,7 +108,6 @@ class HeadlessFights implements FightDriver {
 		squad: Squad,
 		dungeon: DungeonState,
 	): FightOutcome {
-		// Empty squad loses instantly without engine cost.
 		if (squadSize(squad.composition) === 0) {
 			return { winner: "b", survivorsByType: {}, durationTicks: 1 };
 		}
@@ -150,8 +138,7 @@ class HeadlessFights implements FightDriver {
 		const winner = (engine.getWinner() ?? "draw") as "a" | "b" | "draw";
 		const survivorsByType = winner === "a" ? engine.getCounts().a : {};
 
-		// `getT()` is sim time in ms; dividing by the speed multiplier gives the
-		// wall-clock the player would have waited, then game ticks.
+		// `getT()` is sim time in ms; the speed multiplier converts it to wall clock.
 		const csm = state.derived.combatSpeedMultiplier || 1;
 		const durationTicks = Math.max(
 			1,
@@ -159,10 +146,9 @@ class HeadlessFights implements FightDriver {
 		);
 		const outcome: FightOutcome = { winner, survivorsByType, durationTicks };
 
-		// Only lossless wins, where reuse is nearly free: everyone survives whatever
-		// the seed, so only `durationTicks` is borrowed. The key omits `clearCount`
-		// deliberately — with it a farmed dungeon would miss on every clear and an
-		// 8h window would cost minutes of blocking simulation.
+		// Only lossless wins: everyone survives whatever the seed, so only
+		// `durationTicks` is borrowed. The key omits `clearCount`, which would miss on
+		// every clear of a farmed dungeon.
 		if (
 			this.cache &&
 			winner === "a" &&
@@ -192,7 +178,7 @@ export async function simulateOffline(
 	);
 
 	// A squad caught mid-fight has no deadline to jump to, so its battle restarts
-	// here — the same one, since the seed is derived rather than drawn.
+	// here; the seed derives from state, so it is the same one.
 	for (const squad of w.squads) {
 		if (squad.state !== "fighting" || !squad.targetDungeonId) continue;
 		const dungeon = w.dungeons.find((d) => d.id === squad.targetDungeonId);
@@ -214,18 +200,14 @@ export async function simulateOffline(
 	while (w.meta.tickCount < endTick) {
 		const deadline = nextDeadline(w, fights);
 		const next = Math.min(deadline, endTick);
-		// Every transition schedules its successor strictly in the future, so a
-		// deadline at or behind the cursor means one was missed.
+		// Deadlines are strictly in the future, so one at the cursor was missed.
 		if (next <= w.meta.tickCount) break;
 
 		const simulatedBefore = fights.simulated;
 		advance(w, next, fights);
-		// Only a span that reached a deadline moved a squad; the last is usually
-		// just the window running out.
 		if (next === deadline) events++;
 
-		// A cache miss means a whole fight was simulated synchronously — enough on
-		// its own to stall the overlay, so yield on it rather than on the counter.
+		// A cache miss ran a whole fight synchronously, stalling the overlay.
 		if (fights.simulated > simulatedBefore || events % yieldEvery === 0) {
 			options.onProgress?.(
 				w.meta.tickCount - startTick,

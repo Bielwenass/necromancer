@@ -17,18 +17,12 @@ import { squadSize } from "./units";
 
 export { CORPSE_DROP_CHANCE };
 
-/** The `derived` projection, as read by everything that prices a run. */
 type Derived = GameState["derived"];
 
-/**
- * Enemies a dungeon fields. A squad only wins once side B is at zero, so on a
- * clear this is how many fell.
- */
 export function dungeonEnemyCount(def: DungeonDef): number {
 	return def.enemies.reduce((n, e) => n + e.amount, 0);
 }
 
-/** One independent `CORPSE_DROP_CHANCE` roll per felled enemy. */
 export function rollCorpses(enemiesFelled: number, rand: () => number): number {
 	let corpses = 0;
 	for (let i = 0; i < enemiesFelled; i++) {
@@ -37,10 +31,7 @@ export function rollCorpses(enemiesFelled: number, rand: () => number): number {
 	return corpses;
 }
 
-/**
- * `soulHarvestBonus` multiplies the dungeon's soul chance, clamped at 1. Past
- * certainty `soulsYieldBonus` is what keeps paying.
- */
+/** Multiplies the dungeon's soul chance, clamped at 1. */
 export function effectiveSoulChance(
 	base: number,
 	soulHarvestBonus: number,
@@ -49,14 +40,9 @@ export function effectiveSoulChance(
 }
 
 /**
- * Repeat-clear payout multiplier. Bones scale with a dungeon's clear count;
- * corpses don't, since they come off the kill count rather than the loot table.
- * `clearMultBonus` (the Tomb Robber affix) steepens the curve rather than
- * shifting it, so it pays nothing on a first clear.
- *
- * Logarithmic: most of the value arrives in the first day or two on a dungeon
- * and each further step costs ten times the clears, so farming one dungeon
- * focuses a resource without out-earning the ladder.
+ * Repeat-clear payout multiplier on the loot table, leaving corpses untouched.
+ * `clearMultBonus` steepens the curve, so it pays nothing on a first clear.
+ * Logarithmic: each further step costs ten times the clears.
  */
 export function clearMultiplier(
 	clearCount: number,
@@ -68,9 +54,8 @@ export function clearMultiplier(
 }
 
 /**
- * What a clear drops, before the yield bonuses applied on deposit. Corpses and
- * souls are gated — until the tree opens each economy the roll is skipped, so an
- * early necromancer banks bones and nothing else.
+ * What a clear drops, before deposit-time yield bonuses. The corpse and soul
+ * rolls are skipped until the tree opens each economy.
  */
 export function generateLoot(
 	dungeonId: string,
@@ -87,7 +72,7 @@ export function generateLoot(
 	const bones = Math.round(
 		(lt.bonesMin + rand() * (lt.bonesMax - lt.bonesMin)) * clearBonus,
 	);
-	// Corpses come off the kill count, so `clearBonus` deliberately misses them.
+	// Corpses come off the kill count, outside `clearBonus`.
 	const corpses = derived.corpsesUnlocked
 		? rollCorpses(dungeonEnemyCount(def), rand)
 		: 0;
@@ -96,14 +81,12 @@ export function generateLoot(
 		rand() < effectiveSoulChance(lt.soulChance, derived.soulHarvestBonus)
 			? SOULS_PER_DROP
 			: 0;
-	// Rolled last, so the bonus can't shift an existing seed's other rolls.
 	const banners =
 		def.tier * BANNERS_PER_TIER + (rand() < derived.bannerChanceBonus ? 1 : 0);
 
 	return { bones, corpses, souls, banners };
 }
 
-/** Each resource's yield bonus; 0 for the ones no upgrade scales. */
 function yieldBonuses(derived: Derived): Record<keyof Resources, number> {
 	return {
 		bones: derived.boneYieldBonus,
@@ -114,7 +97,6 @@ function yieldBonuses(derived: Derived): Record<keyof Resources, number> {
 	};
 }
 
-/** Bank a squad's haul with the yield bonuses. Mutates `resources`. */
 export function depositLoot(
 	resources: Resources,
 	loot: Partial<Resources>,
@@ -126,10 +108,7 @@ export function depositLoot(
 	}
 }
 
-/**
- * Passive income over `ticks`. Mutates `resources`. The count is a parameter
- * because catchup batches a whole gap into one call rather than looping.
- */
+/** Passive income over `ticks`; catchup batches a whole gap into one call. */
 export function accruePassive(
 	resources: Resources,
 	derived: Derived,
@@ -140,13 +119,9 @@ export function accruePassive(
 
 /**
  * Whether a squad that just got home should march straight back out. A manual
- * recall suppresses it, which is also what keeps a wiped squad's remnant from
- * walking into the fight that killed everyone else.
- *
- * `occupied` is `dungeonOccupancy` over the current squads — a set rather than
- * the squad list so a caller resolving several arrivals in one tick can add to
- * it as it goes. The caller must have already set the arriving squad to `idle`,
- * so it is never counted as holding its own target.
+ * recall suppresses it, keeping a wiped squad's remnant out of the fight that
+ * killed everyone else. `occupied` is a set so a caller resolving several
+ * arrivals in one tick adds to it as it goes; the arriving squad must be `idle`.
  */
 export function shouldAutoDeploy(
 	derived: Derived,
@@ -163,32 +138,19 @@ export function shouldAutoDeploy(
 	return squadSize(squad.composition) > 0;
 }
 
-/** What a clear is worth after every player bonus. Display-only. */
 export interface ProjectedLoot {
 	bonesMin: number;
 	bonesMax: number;
-	/** Chance a run drops souls at all, after `soulHarvestBonus`. 0 while locked. */
 	soulChance: number;
-	/** Souls banked when that roll hits, scaled by `soulsYieldBonus`. */
 	soulsPerDrop: number;
-	/** Expected corpses off a full clear: kills × drop chance × yield bonus. */
 	corpses: number;
-	/** The repeat-clear multiplier folded into the bone figures. */
 	clearMult: number;
-	/**
-	 * The player's own contribution to each line, as a ratio over the bare loot
-	 * table, so the Crypt card can quote a breakdown without re-deriving the base.
-	 */
 	boneBonus: number;
 	soulBonus: number;
 	corpseBonus: number;
 }
 
-/**
- * Folds the repeat-clear bonus (applied to the roll) and the yield bonuses
- * (applied on deposit) into one projection, so the Crypt shows what a dispatch
- * is worth to *this* necromancer rather than what the loot table says.
- */
+/** The repeat-clear and yield bonuses folded into what a dispatch is worth. */
 export function projectLoot(
 	def: DungeonDef,
 	clearCount: number,
@@ -198,7 +160,7 @@ export function projectLoot(
 	const lt = def.lootTable;
 	const boneBonus = 1 + derived.boneYieldBonus;
 	const corpseBonus = 1 + derived.corpseYieldBonus;
-	// A locked economy projects as zero, matching what `generateLoot` will roll.
+	// A locked economy projects zero, matching `generateLoot`.
 	const soulChance = derived.soulsUnlocked
 		? effectiveSoulChance(lt.soulChance, derived.soulHarvestBonus)
 		: 0;

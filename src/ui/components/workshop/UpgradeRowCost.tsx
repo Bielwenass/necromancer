@@ -4,7 +4,6 @@ import { costLines } from "./cost";
 import type { WorkshopRow } from "./types";
 import { WorkshopRowIcon } from "./WorkshopRowIcon";
 
-/** The right-hand price column of an `UpgradeRow`. */
 export function UpgradeRowCost({
 	row,
 	resources,

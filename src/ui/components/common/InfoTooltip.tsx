@@ -3,9 +3,8 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Wraps trigger content with a tap-to-toggle popover carrying the same text as
- * `title`, so information that would otherwise only surface on hover stays
- * reachable on touch. A `<span>`, not a `<button>`, since triggers are often
- * nested inside another clickable element (e.g. a dungeon card).
+ * `title`, keeping hover-only information reachable on touch. A `<span>`, since
+ * triggers are often nested inside another clickable element.
  */
 export function InfoTooltip({
 	tip,
@@ -38,7 +37,7 @@ export function InfoTooltip({
 	}, [open]);
 
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: a real nested <button> would be invalid HTML — triggers are often nested inside another element's own <button>.
+		// biome-ignore lint/a11y/useSemanticElements: a real nested <button> would be invalid HTML; triggers are often nested inside another element's own <button>.
 		<span
 			ref={ref}
 			role="button"

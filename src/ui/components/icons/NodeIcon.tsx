@@ -1,4 +1,4 @@
-// Node icons for upgrades tree
+/** Keyed by `UpgradeNode.icon`, plus the handful the Workshop sections name. */
 const NODE_ICONS: Record<string, (color: string) => React.ReactElement> = {
 	army: (c) => (
 		<g>
@@ -61,14 +61,6 @@ const NODE_ICONS: Record<string, (color: string) => React.ReactElement> = {
 	),
 	aggro: (c) => (
 		<path d="M0 -6 L4 -1 L6 -2 L5 4 L0 6 L-5 4 L-6 -2 L-4 -1 Z" fill={c} />
-	),
-	caution: (c) => (
-		<path
-			d="M-5 -4 L5 -4 L5 0 Q 5 5 0 6 Q -5 5 -5 0 Z"
-			fill="none"
-			stroke={c}
-			strokeWidth="1.5"
-		/>
 	),
 	heal: (c) => (
 		<path

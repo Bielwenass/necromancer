@@ -5,9 +5,7 @@ import type { Side, SideConfig, SimUnit } from "./types";
 
 export type SimState = {
 	units: SimUnit[];
-	/** Units each side spawned with — the denominator `lastStand` measures against. */
 	startCount: Record<Side, number>;
-	/** True when a unit carries an aura, which widens the fine-query radius. */
 	hasAura: boolean;
 };
 
@@ -33,10 +31,6 @@ export function createSimState(): SimState {
 	return { units: [], startCount: { a: 0, b: 0 }, hasAura: false };
 }
 
-/**
- * Record what each side mustered, and whether an aura is in play. Called once
- * after both sides have spawned.
- */
 export function finalizeSpawn(
 	state: SimState,
 	rand: () => number = Math.random,
@@ -47,18 +41,15 @@ export function finalizeSpawn(
 	for (const u of state.units) {
 		state.startCount[u.side]++;
 		if (u.mods !== null && u.mods.aura > 0) state.hasAura = true;
-		// Scatter the first swing across one interval, or a whole side swings on
-		// the same tick forever and the fight resolves in visible pulses. Drawn
-		// after `spawnUnits` so spawn layout is unchanged by it.
+		// Scatter the first swing across one interval, or a side swings in lockstep.
+		// Drawn after `spawnUnits` so layout is unchanged.
 		u.swingCooldown = rand() * interval;
 	}
 }
 
 /**
- * Which side is ahead on the fraction of its muster still standing. Used to call
- * a fight that has run past `MAX_FIGHT_MS` without either side being wiped out —
- * a share rather than a raw count, so the smaller force isn't punished for being
- * the smaller force.
+ * Which side is ahead on the fraction of its muster standing, so the smaller
+ * force isn't punished for its size. Calls a fight past `MAX_FIGHT_MS`.
  */
 export function leadingSide(state: SimState): Side | "draw" {
 	const alive = { a: 0, b: 0 };
@@ -95,8 +86,7 @@ export function spawnUnits(
 				side,
 				mods: unit.mods ?? null,
 				revived: false,
-				// Overwritten with a scattered value by `finalizeSpawn`; set here so
-				// every unit has the same object shape from creation.
+				// Overwritten by `finalizeSpawn`; set here to fix the object shape.
 				swingCooldown: 0,
 			});
 		}
@@ -138,12 +128,9 @@ export function tickSimulation(
 	const N = units.length;
 	if (N === 0) return;
 
-	// ── Tunables derived from config ────────────────────────────
-	// A unit reads a 3x3 block, so sizing a cell at cohesionRadius makes the
-	// block ~3x that wide — a smooth approximation of "the crowd around me".
+	// A unit reads a 3x3 block, so a cell at cohesionRadius spans ~3x that.
 	const aggCell = cfg.cohesionRadius;
-	// The fine hash covers only the short-range interactions: separation, combat
-	// targeting, and aura reach — the last only in a fight that has one.
+	// The fine hash covers separation, targeting, and aura reach.
 	const mcfg = COMBAT_CONFIG.modifiers;
 	const fineRadius = Math.max(
 		cfg.separationRadius,
@@ -175,8 +162,8 @@ export function tickSimulation(
 	// ── Phase 1: aggregate grid + fine hash + global centroids ──
 	const p1Start = stats ? performance.now() : 0;
 
-	// Dense grid (arena is small, so a flat array beats a Map). One extra cell
-	// of margin on each axis so edge units never index out of range.
+	// Dense grid: the arena is small enough that a flat array beats a Map, with one
+	// cell of margin per axis so edge units never index out of range.
 	const cols = Math.max(1, Math.ceil(width / aggCell) + 1);
 	const rows = Math.max(1, Math.ceil(height / aggCell) + 1);
 	const nCells = cols * rows;
@@ -249,8 +236,7 @@ export function tickSimulation(
 	const accX = new Float32Array(N);
 	const accY = new Float32Array(N);
 
-	// How much of each side is still standing, for `lastStand`. The counts come
-	// free out of phase 1's centroid pass.
+	// Share of each side standing, for `lastStand`; counts come free from phase 1.
 	const overwhelmCap = mcfg.overwhelmCap;
 	const lastStandThreshold = mcfg.lastStandThreshold;
 	const fracA = state.startCount.a > 0 ? cAc / state.startCount.a : 1;
@@ -316,23 +302,16 @@ export function tickSimulation(
 		let ax = 0,
 			ay = 0;
 
-		// Cohesion: steer toward same-side local center of mass.
-		// (Block includes self; at scale that's negligible noise.)
+		// Cohesion and alignment: steer toward the same-side local center of mass
+		// and average velocity.
 		if (sCount > 0) {
 			const inv = 1 / sCount;
-			ax += (sSumX * inv - ux) * cohWeight;
-			ay += (sSumY * inv - uy) * cohWeight;
+			ax += (sSumX * inv - ux) * cohWeight + (sSumVx * inv - uvx) * alignWeight;
+			ay += (sSumY * inv - uy) * cohWeight + (sSumVy * inv - uvy) * alignWeight;
 		}
 
-		// Alignment: steer toward same-side local average velocity.
-		if (sCount > 0) {
-			const inv = 1 / sCount;
-			ax += (sSumVx * inv - uvx) * alignWeight;
-			ay += (sSumVy * inv - uvy) * alignWeight;
-		}
-
-		// Seek: the enemy local COM if the block holds any, else the global enemy
-		// centroid. Zero-initialized so the hot loop needs no null checks.
+		// The enemy local COM, else the global centroid. Zero-initialized so the hot
+		// loop needs no null checks.
 		let seekTx = 0,
 			seekTy = 0,
 			haveSeek = false;
@@ -355,9 +334,8 @@ export function tickSimulation(
 				haveSeek = true;
 			}
 		}
-		// Held aside rather than folded in: seek is the one term big enough to
-		// saturate the accel clamp, and a unit already in melee must not keep
-		// driving forward — the neighbor loop below decides whether it applies.
+		// Held aside: seek alone can saturate the accel clamp, and the neighbor loop
+		// decides whether a unit in melee gets it.
 		let seekAx = 0,
 			seekAy = 0;
 		if (haveSeek) {
@@ -389,8 +367,7 @@ export function tickSimulation(
 		let nearestEnemyDist2 = Infinity;
 
 		const mods = u.mods;
-		// An aura bleeds a share of the unit's damage into every enemy in reach,
-		// rather than only the one it is swinging at.
+		// An aura bleeds a share of the unit's damage into every enemy in reach.
 		const auraDmg = mods !== null && mods.aura > 0 ? u.dmg * mods.aura * dt : 0;
 
 		for (const neigh of neighbors) {
@@ -402,7 +379,6 @@ export function tickSimulation(
 
 			const sameSide = neigh.side === u.side;
 
-			// Separation (inverse-distance; spikes at contact).
 			if (d2 < sepR2) {
 				const d = Math.sqrt(d2);
 				const dc = d < sepMinD ? sepMinD : d;
@@ -418,7 +394,6 @@ export function tickSimulation(
 				damageBuffer.set(neigh.id, (damageBuffer.get(neigh.id) ?? 0) + auraDmg);
 			}
 
-			// Combat targeting: nearest enemy (within fine radius; gated by attackR2).
 			if (d2 < nearestEnemyDist2) {
 				nearestEnemyDist2 = d2;
 				nearestEnemy = neigh;
@@ -430,10 +405,8 @@ export function tickSimulation(
 			stats.unitsProcessed++;
 		}
 
-		// Engaged = an enemy is inside melee reach, the same test that gates a
-		// swing. Such a unit stops driving forward and brakes instead: seek would
-		// otherwise push it into a target the positional pass shoves straight back
-		// out, and that standoff is what reads as jitter.
+		// Engaged = an enemy inside melee reach, the same test that gates a swing. It
+		// brakes; full seek would jitter against the positional pass.
 		const engaged = nearestEnemy !== null && nearestEnemyDist2 < attackR2;
 		if (engaged) {
 			ax += seekAx * engagedSeek - uvx * engagedDamping;
@@ -454,8 +427,7 @@ export function tickSimulation(
 		accX[i] = ax;
 		accY[i] = ay;
 
-		// Floored rather than left to run negative: a unit that spent ten seconds
-		// crossing the arena arrives with one blow ready, not ten banked.
+		// Floored, so a unit crossing the arena arrives with one blow and no backlog.
 		u.swingCooldown = u.swingCooldown > dt ? u.swingCooldown - dt : 0;
 
 		if (
@@ -463,15 +435,13 @@ export function tickSimulation(
 			nearestEnemyDist2 < attackR2 &&
 			u.swingCooldown === 0
 		) {
-			// Assigned, not accumulated: accumulating would let a unit bank blows
-			// across a gap in targets. Quantizing every cadence to a whole number of
-			// steps costs well under 2% of nominal DPS.
+			// Assigned, so no unit banks blows across a gap in targets. Quantizing to
+			// whole steps costs under 2% of nominal DPS.
 			u.swingCooldown = swingInterval;
 			let dmg = (u.dmg ?? defaultDmg) * swingInterval;
 
 			if (mods !== null) {
-				// Every modifier is additive into one multiplier, so stacking two of
-				// them can't compound the way multiplying them would.
+				// Additive into one multiplier, so stacking two can't compound.
 				let mult = 1;
 				if (mods.berserk > 0) mult += mods.berserk * (1 - u.hp / u.maxHp);
 				if (mods.vanguard > 0 && inOpening) mult += mods.vanguard;
@@ -493,9 +463,8 @@ export function tickSimulation(
 				}
 				dmg *= mult;
 
-				// Clamped to what the target can absorb, so overkill isn't also a
-				// heal. Approximate: damage other attackers buffered this tick isn't
-				// visible yet, so two units finishing one target both count it.
+				// Clamped to what the target can absorb, so overkill isn't a heal.
+				// Approximate: two units finishing one target both count it.
 				if (mods.lifesteal > 0) {
 					const landed = dmg < nearestEnemy.hp ? dmg : nearestEnemy.hp;
 					const healed = u.hp + landed * mods.lifesteal;
@@ -572,10 +541,8 @@ export function tickSimulation(
 			u.x += dx * push;
 			u.y += dy * push;
 
-			// Absorb the closing half of the pair's normal velocity. Without this
-			// the push is undone by an integrator that still points the two into
-			// each other, and the contact buzzes at the tick rate forever. Each
-			// pair is visited from both ends, so each unit sheds its own share.
+			// Absorb the closing normal velocity, or the contact buzzes at the tick
+			// rate. Each pair is visited from both ends, one share each.
 			const nx = dx * invD;
 			const ny = dy * invD;
 			const closing = (u.vx - n.vx) * nx + (u.vy - n.vy) * ny;
@@ -603,8 +570,8 @@ export function tickSimulation(
 		if (dmg) {
 			u.hp -= dmg;
 			if (u.hp <= 0) {
-				// A revive spends itself here: the unit never enters `dead`, so it
-				// keeps its id, its position, and its place in the survivor count.
+				// A revive spends itself here; the unit never enters `dead`, keeping its
+				// id, position and place in the survivor count.
 				if (u.mods !== null && u.mods.revive > 0 && !u.revived) {
 					u.revived = true;
 					u.hp = u.maxHp * u.mods.revive;

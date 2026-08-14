@@ -31,21 +31,14 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	const [confirmSacrifice, setConfirmSacrifice] = useState(false);
 	const [confirmBulkSacrifice, setConfirmBulkSacrifice] = useState(false);
 	// Mobile-only: the three columns below become tabs, one visible at a time.
-	// Unused above the mobile breakpoint, where all three always render.
 	const [mobilePane, setMobilePane] = useState<
 		"equipped" | "detail" | "inventory"
 	>("inventory");
 
-	const selectedRelic =
-		inventory.find((r) => r.id === selectedRelicId) ??
-		(selectedRelicId
-			? Object.values(equipped)
-					.map((id) => inventory.find((r) => r.id === id))
-					.find((r) => r?.id === selectedRelicId)
-			: null);
+	// Equipped relics stay in the inventory, so one lookup covers both columns.
+	const selectedRelic = inventory.find((r) => r.id === selectedRelicId);
 
-	// Equipped relics are excluded, so the bulk sacrifice below can never eat a
-	// relic that is currently doing something.
+	// Equipped relics are excluded, so a bulk sacrifice can't eat one in use.
 	const filteredInventory = inventory
 		.filter((r) => !Object.values(equipped).includes(r.id))
 		.filter((r) => !filterRarity || r.rarity === filterRarity)
@@ -53,8 +46,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 
 	const filteredDust = dustValue(filteredInventory);
 
-	// Slots only select the relic they hold — equipping is done from the
-	// EQUIP TO SLOT buttons in RelicDetail, which offer only valid slots.
+	// A slot only selects what it holds; equipping is RelicDetail's job.
 	const handleSlotClick = (slotId: SlotId) => {
 		const equippedId = equipped[slotId];
 		if (equippedId) {
@@ -81,10 +73,6 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 	};
 
 	const handleBulkSacrifice = () => {
-		if (!confirmBulkSacrifice) {
-			setConfirmBulkSacrifice(true);
-			return;
-		}
 		const doomed = filteredInventory.map((r) => r.id);
 		sacrificeRelics(doomed);
 		if (selectedRelicId && doomed.includes(selectedRelicId)) {
@@ -144,15 +132,13 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 					<RelicDetail
 						relic={selectedRelic}
 						unlockedSlots={derived.unlockedSlots}
-						onSacrifice={() => {
-							if (confirmSacrifice) handleSacrifice();
-							else setConfirmSacrifice(true);
-						}}
 						onEquip={(slotId) => {
 							equipRelic(selectedRelic.id, slotId);
 							setSelectedRelicId(null);
 						}}
 						confirmSacrifice={confirmSacrifice}
+						onRequestSacrifice={() => setConfirmSacrifice(true)}
+						onConfirmSacrifice={handleSacrifice}
 						onCancelSacrifice={() => setConfirmSacrifice(false)}
 					/>
 				) : (
@@ -196,7 +182,8 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 					sacrificeCount={filteredInventory.length}
 					sacrificeDust={filteredDust}
 					confirming={confirmBulkSacrifice}
-					onSacrifice={handleBulkSacrifice}
+					onRequestSacrifice={() => setConfirmBulkSacrifice(true)}
+					onConfirmSacrifice={handleBulkSacrifice}
 					onCancelSacrifice={() => setConfirmBulkSacrifice(false)}
 				/>
 

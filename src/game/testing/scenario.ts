@@ -8,15 +8,11 @@ import { makeDungeonState } from "../rules/unlocks";
 import { gameTick } from "../tick";
 import type { GameState } from "../types";
 
-/** Shared fixtures for the parity and rule tests. */
-
 /**
  * A necromancer strong enough to clear the opening dungeon without losses, with
  * auto-deploy on so a squad cycles travel → fight → return → travel for a whole
- * window. That cycle exercises every event kind.
- *
- * Past one squad they muster on the *same* dungeon with the same travel time, so
- * they arrive home on the same tick and contend for it.
+ * window. Past one squad they muster on the same dungeon, so they arrive home on
+ * the same tick and contend for it.
  */
 export function buildScenario(dispatched: boolean, squadCount = 1): GameState {
 	const base: Omit<GameState, "derived"> = {
@@ -35,8 +31,7 @@ export function buildScenario(dispatched: boolean, squadCount = 1): GameState {
 			makeDungeonState(def, def.id === "paupers-tomb"),
 		),
 		relics: { inventory: [], equipped: {} },
-		// c1 auto-deploy, s* squad size and count, n2/n5 the corpse and soul gates,
-		// n4/n7 the yield amplifiers — every resource is in play.
+		// c1 auto-deploy, s* squad size/count, n2/n5 the gates, n4/n7 the amplifiers.
 		upgrades: {
 			purchased: [
 				"c1",
@@ -69,8 +64,7 @@ export function buildScenario(dispatched: boolean, squadCount = 1): GameState {
 	};
 	const state = { ...base, derived: recomputeDerived(base as GameState) };
 
-	// Dispatched after `derived` exists, through the same helper `dispatchSquad`
-	// uses, because a leg's length depends on it.
+	// Dispatched after `derived` exists, a leg's length depending on it.
 	if (dispatched) {
 		const legTicks = travelLegTicks(
 			DUNGEON_DEFS["paupers-tomb"],
@@ -87,9 +81,8 @@ export function buildScenario(dispatched: boolean, squadCount = 1): GameState {
 }
 
 /**
- * The live loop, headless: what `useGameLifecycle` runs each interval minus
- * React and the store. Every line of simulation is the shipped one, so a
- * divergence here is a divergence in the game rather than in the harness.
+ * The live loop, headless: what `useGameLifecycle` runs each interval minus React
+ * and the store. Every line of simulation is the shipped one.
  */
 export function runLive(start: GameState, ticks: number): GameState {
 	let state = start;
@@ -113,7 +106,11 @@ export function runLive(start: GameState, ticks: number): GameState {
 	return state;
 }
 
-/** `squadSlice.resolveFight`, applied to a plain state rather than the store. */
+/**
+ * `squadSlice.resolveFight`, applied to a plain state. It installs the same
+ * slices the action does and no more; returning the whole draft would hide a
+ * write the action drops, the one thing this harness exists to catch.
+ */
 function applyLiveFight(
 	state: GameState,
 	squadId: string,
@@ -135,13 +132,10 @@ function applyLiveFight(
 		{ winner, survivorsByType },
 		state.meta.tickCount,
 	);
-	return draft;
+	return { ...state, squads: draft.squads, dungeons: draft.dungeons };
 }
 
-/**
- * The simulated world, minus what the two paths may disagree on: `lastTickAt`
- * is a wall clock and `derived` is a projection neither writes.
- */
+/** The world minus `lastTickAt` (a wall clock) and `derived` (a projection). */
 export function worldOf(state: GameState): Record<string, unknown> {
 	return {
 		resources: state.resources,
@@ -165,14 +159,12 @@ export const unlockedIds = (state: GameState) =>
 export const clearsById = (state: GameState) =>
 	Object.fromEntries(state.dungeons.map((d) => [d.id, d.clearCount]));
 
-/** Banners every clear has earned, at `tier` each. */
 export const bannersEarned = (state: GameState) =>
 	state.dungeons.reduce(
 		(n, d) => n + d.clearCount * DUNGEON_DEFS[d.id].tier,
 		0,
 	);
 
-/** Banners paid out, counting those a squad is still carrying home. */
 export const bannersPaid = (state: GameState) =>
 	state.squads.reduce(
 		(n, s) => n + (s.pendingLoot?.banners ?? 0),

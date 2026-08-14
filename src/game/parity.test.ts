@@ -15,10 +15,10 @@ import {
 import type { GameState } from "./types";
 
 /**
- * The live tick and the offline catchup simulate the same game two ways — 100ms
- * steps versus jumps between events — sharing `advance` but not their sequencing.
- * Every seed is derived from persisted state, so agreement is whole-state
- * equality rather than a tolerance.
+ * The live tick and the offline catchup simulate the same game two ways, in 100ms
+ * steps and in jumps between events, sharing `advance` and none of their
+ * sequencing. Every seed derives from persisted state, so agreement is
+ * whole-state equality.
  */
 
 const WINDOW = 4000; // ticks — several full dispatch cycles
@@ -45,8 +45,7 @@ describe("idle window", () => {
 		off = await simulateOffline(buildScenario(false), WINDOW_MS);
 	});
 
-	// No fights means no randomness on either side, so passive income, day count
-	// and the unlock sweep must land on identical numbers.
+	// No fights, no randomness: every number must land identically.
 	test("passive income matches", () => {
 		expect(live.resources.bones).toBeCloseTo(off.resources.bones, 6);
 		expect(live.resources.souls).toBeCloseTo(off.resources.souls, 6);
@@ -99,22 +98,18 @@ describe("fight window", () => {
 		expect(
 			unlockedIds({ ...off, dungeons: checkUnlockConditions(off.dungeons) }),
 		).toEqual(unlockedIds(off));
-		// The rule is pure, so equal clears must imply an equal unlock set.
 		expect(clearsById(live)).toEqual(clearsById(off));
 		expect(unlockedIds(live)).toEqual(unlockedIds(off));
 	});
 });
 
 describe("resuming a window", () => {
-	// Closing the tab mid-window and reopening it must not pay twice, skip a leg,
-	// or lose a clear.
+	// Closing the tab mid-window must not pay twice, skip a leg, or lose a clear.
 	test("offline then live equals one straight run", async () => {
 		const whole = await simulateOffline(buildScenario(true), WINDOW_MS, exact);
 
-		// Split mid-travel, off a squad's own deadline: the squad is on the road
-		// with its deadline intact, so the live path picks the same trip up. A split
-		// inside a fight is the one case that cannot resume, since the engine's
-		// state is not in `GameState`.
+		// Split mid-travel, off a squad's own deadline, so the live path picks the
+		// same trip up. A split inside a fight cannot resume.
 		const split = buildScenario(true);
 		const k = Math.floor((split.squads[0].phaseEndTick ?? 2) / 2);
 		const first = await simulateOffline(split, k * TICK_MS, exact);
@@ -123,8 +118,7 @@ describe("resuming a window", () => {
 	});
 
 	describe("a window ending mid-fight", () => {
-		// Catchup runs the battle up front to know its length, but nothing may reach
-		// the ledger until the tick the fight actually ends.
+		// Catchup runs the battle up front; nothing reaches the ledger until it ends.
 		let mid: GameState;
 
 		beforeAll(async () => {
@@ -148,8 +142,8 @@ describe("resuming a window", () => {
 });
 
 describe("travel timing", () => {
-	// Stepping one tick at a time has to reach the dungeon on precisely the tick
-	// the deadline names, or every trip drifts by one and the paths separate.
+	// Stepping must reach the dungeon on the tick the deadline names, or every
+	// trip drifts by one.
 	const legs = buildScenario(true).squads[0].phaseEndTick ?? 0;
 
 	test("still travelling one tick early", () => {
@@ -168,8 +162,7 @@ describe("one squad per dungeon", () => {
 		s.squads.filter((sq) => sq.state === "idle").length;
 
 	describe("two squads mustered on one dungeon", () => {
-		// A legal pre-rule save. Both finish the trip they are already on, then
-		// exactly one keeps the dungeon.
+		// Both finish the trip they are on, then exactly one keeps the dungeon.
 		let live: GameState;
 		let off: GameState;
 
@@ -194,10 +187,7 @@ describe("one squad per dungeon", () => {
 	});
 
 	describe("a simultaneous arrival", () => {
-		// Above, the two squads fight before they ever contend and differing fight
-		// durations desynchronise them. Starting both on the return leg makes them
-		// land on the same tick with no fight in between, which is the only way the
-		// tie-break is reached.
+		// Starting both on the return leg is the only way the tie-break is reached.
 		const bothReturning = () => {
 			const s = buildScenario(true, 2);
 			return {

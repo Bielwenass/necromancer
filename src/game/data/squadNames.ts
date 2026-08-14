@@ -1,7 +1,5 @@
-/** Names offered when forming a new legion. Flavour only — never persisted
- *  as an id, so entries can be added or reworded freely. */
+/** Names offered when forming a legion. */
 export const SQUAD_NAMES = [
-	// compound single words
 	"Coldwhisper",
 	"Greymarch",
 	"Boneveil",
@@ -43,7 +41,6 @@ export const SQUAD_NAMES = [
 	"Mournsworn",
 	"Coldsworn",
 
-	// adjective + group noun
 	"Black Litany",
 	"Silent Cohort",
 	"Pale Vigil",
@@ -85,7 +82,6 @@ export const SQUAD_NAMES = [
 	"Blight Vigil",
 	"Hollow Crown",
 
-	// necro noun + group noun
 	"Bone Verse",
 	"Marrow Hymn",
 	"Skull Watch",
@@ -117,7 +113,6 @@ export const SQUAD_NAMES = [
 	"Lich Banner",
 	"Spectre Train",
 
-	// "X of Y" form
 	"Wake of Morn",
 	"Vigil of Thresh",
 	"Choir of Yhrun",
@@ -154,7 +149,6 @@ export const SQUAD_NAMES = [
 	"Drift of Karn",
 	"Pall of Hesh",
 
-	// numbered (matching Marrow-Eight style + Roman / ordinal variants)
 	"Husk-Three",
 	"Bone-Twelve",
 	"Pale-Nine",
@@ -181,7 +175,6 @@ export const SQUAD_NAMES = [
 	"Nineteen Marrow",
 	"Twenty-Second Pyre",
 
-	// "The [thing]"
 	"The Long Cold",
 	"The Last Breath",
 	"The Quiet Many",
@@ -210,7 +203,6 @@ export const SQUAD_NAMES = [
 	"The Pale Train",
 ];
 
-/** One name at random, for pre-filling the dispatch dialog. */
 export function randomSquadName(): string {
 	return SQUAD_NAMES[Math.floor(Math.random() * SQUAD_NAMES.length)];
 }

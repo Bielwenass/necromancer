@@ -11,7 +11,6 @@ interface PullButtonProps {
 	/** The ×10 button is wider and washed with the pool tint. */
 	wide?: boolean;
 	tint?: string;
-	/** Corner note, e.g. the ×10's free extra pull. */
 	badge?: string;
 }
 
@@ -38,8 +37,8 @@ export function PullButton({
 			}`}
 			style={{
 				border: `1px solid ${affordable ? accent : "var(--rule)"}`,
-				// The wide button keeps its text bone-white and colours only the
-				// label, so the two buttons don't read as the same weight.
+				// The wide button keeps its text bone-white and colours only the label,
+				// so the two buttons read at different weights.
 				color: affordable
 					? wide
 						? "var(--ink-bone)"

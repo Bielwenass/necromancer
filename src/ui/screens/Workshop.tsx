@@ -30,8 +30,8 @@ export function Workshop({ onTabChange }: WorkshopProps) {
 	const sections = buildSections(purchased, repeats ?? {}, ws, derived);
 	const active = sections.find((s) => s.id === activeId) ?? sections[0];
 
-	// A pin from another section — or one whose row vanished — falls back to the
-	// top row, so the detail panel always describes something on screen.
+	// A pin from another section, or one whose row vanished, falls back to the top
+	// row, so the detail panel always describes something on screen.
 	const pinned =
 		active.rows.find((r) => r.id === pinnedId) ?? active.rows[0] ?? null;
 

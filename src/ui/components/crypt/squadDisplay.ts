@@ -7,14 +7,12 @@ import type {
 } from "../../../game/types";
 import { UNIT_COLORS } from "../../theme";
 
-/** Two-letter tag per unit type, for dense readouts like "12sk 3wr". */
 const UNIT_TAGS: Record<UnitType, string> = {
 	skeleton: "sk",
 	zombie: "zm",
 	wraith: "wr",
 };
 
-/** A squad's composition as tagged counts, omitting the types it doesn't carry. */
 export function compositionLabel(
 	composition: Record<UnitType, number>,
 ): string {
@@ -23,7 +21,6 @@ export function compositionLabel(
 		.join(" ");
 }
 
-/** Tier badge colour and roman numeral for a dungeon. */
 export const TIER_DECORATION: Record<
 	DungeonDef["tier"],
 	{ color: string; label: string }
@@ -42,8 +39,8 @@ export function squadColor(squad: Squad): string {
 }
 
 /**
- * The glyph that stands for each squad state. Only the glyph is shared — the
- * dungeon card and the legion list word the text beside it differently.
+ * The glyph standing for each squad state. Only the glyph is shared; the dungeon
+ * card and the legion list word the text beside it differently.
  */
 export const SQUAD_STATE_GLYPH: Record<SquadState, string> = {
 	idle: "○",

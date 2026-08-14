@@ -2,19 +2,14 @@ import type { GameState } from "./types";
 
 const SAVE_KEY = "necromancer_save_v1";
 /**
- * Bumped when a save's *meaning* changes, not just its shape — reusing an
- * upgrade node id for a different effect, or retuning what a stored roll is
- * worth, would otherwise silently grant the wrong thing. A mismatch makes
- * `loadGame` return null and the game start fresh, which is what keeps hydration
- * free of migration code.
+ * Bumped whenever a save's meaning changes. A mismatch makes `loadGame` return
+ * null and the game start fresh, keeping hydration free of migration code.
  */
 const SAVE_VERSION = 6;
 
 /**
- * Slices written to disk; `derived` is absent because it is recomputed.
- * Exported so a path installing a whole simulated state — offline catchup —
- * copies exactly what persistence considers state, rather than a hand-listed
- * subset that drifts the next time a slice is added.
+ * Slices written to disk; `derived` is recomputed. Exported so offline catchup
+ * installs exactly what persistence considers state.
  */
 export const PERSISTED_KEYS = [
 	"resources",
@@ -31,9 +26,8 @@ export const PERSISTED_KEYS = [
 export type SavedState = Omit<GameState, "derived">;
 
 /**
- * Set once the app has committed to replacing the save and reloading (import or
- * reset). Those wait ~1s for the reload while the simulation keeps running, so
- * without this an autosave would overwrite the bytes just written. One-way.
+ * Set once the app commits to replacing the save and reloading. The ~1s before
+ * the reload still ticks and would overwrite it. One-way.
  */
 let persistenceSuspended = false;
 
@@ -41,12 +35,16 @@ export function suspendPersistence(): void {
 	persistenceSuspended = true;
 }
 
+function serialize(state: SavedState): string {
+	const out: Record<string, unknown> = { version: SAVE_VERSION };
+	for (const key of PERSISTED_KEYS) out[key] = state[key];
+	return JSON.stringify(out);
+}
+
 export function saveGame(state: GameState): void {
 	if (persistenceSuspended) return;
 	try {
-		const toSave: Record<string, unknown> = { version: SAVE_VERSION };
-		for (const key of PERSISTED_KEYS) toSave[key] = state[key];
-		localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
+		localStorage.setItem(SAVE_KEY, serialize(state));
 	} catch (e) {
 		console.warn("Save failed:", e);
 	}
@@ -94,7 +92,7 @@ export type ParseResult =
 	| { ok: true; state: SavedState }
 	| { ok: false; error: string };
 
-/** Validate an exported save. Pure — writing it is the store's job. */
+/** Validate an exported save. Pure; writing it is the store's job. */
 export function parseSave(json: string): ParseResult {
 	let parsed: Record<string, unknown>;
 	try {
@@ -116,7 +114,5 @@ export function parseSave(json: string): ParseResult {
 
 /** Write a validated save straight to disk, bypassing the suspend guard. */
 export function writeSave(state: SavedState): void {
-	const toSave: Record<string, unknown> = { version: SAVE_VERSION };
-	for (const key of PERSISTED_KEYS) toSave[key] = state[key];
-	localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
+	localStorage.setItem(SAVE_KEY, serialize(state));
 }

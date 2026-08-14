@@ -15,11 +15,10 @@ interface EquippedSlotsProps {
 	selectedRelicId: string | null;
 	onSelectSlot: (slotId: SlotId) => void;
 	onUnequip: (slotId: SlotId) => void;
-	/** Extra classes on the outer column — used to gate visibility on mobile. */
+	/** Extra classes on the outer column; gates visibility on mobile. */
 	className?: string;
 }
 
-/** The left column: every relic slot, grouped by crypt and summoning circle. */
 export function EquippedSlots({
 	inventory,
 	equipped,

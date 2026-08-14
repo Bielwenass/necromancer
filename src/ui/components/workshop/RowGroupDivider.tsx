@@ -1,4 +1,3 @@
-/** Marks where a section's finished rows begin. */
 export function RowGroupDivider({ label }: { label: string }) {
 	return (
 		<div className="flex items-center gap-3.5 px-8 py-2 border-b border-[color:var(--rule)] bg-bg-inset">

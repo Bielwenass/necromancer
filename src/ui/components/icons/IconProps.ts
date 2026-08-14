@@ -5,5 +5,4 @@ export interface IconProps {
 	color?: string;
 }
 
-/** An icon component, as every table of icons in the UI types it. */
 export type IconComponent = ComponentType<IconProps>;

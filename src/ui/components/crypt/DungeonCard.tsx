@@ -12,7 +12,6 @@ import { IconBone, IconCorpse, IconSoul } from "../icons";
 import { DungeonLootStat } from "./DungeonLootStat";
 import { SQUAD_STATE_GLYPH, squadColor, TIER_DECORATION } from "./squadDisplay";
 
-/** A payout figure: whole numbers past 10, one decimal below it. */
 function formatAmount(n: number): string {
 	if (n >= 10 || Number.isInteger(n)) return String(Math.round(n));
 	return n.toFixed(1);
@@ -20,8 +19,8 @@ function formatAmount(n: number): string {
 
 /**
  * The tail of a payout tooltip: `" · ×1.14 clears · +30% bonus"`, listing only
- * the multipliers that actually apply. Pass `null` for `clearMult` on a payout
- * repeat clears don't scale.
+ * the multipliers that apply. `clearMult` is `null` on a payout repeat clears
+ * leave alone.
  */
 function bonusNote(clearMult: number | null, bonusMult: number): string {
 	const parts: string[] = [];
@@ -44,16 +43,13 @@ export function DungeonCard({
 	def: DungeonDef;
 	ds: DungeonState;
 	squads: Squad[];
-	/** One leg of the trip after upgrades — see travelLegTicks. */
 	travelTicks: number;
-	/** Now, in game ticks. The squad's ETA is the gap to its phase deadline. */
 	tickCount: number;
-	/** Payout after clear and yield bonuses — see projectLoot. */
 	loot: ProjectedLoot;
 	onDispatch: (id: string) => void;
 }) {
-	// Only one squad may hold a dungeon, so at most one can match — see
-	// `dungeonOccupancy`. Its presence is exactly what makes the card unavailable.
+	// Only one squad may hold a dungeon, so at most one matches; its presence is
+	// what makes the card unavailable.
 	const activeSquad = squads.find(
 		(s) => s.targetDungeonId === def.id && s.state !== "idle",
 	);
@@ -71,7 +67,7 @@ export function DungeonCard({
 
 	// `projectLoot` reports the clear multiplier and each yield ratio alongside
 	// the figures, so the tooltip names the breakdown without re-deriving the
-	// loot-table base. A locked economy projects zero, and reads as absent.
+	// loot-table base. A locked economy projects zero and reads as absent.
 	const { clearMult, boneBonus, soulBonus, corpseBonus } = loot;
 	const clearMultDisplay = clearMult.toFixed(2);
 	const lt = def.lootTable;

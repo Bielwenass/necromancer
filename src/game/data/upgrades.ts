@@ -1,37 +1,28 @@
 import type { UpgradeNode } from "../types";
 
 /**
- * The upgrade tree: three branches, six tiers, one capstone each.
- *
- * Each branch owns a question. **Summoning** is what you field — squad size and
- * count, the two unit unlocks, per-unit power. **Command** is how they
- * campaign — orders, march speed, combat multipliers, what a clear pays.
- * **Necromancy** is what you reap and what you bind — the corpse and soul
- * economies, passive income, relic slots, the Ritual.
+ * The upgrade tree: three branches, six tiers, one capstone each. Summoning is
+ * what you field, command is how they campaign, necromancy is what you reap and
+ * bind.
  *
  * Two rules keep the ordering honest:
  *
- * 1. **An amplifier never precedes its enabler.** A node that scales corpses,
- *    souls, or a unit type sits downstream of the node that opens it, in the
- *    same branch, so nothing can be bought while it is worth zero.
- * 2. **A cross-branch dependency is priced, not prerequisited.** `sections.ts`
- *    hides a node whose prerequisites are unmet, which reads as progressive
- *    reveal inside a branch and as a missing node across two. Zombie Rites
- *    charges corpses rather than requiring Grave Harvest, so the node stays
- *    visible and its price says what is missing.
+ * 1. An amplifier never precedes its enabler. A node scaling corpses, souls, or
+ *    a unit type sits downstream of the node that opens it, in the same branch.
+ * 2. A cross-branch dependency is priced through `cost`, since `sections.ts`
+ *    hides a node whose prerequisites are unmet. Zombie Rites charges corpses,
+ *    so its price says what is missing.
  *
- * Costs climb roughly threefold per tier — a tier-1 node is a few clears, a
- * capstone is a campaign. Banners are the spine; a node reaching for another
- * branch's economy charges that economy's resource on top.
+ * Costs climb roughly threefold per tier. Banners are the spine; a node reaching
+ * for another branch's economy charges that resource on top.
  *
- * `pctOfSelf` is unused here: `recomputeDerived` folds upgrades before workshop
- * levels and iterates `purchased` in purchase order, so a share of a running
- * total would depend on both. It belongs to relics, which are folded last.
+ * `pctOfSelf` is unusable here: `recomputeDerived` folds upgrades first and in
+ * purchase order, so a share of a running total would depend on both.
  */
 export const UPGRADE_NODES: UpgradeNode[] = [
-	// ══ SUMMONING ═══════════════════════════════════════════════════
-	// The army. Splits at s1 into a circle line (size, count) and a
-	// bone line (skeletons, then the two unit unlocks hanging off it).
+	// ══ SUMMONING ══
+	// The army. Splits at s1 into a circle line (size, count) and a bone line
+	// (skeletons, then the two unit unlocks hanging off it).
 
 	{
 		id: "s1",
@@ -126,9 +117,8 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		name: "Brittle Host",
 		tier: 3,
 		cost: { banners: 198 },
-		// Purely positive, unlike the relic affix of the same shape: a tree node is
-		// bought once and never taken off, so a permanent drawback is a trap rather
-		// than a choice. Glass cannon belongs on a relic that can be unequipped.
+		// Purely positive: a tree node is bought once and never taken off, so a
+		// drawback here is a trap.
 		effects: [
 			{ kind: "unit", units: ["skeleton"], stat: "dmgBonus", value: 0.3 },
 		],
@@ -217,9 +207,9 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		capstone: true,
 	},
 
-	// ══ COMMAND ═════════════════════════════════════════════════════
-	// The campaign. A logistics line (march, payout, a third circle) and
-	// a war line (stats, tactics, the enemy debuffs) meeting at War Cry.
+	// ══ COMMAND ══
+	// The campaign. A logistics line (march, payout, a third circle) and a war
+	// line (stats, tactics, the enemy debuffs) meeting at War Cry.
 
 	{
 		id: "c1",
@@ -423,10 +413,10 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		capstone: true,
 	},
 
-	// ══ NECROMANCY ══════════════════════════════════════════════════
-	// The arts. A yield line (corpses, then souls, each followed by its
-	// own amplifiers) and a reliquary line (five slots), meeting at the
-	// capstone. Choosing between them is the branch's whole point.
+	// ══ NECROMANCY ══
+	// The arts. A yield line (corpses, then souls, each followed by its own
+	// amplifiers) and a reliquary line (five slots), meeting at the capstone.
+	// Choosing between them is the branch's whole point.
 
 	{
 		id: "n1",
@@ -610,12 +600,9 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		capstone: true,
 	},
 
-	// ═══════════════════════════════════════════════════════════════
-	// THE ENDLESS RITE — the one node with no last purchase
-	// ═══════════════════════════════════════════════════════════════
-	// The board above is finite and a long run outlasts it, leaving banners to
-	// pile up unspent — so the tree ends in a rite that can always be performed
-	// once more, for a little more, at a steadily steeper price.
+	// ══ THE ENDLESS RITE ══
+	// The board above is finite and a long run outlasts it, so the tree ends in a
+	// rite that can always be performed once more at a steeper price.
 	{
 		id: "x1",
 		branch: "necromancy",

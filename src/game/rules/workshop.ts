@@ -15,12 +15,7 @@ const GARDEN_BY_ID: Record<GardenPlotId, GardenPlotDef> = Object.fromEntries(
 	GARDEN_PLOTS.map((p) => [p.id, p]),
 ) as Record<GardenPlotId, GardenPlotDef>;
 
-/**
- * Each unit is bought with the currency its nature implies. Skeletons are plain
- * bone-work; zombies need bodies to stitch and, deep in, souls to drive them;
- * wraiths never touch bones at all — they are bound out of flesh, souls, and
- * ground relic dust. The magnitudes are all in `data/workshop.ts`.
- */
+/** Skeletons cost bones; zombies add corpses and souls; wraiths drop bones. */
 export function unitStatCost(
 	unit: UnitType,
 	stat: StatKey,
@@ -56,7 +51,6 @@ export function unitStatCost(
 	}
 }
 
-/** What a unit stat track reads at `level`. See `UNIT_STAT_CONFIG`. */
 export function statAtLevel(
 	cfg: { base: number; statGrowth: number },
 	level: number,
@@ -65,13 +59,9 @@ export function statAtLevel(
 }
 
 /**
- * Squad size bought so far. This is the one track whose gain stays
- * sub-exponential, and deliberately: a squad's contribution to a fight is very
- * nearly the *square* of its size — `balanceCheck` measures power ∝ squad^1.96
- * at tier 2 and ^1.86 at tier 3, drifting down as crowding keeps rear ranks out
- * of contact. A geometric gain on top of that would swamp every other purchase,
- * so each level adds a whole unit and the size of that step grows slowly, which
- * keeps a compounding price honest against a near-quadratic return.
+ * Squad size bought so far. Its gain stays sub-exponential on purpose: a squad's
+ * contribution to a fight is nearly the square of its size (`balanceCheck`
+ * measures power ∝ squad^1.9), so a geometric gain would swamp everything else.
  */
 export function squadSizeFromLevel(level: number): number {
 	const { perLevelBase, levelsPerStep } = CRYPT_CONFIG.squadSize;
@@ -87,7 +77,6 @@ export function cryptCost(key: CryptKey, level: number): Partial<Resources> {
 	return { bones: Math.floor(cfg.baseBones * cfg.growth ** level) };
 }
 
-/** A plot is bought and upgraded with the resource it is named for. */
 export function gardenCost(
 	id: GardenPlotId,
 	level: number,
@@ -98,12 +87,10 @@ export function gardenCost(
 	};
 }
 
-/** Bones/sec a plot produces at `level`. */
 export function gardenYield(id: GardenPlotId, level: number): number {
 	return GARDEN_BY_ID[id].baseYield * level;
 }
 
-/** Total bones/sec across every plot, before `bonesPassiveMult`. */
 export function gardenTotalYield(garden: Record<GardenPlotId, number>): number {
 	return GARDEN_PLOTS.reduce((sum, p) => sum + p.baseYield * garden[p.id], 0);
 }

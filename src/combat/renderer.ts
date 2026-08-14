@@ -37,7 +37,6 @@ export function renderFrame(
 		ctx.fill();
 	}
 
-	// Death flashes
 	const flashMs = rcfg.deathFlashMs;
 	for (const flash of deathFlashes) {
 		const age = t - flash.t;

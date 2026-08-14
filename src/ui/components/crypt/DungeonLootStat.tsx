@@ -3,8 +3,8 @@ import type { IconComponent } from "../icons/IconProps";
 
 /**
  * One projected payout figure on a dungeon card. `boosted` brightens the value
- * whenever player bonuses push it above the bare loot table, and `title` spells
- * the breakdown out on hover.
+ * where player bonuses push it above the bare loot table; `title` spells the
+ * breakdown out on hover.
  */
 export function DungeonLootStat({
 	icon: Icon,

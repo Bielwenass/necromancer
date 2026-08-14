@@ -1,4 +1,3 @@
-// Mulberry32 — fast, good-quality 32-bit PRNG
 export function mulberry32(seed: number): () => number {
 	let s = seed >>> 0;
 	return () => {

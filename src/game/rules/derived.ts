@@ -44,7 +44,6 @@ export function upgradeCost(
 	return out;
 }
 
-/** How many times a node has been bought — 0, 1, or more for a repeatable one. */
 export function upgradeTimesBought(state: GameState, nodeId: string): number {
 	const owned = state.upgrades.purchased.includes(nodeId) ? 1 : 0;
 	return owned + (state.upgrades.repeats?.[nodeId] ?? 0);
@@ -114,9 +113,8 @@ function applyGlobal(
 			g[stat] *= value;
 			break;
 		case "pctOfSelf":
-			// A share of the stat's own running total — how a percentage squad-size
-			// bonus has to work. Order-sensitive by nature, which is why relics are
-			// folded in last, after upgrades and workshop levels have settled.
+			// A share of the stat's running total, so relics fold in last, after
+			// upgrades and workshop levels have settled.
 			g[stat] += Math.floor(g[stat] * value);
 			break;
 	}
@@ -167,12 +165,9 @@ function applyAffixEffect(
 const NODES_BY_ID = new Map(UPGRADE_NODES.map((n) => [n.id, n]));
 
 /**
- * The single computed projection of *upgrades purchased + workshop levels +
- * equipped relic affixes* into the flat numbers everything else reads.
- *
- * The three sources are folded in that order and it matters: `pctOfSelf`
- * effects (the `squadSizeBonus` affix) take a share of the running total, so
- * relics must see a settled base.
+ * Projects upgrades purchased, workshop levels and equipped relic affixes into
+ * the flat numbers everything else reads. The fold order matters: `pctOfSelf`
+ * takes a share of the running total, so relics must see a settled base.
  */
 export function recomputeDerived(state: GameState): GameState["derived"] {
 	const g = baseGlobals();
@@ -187,7 +182,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 	};
 	const slots = new Set<SlotId>(BASE_UNLOCKED_SLOTS);
 
-	// ── 1. Purchased upgrade nodes ───────────────────────────────
+	// Purchased upgrade nodes
 	for (const nodeId of state.upgrades.purchased) {
 		const node = NODES_BY_ID.get(nodeId);
 		if (!node) continue;
@@ -202,7 +197,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		}
 	}
 
-	// ── 2. Workshop levels ───────────────────────────────────────
+	// Workshop levels
 	let gardenBonesPerTick = 0;
 	if (state.workshop) {
 		const ws = state.workshop;
@@ -218,7 +213,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		gardenBonesPerTick = gardenTotalYield(ws.garden) / TICKS_PER_SECOND;
 	}
 
-	// ── 3. Equipped relic affixes ────────────────────────────────
+	// Equipped relic affixes
 	for (const relicId of Object.values(state.relics.equipped)) {
 		if (!relicId) continue;
 		const relic = state.relics.inventory.find((r) => r.id === relicId);
@@ -241,8 +236,6 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 	g.enemyDmgPenalty = Math.min(MAX_ENEMY_PENALTY, g.enemyDmgPenalty);
 	g.pityReduction = Math.min(MAX_PITY_REDUCTION, g.pityReduction);
 
-	// `bonesPassiveMult` is the one global that doesn't survive under its own
-	// name — it multiplies the garden's output and nothing else reads it.
 	const { bonesPassiveMult, ...globals } = g;
 
 	return {
@@ -251,8 +244,7 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		...units,
 		bonesPerTick: gardenBonesPerTick * bonesPassiveMult,
 		unlockedSlots: [...slots],
-		// Nothing varies this yet; it exists so catchup and the live loop agree on
-		// how sim time converts to wall-clock time.
+		// Fixed, so catchup and the live loop convert sim time the same way.
 		combatSpeedMultiplier: 1,
 	};
 }

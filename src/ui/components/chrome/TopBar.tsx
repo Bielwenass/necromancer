@@ -3,14 +3,13 @@ import { exportSave } from "../../../game/save";
 import { useGameStore } from "../../../game/store";
 import type { DerivedFlagKey, Resources } from "../../../game/types";
 import { formatRate } from "../../format";
-import { RESOURCE_KEYS, resourceMeta } from "../../resources";
+import { RESOURCE_KEYS, RESOURCE_META } from "../../resources";
 import { DANGER_BUTTON } from "../common/ConfirmAction";
 import { Modal } from "../common/Modal";
 import { SectionLabel } from "../common/SectionLabel";
 import { IconBone } from "../icons";
 import { ResourceReadout } from "./ResourceReadout";
 
-/** Shown whatever the balance — the two currencies the game opens with. */
 const ALWAYS_SHOWN = new Set<keyof Resources>(["bones", "banners"]);
 
 /** A gated economy also appears once its gate opens, before the first drop. */
@@ -38,8 +37,7 @@ export function TopBar() {
 
 	const dayStr = `DAY ${meta.dayCount}`;
 
-	// An economy the tree hasn't opened stays off the bar until the player holds
-	// some of it, so the bar never advertises what can't be earned yet.
+	// An unopened economy stays off the bar until the player holds some of it.
 	const readouts = RESOURCE_KEYS.filter((key) => {
 		const flag = ECONOMY_FLAG[key];
 		return (
@@ -134,7 +132,7 @@ export function TopBar() {
 						</button>
 					)}
 					{readouts.map((key) => {
-						const { label, icon } = resourceMeta(key);
+						const { label, icon } = RESOURCE_META[key];
 						return (
 							<ResourceReadout
 								key={key}

@@ -47,8 +47,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 		}
 	}, [squads, watchedSquadId]);
 
-	// Every unlocked dungeon, plus the first locked one as a teaser for what
-	// comes next.
+	// Every unlocked dungeon, plus the first locked one as a teaser.
 	const visibleDungeons: DungeonDef[] = [];
 	let foundLocked = false;
 	for (const def of Object.values(DUNGEON_DEFS)) {
@@ -124,7 +123,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 								BATTLE · {watchedDungeon.name.toUpperCase()}
 							</SectionLabel>
 						</div>
-						<CombatWindow squad={watchedSquad} def={watchedDungeon} />
+						<CombatWindow squad={watchedSquad} />
 					</div>
 				)}
 
@@ -170,9 +169,8 @@ export function Crypt({ onTabChange }: CryptProps) {
 										derived,
 										squad,
 										dungeonState,
-										// This squad is still holding its own target while it walks
-										// home, so it has to be excluded or it would read as
-										// blocked by itself.
+										// The squad still holds its own target while walking home, so
+										// excluding it keeps it from reading as self-blocked.
 										dungeonOccupancy(squads, squad.id),
 									)}
 									onDisband={() => deleteSquad(squad.id)}

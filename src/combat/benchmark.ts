@@ -1,11 +1,8 @@
 /**
- * Headless combat benchmark with accel sub-phase breakdown.
+ * Headless combat benchmark. `bunx tsx src/combat/benchmark.ts`.
  *
- * Run: `bunx tsx src/combat/benchmark.ts`
- *
- * Both sides are level-zero skeletons, mustered in the real spawn bands — a
- * symmetric worst case, not a real dungeon. The phase split is what tells us
- * where to optimize; the absolute numbers only matter relative to each other.
+ * Both sides are level-zero skeletons in the real spawn bands: a symmetric worst
+ * case. Read the phase split; the absolutes mean little.
  */
 
 import { ENGINE_DT, MAX_HEADLESS_TICKS } from "../game/data/pacing";
@@ -34,10 +31,7 @@ const NO_MODS: UnitMods = {
 	lastStand: 0,
 };
 
-/**
- * Two modifier loadouts worth measuring separately: everything that rides along
- * inside the existing loops, and the one that widens the fine query.
- */
+/** Measured apart: only the aura widens the fine query. */
 const MOD_LOADOUTS: { label: string; mods?: UnitMods }[] = [
 	{ label: "no modifiers" },
 	{
@@ -105,8 +99,7 @@ interface RunResult {
 
 function runOnce(n: number, seed: number, mods?: UnitMods): RunResult {
 	const engine = new CombatEngine({ width: COMBAT_W, height: COMBAT_H, seed });
-	// Modifiers go on side A only — the player's side is the only one that ever
-	// carries them, so a symmetric loadout would overstate their cost.
+	// Side A only: enemies never carry modifiers.
 	engine.setSide("a", makeConfig(n, true, mods));
 	engine.setSide("b", makeConfig(n, false));
 	engine.start();
@@ -171,9 +164,7 @@ for (const n of SCENARIOS) {
 	summarize(results);
 }
 
-// What the relic modifiers cost. Everything but the aura rides along inside
-// loops that already run; the aura is the one that widens the fine query, and
-// it only does so in fights where a unit actually carries it.
+// Everything but the aura rides along in loops that already run.
 console.log("\n── modifier cost, 500v500 (avg over 3 seeds) ──");
 for (const { label, mods } of MOD_LOADOUTS) {
 	const runs = SEEDS.map((seed) => runOnce(500, seed, mods));
@@ -184,20 +175,10 @@ for (const { label, mods } of MOD_LOADOUTS) {
 	);
 }
 
-console.log("\nDone.");
-console.log("\nReading guide:");
-console.log(
-	"  - query high      → queryRadius itself is costly (cell iteration / result alloc)",
-);
-console.log(
-	"  - neighborLoop high → per-neighbor force math; density-driven, cut via cell aggregates",
-);
-console.log(
-	"  - seekFallback high → many units firing the second query; widen-seek is the culprit",
-);
-console.log(
-	"  - integrate high   → unlikely, but would point at the integration pass",
-);
-console.log(
-	"  - avgNeighbors growing with n → density scaling; the core 1000v1000 problem",
-);
+console.log(`
+Reading the accel split:
+  query          → queryRadius itself; cell iteration and result allocation
+  neighborLoop   → per-neighbor force math, density-driven
+  seekFallback   → the aggregate-grid reads
+  avgNeighbors rising with n → density scaling, the 1000v1000 problem
+`);

@@ -44,13 +44,12 @@ function buildInitialState(): GameState {
 
 /**
  * Build the state the store starts from. A save is spread over the defaults, so
- * top-level fields added since it was written get their default for free. That
- * does *not* hold inside a nested object — a saved `resources` or `gacha`
- * replaces the default wholesale — so every key added to one needs a line here,
- * the way `freePulls` does below.
+ * a new top-level field gets its default for free. A saved nested object
+ * (`resources`, `gacha`) replaces the default wholesale, so a key added inside
+ * one needs a line here.
  *
- * Only saves at the current `SAVE_VERSION` reach this, which is what keeps it
- * free of migration code.
+ * Only saves at the current `SAVE_VERSION` reach this, which keeps it free of
+ * migration code.
  */
 export function buildHydratedState(): GameState {
 	const saved = loadGame();
@@ -64,8 +63,8 @@ export function buildHydratedState(): GameState {
 		...defaults,
 		...saved,
 		resources: { ...defaults.resources, ...saved.resources },
-		// A squad saved before `roster` existed treats its current strength as the
-		// one it was raised at, so replenishing it is a no-op until it loses units.
+		// A squad with no saved `roster` treats its current strength as the one it
+		// was raised at, so replenishing is a no-op until it loses units.
 		squads: (saved.squads ?? []).map((s) => ({
 			...s,
 			roster: s.roster ?? s.composition,
@@ -79,8 +78,8 @@ export function buildHydratedState(): GameState {
 				...saved.gacha?.pityCounters,
 			},
 		},
-		// A save written before the tab was hidden has no `lastTickAt`; without one
-		// the elapsed-time check reads NaN and catchup never runs.
+		// Without `lastTickAt` the elapsed-time check reads NaN and catchup never
+		// runs.
 		meta: { ...saved.meta, lastTickAt: saved.meta?.lastTickAt ?? Date.now() },
 	};
 	return { ...base, derived: recomputeDerived(base as GameState) };

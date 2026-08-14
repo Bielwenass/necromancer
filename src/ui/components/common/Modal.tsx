@@ -2,19 +2,15 @@ import type React from "react";
 import { useEffect } from "react";
 
 interface ModalProps {
-	/** Accessible name for the dialog. */
 	label: string;
 	/**
-	 * Dismiss handler. When omitted the modal is undismissable — neither the
-	 * backdrop nor Escape closes it, which is what the offline-catchup overlay
-	 * needs while it is still working.
+	 * Dismiss handler. Omitting it makes the modal undismissable by backdrop or
+	 * Escape, which the offline-catchup overlay needs while it works.
 	 */
 	onClose?: () => void;
-	/** Backdrop tint, e.g. `bg-[rgba(0,0,0,0.72)]`. */
 	backdropClassName?: string;
-	/** Stack order, e.g. `z-[200]`. */
 	zClassName?: string;
-	/** Extra classes on the backdrop — pass `flex-col` for stacked content. */
+	/** Extra classes on the backdrop; pass `flex-col` for stacked content. */
 	className?: string;
 	children: React.ReactNode;
 }

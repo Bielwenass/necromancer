@@ -22,22 +22,20 @@ import type {
 	UnitType,
 	WorkshopState,
 } from "../../../game/types";
-import { resourceMeta } from "../../resources";
+import { RESOURCE_META } from "../../resources";
 import { UNIT_LABELS } from "../../theme";
 import { UNIT_ICONS } from "../icons";
 import type { WorkshopRow, WorkshopSection } from "./types";
 
-/** A row is done when it has a ceiling and has reached it. */
 export function isRowMaxed(row: WorkshopRow): boolean {
 	return row.maxLevel !== undefined && row.level >= row.maxLevel;
 }
 
-/** Inscribed rows sink below everything still purchasable. */
 function arrange(rows: WorkshopRow[]): WorkshopRow[] {
 	return [...rows.filter((r) => !isRowMaxed(r)), ...rows.filter(isRowMaxed)];
 }
 
-/** Nodes whose prerequisites are unmet are omitted, not shown as locked. */
+/** Nodes whose prerequisites are unmet are omitted entirely. */
 function skillRows(
 	purchased: string[],
 	repeats: Record<string, number>,
@@ -49,41 +47,35 @@ function skillRows(
 			(purchased.includes(n.id) ||
 				n.prerequisites.every((p) => purchased.includes(p))),
 	).map((n) => {
-		const bought = (purchased.includes(n.id) ? 1 : 0) + (repeats[n.id] ?? 0);
-		// A repeatable node has no maxLevel, so it reads as a track that keeps
-		// going rather than a one-off that is finished.
-		if (n.repeatGrowth) {
-			return {
-				id: n.id,
-				name: n.name,
-				description: summarizeUpgradeEffects(n),
-				flavor: n.flavor,
-				icon: n.icon,
-				level: bought,
-				kindLabel: "Repeatable Rite",
-				buyLabel: () => "Perform",
-				costFn: (lv: number) => upgradeCost(n, lv),
-				valueFn: (lv: number) => (lv > 0 ? `×${lv}` : "—"),
-				nextFn: () => summarizeUpgradeEffects(n),
-				skill: { upgradeId: n.id },
-			};
-		}
-		return {
+		const summary = summarizeUpgradeEffects(n);
+		const base = {
 			id: n.id,
 			name: n.name,
-			description: summarizeUpgradeEffects(n),
+			description: summary,
 			flavor: n.flavor,
 			icon: n.icon,
-			level: bought,
-			maxLevel: 1,
-			kindLabel: "One-time Upgrade",
-			buyLabel: () => "Inscribe",
-			costFn: (lv: number) => (lv >= 1 ? null : upgradeCost(n)),
-			valueFn: (lv: number) => (lv >= 1 ? "Inscribed" : "—"),
-			nextFn: (lv: number) =>
-				lv >= 1 ? "— maxed —" : summarizeUpgradeEffects(n),
+			level: (purchased.includes(n.id) ? 1 : 0) + (repeats[n.id] ?? 0),
 			skill: { upgradeId: n.id },
 		};
+		// A repeatable node has no maxLevel, so it reads as an endless track.
+		return n.repeatGrowth
+			? {
+					...base,
+					kindLabel: "Repeatable Rite",
+					buyLabel: () => "Perform",
+					costFn: (lv: number) => upgradeCost(n, lv),
+					valueFn: (lv: number) => (lv > 0 ? `×${lv}` : "—"),
+					nextFn: () => summary,
+				}
+			: {
+					...base,
+					maxLevel: 1,
+					kindLabel: "One-time Upgrade",
+					buyLabel: () => "Inscribe",
+					costFn: (lv: number) => (lv >= 1 ? null : upgradeCost(n)),
+					valueFn: (lv: number) => (lv >= 1 ? "Inscribed" : "—"),
+					nextFn: (lv: number) => (lv >= 1 ? "— maxed —" : summary),
+				};
 	});
 }
 
@@ -109,7 +101,6 @@ function unitRows(
 	unit: UnitType,
 	levels: { hp: number; dmg: number; speed: number },
 ): WorkshopRow[] {
-	/** Stat curves are geometric, so a raw value is rarely a whole number. */
 	const formatStat = (n: number) =>
 		n >= 100 ? String(Math.round(n)) : n.toFixed(n >= 10 ? 1 : 2);
 	const cfg = UNIT_STAT_CONFIG[unit];
@@ -166,7 +157,7 @@ const PLOT_FLAVOR: Record<string, string> = {
 
 function gardenRows(garden: WorkshopState["garden"]): WorkshopRow[] {
 	return GARDEN_PLOTS.map((plot) => {
-		const meta = resourceMeta(plot.id);
+		const meta = RESOURCE_META[plot.id as keyof Resources];
 		return {
 			id: `garden.${plot.id}`,
 			name: plot.name,
@@ -183,22 +174,27 @@ function gardenRows(garden: WorkshopState["garden"]): WorkshopRow[] {
 	});
 }
 
-/** One levelled-stat section per unit type, locked until that type is unlocked. */
-function unitSections(
-	ws: WorkshopState,
-	derived: GameState["derived"],
-): WorkshopSection[] {
-	return UNIT_TYPES.map((type) => ({
-		id: `${type}s`,
-		name: `${UNIT_LABELS[type]}s`,
-		subtitle: `Leveled stat upgrades for ${type}s.`,
-		icon: UNIT_ICONS[type],
-		unlocked: isUnitUnlocked(type, derived),
-		lockedTitle: `${UNIT_LABELS[type]}s Locked`,
-		lockedBody: "Unlock via Summoning branch.",
-		rows: unitRows(type, ws[type]),
-	}));
-}
+const BRANCHES: { id: string; name: string; subtitle: string; icon: string }[] =
+	[
+		{
+			id: "summoning",
+			name: "Summoning",
+			subtitle: "One-time summon enhancements.",
+			icon: "army",
+		},
+		{
+			id: "command",
+			name: "Command",
+			subtitle: "One-time battlefield enhancements.",
+			icon: "auto",
+		},
+		{
+			id: "necromancy",
+			name: "Necromancy",
+			subtitle: "One-time dark arts enhancements.",
+			icon: "soul",
+		},
+	];
 
 export function buildSections(
 	purchased: string[],
@@ -207,31 +203,21 @@ export function buildSections(
 	derived: GameState["derived"],
 ): WorkshopSection[] {
 	return [
-		{
-			id: "summoning",
-			name: "Summoning",
-			subtitle: "One-time summon enhancements.",
-			icon: "army",
+		...BRANCHES.map((b) => ({
+			...b,
 			unlocked: true,
-			rows: arrange(skillRows(purchased, repeats, "summoning")),
-		},
-		{
-			id: "command",
-			name: "Command",
-			subtitle: "One-time battlefield enhancements.",
-			icon: "auto",
-			unlocked: true,
-			rows: arrange(skillRows(purchased, repeats, "command")),
-		},
-		{
-			id: "necromancy",
-			name: "Necromancy",
-			subtitle: "One-time dark arts enhancements.",
-			icon: "soul",
-			unlocked: true,
-			rows: arrange(skillRows(purchased, repeats, "necromancy")),
-		},
-		...unitSections(ws, derived),
+			rows: arrange(skillRows(purchased, repeats, b.id)),
+		})),
+		...UNIT_TYPES.map((type) => ({
+			id: `${type}s`,
+			name: `${UNIT_LABELS[type]}s`,
+			subtitle: `Leveled stat upgrades for ${type}s.`,
+			icon: UNIT_ICONS[type],
+			unlocked: isUnitUnlocked(type, derived),
+			lockedTitle: `${UNIT_LABELS[type]}s Locked`,
+			lockedBody: "Unlock via Summoning branch.",
+			rows: unitRows(type, ws[type]),
+		})),
 		{
 			id: "crypt",
 			name: "Crypt",
@@ -251,7 +237,6 @@ export function buildSections(
 	];
 }
 
-/** Which side-nav entries have at least one affordable purchase right now. */
 export function affordableDots(
 	sections: WorkshopSection[],
 	res: Resources,

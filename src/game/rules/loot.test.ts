@@ -8,7 +8,6 @@ import { makeDungeonState } from "./unlocks";
 
 const def = DUNGEON_DEFS["paupers-tomb"];
 const open = buildScenario(false).derived;
-/** A necromancer who has bought nothing: both gated economies still shut. */
 const shut = recomputeDerived({
 	...buildScenario(false),
 	upgrades: { purchased: [] },
@@ -28,8 +27,8 @@ describe("gated economies", () => {
 		expect(projectLoot(def, 3, shut).corpses).toBe(0);
 	});
 
-	// Over many clears an opened economy must actually pay, or the gate would be
-	// indistinguishable from a permanent lock.
+	// Over many clears an opened economy must pay, or the gate reads as a
+	// permanent lock.
 	test("an opened economy pays corpses", () => {
 		const rand = mulberry32(11);
 		let corpses = 0;

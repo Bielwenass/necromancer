@@ -10,12 +10,9 @@ import { TICK_MS } from "./data/pacing";
 import type { GameState } from "./types";
 
 /**
- * The fights the player is watching. React-free so the parity tests can drive
- * the real live path rather than a copy of it.
- *
- * The engine is authoritative and `resolveFight` applies whatever it reports.
- * The seed is derived from game state and the engine steps in whole `ENGINE_DT`
- * units whatever it is fed, so this reaches the headless run's verdict.
+ * The fights the player is watching. React-free, so the parity tests drive the
+ * shipped live path. The engine is authoritative: its seed comes from game state
+ * and it steps in whole `ENGINE_DT`.
  */
 
 export interface FinishedFight {
@@ -25,12 +22,10 @@ export interface FinishedFight {
 }
 
 /**
- * Engines for every squad that has entered `fighting` without one. Returned
- * rather than installed, so the caller keeps ownership of the engine map.
- *
- * Called *after* `stepLiveFights`, so an engine takes its first step on the tick
- * after the one that started it — the fight occupies the ticks after arrival,
- * which is what makes it last the `durationTicks` the headless run reports.
+ * Engines for every squad that entered `fighting` without one; the caller keeps
+ * ownership of the map. Called after `stepLiveFights`, so an engine's first step
+ * falls on the tick after the one that started it, making a watched fight last
+ * the `durationTicks` the headless run reports.
  */
 export function beginLiveFights(
 	state: GameState,
@@ -65,11 +60,9 @@ export function beginLiveFights(
 }
 
 /**
- * Advance every live engine by one game tick's worth of sim time and report the
- * fights that ended. The caller applies each result and retires its engine.
- *
- * One `tick` call per engine, never a hand-rolled loop of `ENGINE_DT` steps: the
- * engine carries the sub-step remainder itself.
+ * Advance every live engine by one game tick of sim time and report the fights
+ * that ended; the caller applies each result and retires its engine. One `tick`
+ * call each, never a hand-rolled `ENGINE_DT` loop.
  */
 export function stepLiveFights(
 	engines: ReadonlyMap<string, CombatEngine>,

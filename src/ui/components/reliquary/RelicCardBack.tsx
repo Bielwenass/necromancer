@@ -1,11 +1,10 @@
 import { CardFrame, STAR_ANGLES, TICK_ANGLES } from "./relicCardArt";
 
 /**
- * The card back. Same substrate, frame, noise and padding grid as the front —
- * it is the same object turned over, so nothing here moves or glows. The seal
- * is engraved line work at the front's art weight, and its silhouette is
- * identical across rarities; only the tint the whole card carries comes
- * through.
+ * The card back: the same substrate, frame, noise and padding grid as the front,
+ * so nothing here moves or glows. The seal is engraved line work at the front's
+ * art weight, its silhouette identical across rarities; only the card's tint
+ * comes through.
  */
 export function RelicCardBack({ noise }: { noise: number }) {
 	return (

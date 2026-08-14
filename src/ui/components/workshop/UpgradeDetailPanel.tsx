@@ -2,7 +2,6 @@ import type { Resources } from "../../../game/types";
 import type { WorkshopRow } from "./types";
 import { UpgradeDetail } from "./UpgradeDetail";
 
-/** Right column: the pinned row in full, plus the interaction legend. */
 export function UpgradeDetailPanel({
 	row,
 	resources,

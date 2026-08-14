@@ -19,14 +19,13 @@ import type {
 import { relicUpgradeMultiplier } from "./relics";
 import { squadSizeFromLevel } from "./workshop";
 
-/** A decimal bonus as a percentage, without float noise (`0.08` → `8%`). */
 function pct(value: number): string {
 	const n = Math.round(value * 1000) / 10;
 	return `${n}%`;
 }
 
 function signed(value: number, render: (abs: number) => string): string {
-	// U+2212 MINUS SIGN — a hyphen reads as a dash mid-sentence.
+	// U+2212 MINUS SIGN; a hyphen reads as a dash mid-sentence.
 	return value < 0 ? `−${render(-value)}` : `+${render(value)}`;
 }
 
@@ -42,7 +41,7 @@ const GLOBAL_LABELS: Record<
 	maxSquads: { label: "max squads", pct: false },
 	soulHarvestBonus: { label: "soul drop chance", pct: true },
 	squadTravelSpeedBonus: { label: "travel & return speed", pct: true },
-	// A bonus here *reduces* the price, so it reads with the opposite sign.
+	// A bonus here reduces the price, so it reads with the opposite sign.
 	summonCostBonus: { label: "skeleton summon cost", pct: true, invert: true },
 	bannerChanceBonus: { label: "chance of a bonus banner", pct: true },
 	clearMultBonus: { label: "repeat-clear payout", pct: true },
@@ -95,7 +94,6 @@ function describeGlobal(
 	const meta = GLOBAL_LABELS[stat];
 
 	if (op === "mult") {
-		// A whole multiplier reads better as ×N; anything else as a percentage.
 		return Number.isInteger(value)
 			? `×${value} ${meta.label}`
 			: `${signed(value - 1, pct)} ${meta.label}`;
@@ -117,7 +115,6 @@ function describeUnitEffect(
 			: ` ${units.map((u) => UNIT_NAMES[u]).join(" and ")}`;
 	const flat = stat.endsWith("Flat");
 	const magnitude = flat ? String : pct;
-	// "+15% skeleton damage" / "+25% damage (all units)"
 	return units.length === UNIT_TYPES.length
 		? `${signed(value, magnitude)} ${UNIT_STAT_LABELS[stat]}${who}`
 		: `${signed(value, magnitude)}${who} ${UNIT_STAT_LABELS[stat]}`;
@@ -136,32 +133,24 @@ export function describeEffect(effect: UpgradeEffect): string {
 	}
 }
 
-/** Every mechanical line for a node, in declaration order. */
 export function describeUpgradeEffects(node: UpgradeNode): string[] {
 	return node.effects.map(describeEffect);
 }
 
-/** The node's effects as one sentence, for the compact row layout. */
 export function summarizeUpgradeEffects(node: UpgradeNode): string {
 	const sentence = (text: string) => text.replace(/\.$/, "");
 	const parts = describeUpgradeEffects(node);
-	// The node's own `description` is qualitative colour, where it has one.
 	if (node.description) parts.push(sentence(node.description));
 	return `${parts.join(". ")}.`;
 }
 
-/**
- * A rolled affix magnitude as a decimal, rounded the way `formatAffixValue`
- * prints it so a tooltip line never contradicts the stat row above it.
- */
 function asShownPercent(value: number): number {
 	return (Math.sign(value) * Math.round(Math.abs(value) * 100)) / 100;
 }
 
 /**
- * Every mechanical line for one rolled affix, at the magnitude this relic
- * carries. Mirrors `applyAffixEffect`: the roll is a percentage and each effect
- * takes its own `scale` of it.
+ * Every mechanical line for one rolled affix. Mirrors `applyAffixEffect`: the
+ * roll is a percentage and each effect takes its own `scale` of it.
  */
 export function describeAffixEffects(
 	affixId: string,
@@ -207,7 +196,6 @@ export function describeUnlock(def: DungeonDef): string {
 	return `Clear ${list}`;
 }
 
-/** What one level of a crypt track is worth, e.g. "+8% per level". */
 export function describeCryptTrack(key: CryptKey): string {
 	switch (key) {
 		case "squadSize":
@@ -217,7 +205,6 @@ export function describeCryptTrack(key: CryptKey): string {
 	}
 }
 
-/** A crypt track's total at `level`, as the Workshop row displays it. */
 export function describeCryptLevel(key: CryptKey, level: number): string {
 	switch (key) {
 		case "squadSize":

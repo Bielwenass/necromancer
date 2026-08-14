@@ -1,4 +1,3 @@
-/** The purchase button shared by every detail-panel body. */
 export function BuyButton({
 	label,
 	disabled,

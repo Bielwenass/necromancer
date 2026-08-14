@@ -6,11 +6,9 @@ interface ResourceReadoutProps {
 	label: string;
 	value: number;
 	Icon: IconComponent;
-	/** Trailing note, e.g. the bones-per-second rate. */
 	note?: React.ReactNode;
 }
 
-/** One icon + label + amount block in the top bar. */
 export function ResourceReadout({
 	label,
 	value,

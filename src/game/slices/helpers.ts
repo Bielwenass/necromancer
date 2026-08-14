@@ -3,9 +3,9 @@ import { recomputeDerived } from "../rules/derived";
 import type { GameState, SlotId, Units, UnitType } from "../types";
 
 /**
- * Apply a patch and refresh `derived` from the result in one step. Nothing
- * recomputes `derived` on a timer, so every action touching upgrades, workshop
- * levels or equipped relics must go through this.
+ * Apply a patch and refresh `derived` in one step. Nothing recomputes `derived`
+ * on a timer, so every action touching upgrades, workshop levels or equipped
+ * relics goes through this.
  */
 export function withDerived(
 	prev: GameState,
@@ -14,10 +14,6 @@ export function withDerived(
 	return { ...patch, derived: recomputeDerived({ ...prev, ...patch }) };
 }
 
-/**
- * Move units between the reserve pool and a squad. `sign` is -1 to spend units
- * on a squad, +1 to return them.
- */
 export function applyUnitDelta(
 	units: Units,
 	counts: Partial<Record<UnitType, number>>,
@@ -28,7 +24,6 @@ export function applyUnitDelta(
 	return next;
 }
 
-/** True when the reserve pool can cover every unit in `counts`. */
 export function hasUnitsAvailable(
 	units: Units,
 	counts: Partial<Record<UnitType, number>>,
@@ -36,7 +31,7 @@ export function hasUnitsAvailable(
 	return UNIT_TYPES.every((type) => (counts[type] ?? 0) <= units[type]);
 }
 
-/** Drop a relic from every slot it occupies. Used on both equip and sacrifice. */
+/** Drop a relic from every slot it occupies; used on equip and sacrifice. */
 export function withoutRelic(
 	equipped: GameState["relics"]["equipped"],
 	relicId: string,

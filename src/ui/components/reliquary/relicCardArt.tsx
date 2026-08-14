@@ -9,7 +9,6 @@ import {
 	IconRarityUncommon,
 } from "../icons/RarityIcons";
 
-// ── rarity config ────────────────────────────────────────────────
 export type RarityConfig = {
 	label: string;
 	glyph: React.ReactNode;
@@ -23,10 +22,9 @@ export type RarityConfig = {
 };
 
 /**
- * The card's own rarity palette — not `theme.ts`'s `RARITY_COLORS`, which are
- * flat UI accents. These are the base of a layered foil treatment and carry a
- * deep tone, two accents and a hue set the rest of the UI has no use for.
- * Changing a rarity's look means changing both.
+ * The card's own rarity palette, separate from `theme.ts`'s flat UI accents in
+ * `RARITY_COLORS`. These carry a deep tone, two accents and a hue for a layered
+ * foil treatment. Changing a rarity's look means changing both.
  */
 export const RARITIES: Record<Rarity, RarityConfig> = {
 	common: {
@@ -99,7 +97,6 @@ export const RARITY_SIGIL: Record<Rarity, string> = {
 export const TICK_ANGLES = [30, 60, 120, 150, 210, 240, 300, 330];
 export const STAR_ANGLES = [-90, -30, 30, 90, 150, 210];
 
-// Corner brackets: [x, y, rotation].
 export const CARD_CORNERS: [number, number, number][] = [
 	[18, 18, 0],
 	[302, 18, 90],
@@ -107,7 +104,6 @@ export const CARD_CORNERS: [number, number, number][] = [
 	[302, 442, 180],
 ];
 
-// ── foil builders ────────────────────────────────────────────────
 export function buildFoil(
 	hues: number[],
 	sat: number,
@@ -143,15 +139,11 @@ export function buildBars(hues: number[], sat: number, light: number): string {
 	return `repeating-linear-gradient(115deg, ${bars.join(", ")})`;
 }
 
-// ── frame ────────────────────────────────────────────────────────
 interface CardFrameProps {
-	/** The back draws its corner brackets harder than the front does. */
 	cornerOpacity: number;
-	/** Extra frame furniture — the front hangs its title rule off the top. */
 	children?: React.ReactNode;
 }
 
-/** The double border and corner brackets shared by both card faces. */
 export function CardFrame({ cornerOpacity, children }: CardFrameProps) {
 	return (
 		<svg

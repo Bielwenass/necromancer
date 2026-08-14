@@ -4,14 +4,14 @@ interface MeterProps {
 	color: string;
 	className?: string;
 	/**
-	 * Track border. Defaults to Tailwind's `border-rule`; the two `--rule`
-	 * spellings do not render alike (see CLAUDE.md), so call sites that used the
-	 * CSS variable pass it explicitly rather than silently changing appearance.
+	 * Track border, defaulting to Tailwind's `border-rule`. The two `--rule`
+	 * spellings do not render alike (see CLAUDE.md), so a call site wanting the
+	 * CSS variable passes it explicitly.
 	 */
 	borderClassName?: string;
 }
 
-/** An inset track with a coloured fill — pity, quality, and unit health. */
+/** An inset track with a coloured fill: pity, quality, and unit health. */
 export function Meter({
 	value,
 	color,

@@ -32,11 +32,11 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	const replenishSquad = useGameStore((s) => s.replenishSquad);
 
 	const idleSquads = squads.filter((s) => s.state === "idle");
-	// The cap is on how many squads exist at all, whatever they're doing —
-	// so it only ever blocks creating a new one, never dispatching an idle one.
+	// The cap counts squads that exist, so it blocks creating one and never
+	// dispatching an idle one.
 	const atCapacity = squads.length >= derived.maxSquads;
-	// A squad may have taken the dungeon between opening this modal and clicking.
-	// The store guard is the backstop; this keeps the buttons honest.
+	// A squad may have taken the dungeon since this modal opened; the store guard
+	// is the backstop.
 	const held = dungeonOccupancy(squads).has(dungeonId);
 
 	const [composition, setComposition] =

@@ -2,19 +2,17 @@ import { SUMMON_COSTS, SUMMON_SCALING_K, UNSCALED_COSTS } from "../data/units";
 import type { GameState, Resources, UnitType } from "../types";
 
 /**
- * Price multiplier for the next unit of a type when `owned` of it already
- * exist: `e^(k·√owned)`. Sub-exponential on purpose — it bites early but its
- * slope keeps falling, so a large army stays affordable in a way a true
- * exponential wouldn't allow.
+ * Price multiplier for the next unit when `owned` already exist: `e^(k·√owned)`.
+ * Sub-exponential on purpose: it bites early, then its slope keeps falling, so a
+ * large army stays affordable.
  */
 export function summonScaling(owned: number): number {
 	return Math.exp(SUMMON_SCALING_K * Math.sqrt(Math.max(0, owned)));
 }
 
 /**
- * Every unit of `type` the player owns: the reserve pool plus everything
- * already committed to a squad. Squad-held units are counted so that forming a
- * squad can't be used to walk back down the price curve.
+ * Every unit of `type` the player owns, reserves and squads alike; counting
+ * squad-held units stops a new squad walking the price back down the curve.
  */
 export function ownedUnitCount(
 	type: UnitType,
@@ -26,16 +24,12 @@ export function ownedUnitCount(
 	);
 }
 
-/** What `summonCost` needs to price a raise. `GameState` satisfies it. */
 export type SummonContext = Pick<GameState, "units" | "squads" | "derived">;
 
 /**
- * Cost of summoning `count` more units of `type`, priced one unit at a time up
- * the scaling curve — so ten single raises and one batch of ten cost the same.
- *
- * `derived.summonCostBonus` discounts skeletons only — zombies and wraiths pay
- * list price. Deliberate: the discount comes from the summoning branch, which
- * is skeleton-flavoured.
+ * Cost of summoning `count` more units of `type`, priced one at a time up the
+ * scaling curve, so ten single raises and a batch of ten cost the same.
+ * `summonCostBonus` discounts skeletons only.
  */
 export function summonCost(
 	type: UnitType,

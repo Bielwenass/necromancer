@@ -19,7 +19,6 @@ import {
 	RARITY_SIGIL,
 } from "./relicCardArt";
 
-// ── tweaks ───────────────────────────────────────────────────────
 export interface RelicCardTweaks {
 	tilt: number;
 	glow: number;
@@ -28,7 +27,6 @@ export interface RelicCardTweaks {
 	noise: number;
 	idleDrift: boolean;
 	edgeShimmer: boolean;
-	/** Total ms for the back→front flip animation. */
 	revealDuration: number;
 }
 
@@ -44,11 +42,15 @@ const DEFAULT_TWEAKS: RelicCardTweaks = {
 };
 
 const VARIANT_TWEAKS: Record<"pull" | "inventory", Partial<RelicCardTweaks>> = {
-	pull: { tilt: 12, idleDrift: true, edgeShimmer: true },
-	inventory: { tilt: 12, idleDrift: false, edgeShimmer: false },
+	pull: {},
+	inventory: { idleDrift: false, edgeShimmer: false },
 };
 
-// ── component ────────────────────────────────────────────────────
+const TITLE_RULES: [number, number][] = [
+	[18, 0],
+	[442, 180],
+];
+
 export interface RelicCardProps {
 	relic: Relic;
 	/** 'pull' = full card for gacha reveal; 'inventory' = condensed for item grid */
@@ -56,11 +58,9 @@ export interface RelicCardProps {
 	selected?: boolean;
 	tweaks?: Partial<RelicCardTweaks>;
 	onClick?: () => void;
-	/** When true, play the flip-reveal (back → front) animation on mount. */
 	revealing?: boolean;
 	/** Ms to wait before starting the flip. Use to stagger multi-card pulls. */
 	revealDelay?: number;
-	/** Fired after the reveal animation finishes. */
 	onRevealComplete?: () => void;
 }
 
@@ -80,17 +80,15 @@ export function RelicCard({
 	const rafRef = useRef<number>(0);
 	const timersRef = useRef<number[]>([]);
 	const [hovered, setHovered] = useState(false);
-	// Which affix row the cursor is on, if any — drives the description tooltip.
 	const [tipAffixId, setTipAffixId] = useState<string | null>(null);
-	// Tilt and idle drift are desktop-only: on touch they'd either never fire or
-	// stick, off the synthetic mouse events some mobile browsers send on tap.
+	// Tilt and idle drift are desktop-only: the synthetic mouse events some mobile
+	// browsers send on tap would leave them stuck.
 	const [canHover] = useState(
 		() =>
 			typeof window !== "undefined" &&
 			window.matchMedia("(hover: hover) and (pointer: fine)").matches,
 	);
-	// Tri-state. When `revealing` is false we skip the animation entirely and
-	// land directly in 'revealed' — the card just appears face-up.
+	// Tri-state; with `revealing` false the card lands directly in 'revealed'.
 	const [phase, setPhase] = useState<Phase>(revealing ? "hidden" : "revealed");
 
 	const isLarge = variant === "pull";
@@ -106,15 +104,14 @@ export function RelicCard({
 	const foil = tweaks.foil * R.foilMul;
 	const dur = tweaks.revealDuration;
 
-	// Display data
 	const name = base?.name ?? relic.baseId;
 	const flavor = base?.description ? `"${base.description}"` : "";
 	const slotKey = base?.slot ?? "crypt";
 	const slotLabel = `${slotKey.charAt(0).toUpperCase()}${slotKey.slice(1)}`;
 	const sigil = RARITY_SIGIL[relic.rarity];
 	const serial = `REL-${relic.id.replace(/\D/g, "").slice(0, 4).padStart(4, "0")}`;
-	// `allAffixes` reads main → minors → signature. The signature is marked: it
-	// is why a legendary of this base beats a better-rolled common one.
+	// `allAffixes` reads main → minors → signature. The signature is marked: it is
+	// why a legendary of this base beats a better-rolled common one.
 	const stats = allAffixes(relic).map((affix) => ({
 		id: affix.id,
 		value: affix.value,
@@ -127,8 +124,7 @@ export function RelicCard({
 		: [];
 	const tipFlavor = tipStat ? getAffixDescription(tipStat.id) : undefined;
 
-	// Stable per rarity + tilt, so effects can depend on it directly instead of
-	// listing the values it happens to close over.
+	// Stable per rarity + tilt, so effects can depend on it directly.
 	const setPose = useCallback(
 		(px: number, py: number) => {
 			const el = cardRef.current;
@@ -150,12 +146,10 @@ export function RelicCard({
 		[R.foilHues, tweaks.tilt],
 	);
 
-	// Reset pose when rarity or tilt changes (both captured by setPose).
 	useEffect(() => {
 		setPose(0, 0);
 	}, [setPose]);
 
-	// Set CSS var for animation duration so keyframes scale.
 	useEffect(() => {
 		cardRef.current?.parentElement?.style.setProperty(
 			"--reveal-duration",
@@ -169,7 +163,6 @@ export function RelicCard({
 		onRevealCompleteRef.current = onRevealComplete;
 	}, [onRevealComplete]);
 
-	// Drive the reveal sequence whenever `revealing` flips on.
 	useEffect(() => {
 		timersRef.current.forEach(window.clearTimeout);
 		timersRef.current = [];
@@ -178,8 +171,8 @@ export function RelicCard({
 			return;
 		}
 		setPhase("hidden");
-		// Two animation frames so the browser commits 'hidden' state (back facing
-		// camera) before the keyframes start — otherwise the flip starts mid-air.
+		// Two frames, so the browser commits the 'hidden' pose before the keyframes
+		// start and the flip begins face-down.
 		const start = window.setTimeout(() => {
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => setPhase("flipping"));
@@ -198,7 +191,6 @@ export function RelicCard({
 		};
 	}, [revealing, revealDelay, dur]);
 
-	// Idle drift only when fully revealed and not hovered.
 	useEffect(() => {
 		if (!canHover || !tweaks.idleDrift || hovered || phase !== "revealed")
 			return;
@@ -235,8 +227,7 @@ export function RelicCard({
 		<button
 			type="button"
 			// w-full is required: a <button> resolves `width: auto` as shrink-to-fit,
-			// which would make the inner .relic-card's `width: 100%` circular and
-			// collapse the card to a few pixels.
+			// making the inner .relic-card's `width: 100%` circular.
 			className="relic-stage w-full text-left"
 			data-rarity={relic.rarity}
 			data-variant={variant}
@@ -251,20 +242,10 @@ export function RelicCard({
 			<div
 				className="relic-glow"
 				style={{
-					// Hidden phase is folded in here rather than fought with
-					// `!important` in CSS, since this inline opacity would always win.
 					opacity: phase === "hidden" ? 0 : glow * (hovered ? 1.0 : 0.55),
 					background: `radial-gradient(closest-side, ${R.color}, transparent 70%)`,
 				}}
 			/>
-
-			{/* mid-flip light burst */}
-			{/* <div
-				className="rc-flash"
-				style={{
-					background: `radial-gradient(closest-side, #b8b8b8ac, ${R.color} 35%, transparent 75%)`,
-				}}
-			/> */}
 
 			<div
 				ref={cardRef}
@@ -306,52 +287,36 @@ export function RelicCard({
 
 						{/* frame decoration */}
 						<CardFrame cornerOpacity={0.65}>
-							<g transform="translate(160 18)" opacity="0.65">
-								<line
-									x1="-50"
-									y1="0"
-									x2="-10"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.5"
-								/>
-								<line
-									x1="10"
-									y1="0"
-									x2="50"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.5"
-								/>
-								<path
-									d="M -6 -3 L 0 0 L 6 -3 L 0 3 Z"
-									fill="currentColor"
-									fillOpacity="0.7"
-								/>
-							</g>
-							<g transform="translate(160 442)" opacity="0.65">
-								<line
-									x1="-50"
-									y1="0"
-									x2="-10"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.5"
-								/>
-								<line
-									x1="10"
-									y1="0"
-									x2="50"
-									y2="0"
-									stroke="currentColor"
-									strokeWidth="0.5"
-								/>
-								<path
-									d="M 6 3 L 0 0 L -6 3 L 0 -3 Z"
-									fill="currentColor"
-									fillOpacity="0.7"
-								/>
-							</g>
+							{/* Top and bottom title rules; the lower one is the upper turned over. */}
+							{TITLE_RULES.map(([y, deg]) => (
+								<g
+									key={y}
+									transform={`translate(160 ${y}) rotate(${deg})`}
+									opacity="0.65"
+								>
+									<line
+										x1="-50"
+										y1="0"
+										x2="-10"
+										y2="0"
+										stroke="currentColor"
+										strokeWidth="0.5"
+									/>
+									<line
+										x1="10"
+										y1="0"
+										x2="50"
+										y2="0"
+										stroke="currentColor"
+										strokeWidth="0.5"
+									/>
+									<path
+										d="M -6 -3 L 0 0 L 6 -3 L 0 3 Z"
+										fill="currentColor"
+										fillOpacity="0.7"
+									/>
+								</g>
+							))}
 						</CardFrame>
 
 						<div className="rc-edge-shimmer" />

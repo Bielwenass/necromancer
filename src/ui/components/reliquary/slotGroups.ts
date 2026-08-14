@@ -14,8 +14,8 @@ export interface SlotGroup {
 const slot = (id: SlotId) => ({ id, label: SLOT_LABELS[id] });
 
 /**
- * The equipped-relic layout: which slots exist, grouped and labelled. Which of
- * them are *open* is `derived.unlockedSlots` — the second slot of every group is
+ * The equipped-relic layout: which slots exist, grouped and labelled.
+ * `derived.unlockedSlots` says which are open; the second slot of every group is
  * bought from the necromancy branch.
  */
 export const SLOT_GROUPS: SlotGroup[] = [

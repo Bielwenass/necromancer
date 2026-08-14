@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * A toggle pill used by the inventory filter rows. `color` is the accent the
- * chip takes when active — a palette value picked at runtime, hence inline.
+ * chip takes when active, a runtime palette value, hence inline.
  */
 export function FilterChip({
 	label,

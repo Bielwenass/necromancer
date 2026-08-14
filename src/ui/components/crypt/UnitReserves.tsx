@@ -15,7 +15,6 @@ interface UnitReservesProps {
 	onSummon: (type: UnitType, count: number) => void;
 }
 
-/** The reserve panel: one raise row per unlocked unit type. */
 export function UnitReserves({
 	units,
 	squads,
@@ -23,8 +22,8 @@ export function UnitReserves({
 	resources,
 	onSummon,
 }: UnitReservesProps) {
-	// Summon prices climb with the size of the army, so every row has to price
-	// itself against live state rather than a fixed table.
+	// Summon prices climb with the army, so every row prices itself against live
+	// state.
 	const summonState = { units, squads, derived };
 
 	const rows = UNIT_TYPES.filter((type) => isUnitUnlocked(type, derived));

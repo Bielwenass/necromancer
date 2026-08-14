@@ -71,7 +71,6 @@ export const IconWraith = ({
 	</svg>
 );
 
-/** Icon per unit type, so a list of unit rows can be built by looping. */
 export const UNIT_ICONS: Record<UnitType, IconComponent> = {
 	skeleton: IconSkeleton,
 	zombie: IconZombie,

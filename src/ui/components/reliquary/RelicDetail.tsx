@@ -1,5 +1,5 @@
 import { RELIC_BASES, SLOT_LABELS } from "../../../game/data/relics";
-import { DUST_VALUES } from "../../../game/rules/relics";
+import { dustValue } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
 import { rarityColor } from "../../theme";
 import { ConfirmAction } from "../common/ConfirmAction";
@@ -10,21 +10,23 @@ import { RelicCard } from "./RelicCard";
 export function RelicDetail({
 	relic,
 	unlockedSlots,
-	onSacrifice,
 	onEquip,
 	confirmSacrifice,
+	onRequestSacrifice,
+	onConfirmSacrifice,
 	onCancelSacrifice,
 }: {
 	relic: Relic;
 	unlockedSlots: SlotId[];
-	onSacrifice: () => void;
 	onEquip: (slotId: SlotId) => void;
 	confirmSacrifice: boolean;
+	onRequestSacrifice: () => void;
+	onConfirmSacrifice: () => void;
 	onCancelSacrifice: () => void;
 }) {
 	const c = rarityColor(relic.rarity);
 	const base = RELIC_BASES.find((b) => b.id === relic.baseId);
-	const dustValue = DUST_VALUES[relic.rarity];
+	const dust = dustValue([relic]);
 
 	return (
 		<div className="px-4 py-5 flex flex-col h-full">
@@ -85,10 +87,10 @@ export function RelicDetail({
 			<div className="mt-auto flex gap-2 pt-4">
 				<ConfirmAction
 					confirming={confirmSacrifice}
-					onRequest={onSacrifice}
-					onConfirm={onSacrifice}
+					onRequest={onRequestSacrifice}
+					onConfirm={onConfirmSacrifice}
 					onCancel={onCancelSacrifice}
-					label={`Sacrifice (+${dustValue} dust)`}
+					label={`Sacrifice (+${dust} dust)`}
 					buttonClassName="flex-1 py-[10px] display text-xs tracking-[0.22em] uppercase"
 				/>
 			</div>

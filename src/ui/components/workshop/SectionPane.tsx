@@ -7,7 +7,6 @@ import { isRowMaxed } from "./sections";
 import type { WorkshopRow, WorkshopSection } from "./types";
 import { UpgradeRow } from "./UpgradeRow";
 
-/** Center column: the section header plus its rows, finished ones last. */
 export function SectionPane({
 	section,
 	resources,

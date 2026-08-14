@@ -15,8 +15,8 @@ export class EventQueue {
 		return out;
 	}
 
-	// Returns events added since the last drainFlash() without removing them from the main queue.
-	// The main queue is still available for the consumer via drain().
+	// Events added since the last drainFlash(), left in the main queue for
+	// `drain()`.
 	drainFlash(): CombatEvent[] {
 		const out = this.events.slice(this.flashCursor);
 		this.flashCursor = this.events.length;

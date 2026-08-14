@@ -9,10 +9,7 @@ import type { SliceCreator } from "./types";
 
 let squadIdCounter = 0;
 
-/**
- * Keep new squad ids from colliding with ones already on disk. Called once
- * during hydration, before any squad is created.
- */
+/** Keeps new squad ids off saved ones. Called once during hydration. */
 export function syncSquadIdCounter(squads: Array<{ id: string }>): void {
 	for (const squad of squads) {
 		const match = /^S-(\d+)$/.exec(squad.id);
@@ -52,8 +49,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 			if (!dungeonState.unlocked) return prev;
 			if (squad.state !== "idle") return prev;
 			if (squadSize(squad.composition) === 0) return prev;
-			// One squad per dungeon. The dispatching squad is idle to have reached
-			// this line, so it never blocks itself.
+			// One squad per dungeon; the dispatcher is idle, so it never blocks itself.
 			if (dungeonOccupancy(prev.squads).has(dungeonId)) return prev;
 
 			const legTicks = travelLegTicks(def, prev.derived.squadTravelSpeedBonus);
@@ -74,13 +70,13 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 	},
 
 	/**
-	 * Turn a squad around, or — for one already on its way home — mark the trip
-	 * as a recall so auto-deploy leaves it in the crypt. A returning squad keeps
-	 * its loot; one pulled out mid-run never finished the dungeon and drops it.
+	 * Turn a squad around, or mark an already-returning trip as a recall so
+	 * auto-deploy leaves it in the crypt. A returning squad keeps its loot; one
+	 * pulled out mid-run drops it.
 	 */
 	recallSquad: (squadId) => {
-		// A squad pulled out of a fight abandons it, so its engine is retired here
-		// rather than left to run to a verdict `resolveFight` would then discard.
+		// A squad pulled out of a fight abandons it, so its engine is retired before
+		// reaching a verdict `resolveFight` would discard.
 		if (get().squads.find((s) => s.id === squadId)?.state === "fighting") {
 			get().removeCombatEngine(squadId);
 		}
@@ -98,9 +94,8 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 					const fullLeg = def
 						? travelLegTicks(def, prev.derived.squadTravelSpeedBonus)
 						: 1;
-					// Turning back costs whatever the squad has already walked. One
-					// pulled out of a fight has walked the whole way there, so it walks
-					// the whole way home.
+					// Turning back costs whatever was walked; one pulled out of a fight
+					// walks the whole way home.
 					const walked =
 						s.state === "fighting"
 							? fullLeg
@@ -122,15 +117,10 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 		});
 	},
 
-	/**
-	 * Refill an idle squad from the reserves back up to the strength it was
-	 * raised at. Partial when the reserves are short — what is there is drafted.
-	 */
 	replenishSquad: (squadId) => {
 		set((prev) => {
 			const squad = prev.squads.find((s) => s.id === squadId);
-			// Units in the field are held by the squad, so drafting into one would
-			// mean two claims on the same skeleton.
+			// A squad in the field holds its units; drafting into one double-claims.
 			if (squad?.state !== "idle") return prev;
 
 			const delta = replenishDelta(
@@ -185,8 +175,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 	deleteSquad: (squadId) => {
 		set((prev) => {
 			const squad = prev.squads.find((s) => s.id === squadId);
-			// Only an idle squad can be disbanded — a squad in the field still
-			// "holds" its units, so refunding them mid-run would duplicate them.
+			// A squad in the field still holds its units; refunding duplicates them.
 			if (squad?.state !== "idle") return prev;
 			return {
 				units: applyUnitDelta(prev.units, squad.composition, 1),
@@ -202,8 +191,7 @@ export const createSquadSlice: SliceCreator<SquadSlice> = (set, get) => ({
 			const dungeonId = current.targetDungeonId;
 			if (!dungeonId || !DUNGEON_DEFS[dungeonId]) return prev;
 
-			// `applyFightResolution` is what a finished fight does to the game, and
-			// catchup drives it too; this action only decides *when*.
+			// `applyFightResolution` is shared with catchup; this decides the timing.
 			const draft = cloneForAdvance(prev);
 			const squad = draft.squads.find((s) => s.id === squadId);
 			const dungeon = draft.dungeons.find((d) => d.id === dungeonId);

@@ -9,7 +9,6 @@ interface PityMeterProps {
 	guaranteed: Rarity;
 }
 
-/** Pulls since the last guarantee, and how many are left until the next one. */
 export function PityMeter({ counter, max, guaranteed }: PityMeterProps) {
 	const color = rarityColor(guaranteed);
 
