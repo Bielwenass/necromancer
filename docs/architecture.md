@@ -37,7 +37,9 @@ The React-free boundary is load-bearing: it's what lets the simulation run headl
 
 ## Tick pipeline
 
-`useGameLifecycle` is the only driver. Every 100 ms it:
+`useGameLifecycle` is the only driver. Its interval fires every 100 ms but owes time by the wall clock: a late or suspended timer runs the ticks it missed, and a gap past `CATCHUP_THRESHOLD_MS` goes to catchup. That, plus `pagehide`/`pageshow` and `freeze`/`resume` alongside `visibilitychange`, covers a mobile browser backgrounded without a visibility transition.
+
+Per tick it:
 
 1. Calls `store.tick(TICK_MS)`, whose accumulator drains exact steps through `gameTick(state)`.
 2. Advances live engines by one tick of sim time (`stepLiveFights`) and calls `resolveFight` on any that report a winner.

@@ -24,31 +24,60 @@ export function useGameLifecycle(): {
 	const catchingUpRef = useRef(false);
 
 	useEffect(() => {
-		function startInterval(): void {
-			if (intervalRef.current !== null) return;
-			intervalRef.current = setInterval(() => {
-				// 1. Advance game tick (the accumulator drains exact TICK_MS steps)
-				useGameStore.getState().tick(TICK_MS);
+		// The loop owes time by the wall clock, not by its own period: a throttled
+		// or suspended interval raises no visibility event, so the gap between two
+		// fires is the only dependable signal that time passed.
+		let lastWallAt = Date.now();
+		let carryMs = 0;
 
-				// 2. Advance the running engines and resolve any finished fights
-				const { combatEngines, derived, resolveFight, removeCombatEngine } =
-					useGameStore.getState();
-				for (const f of stepLiveFights(
-					combatEngines,
-					derived.combatSpeedMultiplier,
-				)) {
-					resolveFight(f.squadId, f.winner, f.survivorsByType);
-					removeCombatEngine(f.squadId);
+		function runOneTick(): void {
+			// 1. Advance game tick (the accumulator drains exact TICK_MS steps)
+			useGameStore.getState().tick(TICK_MS);
+
+			// 2. Advance the running engines and resolve any finished fights
+			const { combatEngines, derived, resolveFight, removeCombatEngine } =
+				useGameStore.getState();
+			for (const f of stepLiveFights(
+				combatEngines,
+				derived.combatSpeedMultiplier,
+			)) {
+				resolveFight(f.squadId, f.winner, f.survivorsByType);
+				removeCombatEngine(f.squadId);
+			}
+
+			// 3. Start engines for squads that just entered fighting. Last, so a
+			// new fight's first step falls on the next tick — see beginLiveFights.
+			const current = useGameStore.getState();
+			for (const [squadId, engine] of beginLiveFights(
+				current,
+				current.combatEngines,
+			)) {
+				current.addCombatEngine(squadId, engine);
+			}
+		}
+
+		function startInterval(): void {
+			// Guard first: a running loop owns `lastWallAt`.
+			if (intervalRef.current !== null) return;
+			lastWallAt = Date.now();
+			carryMs = 0;
+			intervalRef.current = setInterval(() => {
+				const now = Date.now();
+				const elapsed = now - lastWallAt;
+				lastWallAt = now;
+
+				// An absence, not a late timer — too many ticks to grind through here.
+				if (elapsed > CATCHUP_THRESHOLD_MS) {
+					carryMs = 0;
+					runCatchup(true);
+					return;
 				}
 
-				// 3. Start engines for squads that just entered fighting. Last, so a
-				// new fight's first step falls on the next tick — see beginLiveFights.
-				const current = useGameStore.getState();
-				for (const [squadId, engine] of beginLiveFights(
-					current,
-					current.combatEngines,
-				)) {
-					current.addCombatEngine(squadId, engine);
+				// Clamped against a clock that jumped backwards.
+				carryMs += Math.max(0, elapsed);
+				while (carryMs >= TICK_MS) {
+					carryMs -= TICK_MS;
+					runOneTick();
 				}
 			}, TICK_MS);
 		}
@@ -67,11 +96,11 @@ export function useGameLifecycle(): {
 			useGameStore.getState().clearCombatEngines();
 
 			const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
-			const emptyStats: CatchupStats = {
+
+			let lastStats: CatchupStats = {
 				eventsProcessed: 0,
 				gained: zeroResources(),
 			};
-			let lastStats: CatchupStats = emptyStats;
 			let overlayShown = false;
 
 			const rawResult = await simulateOffline(
@@ -98,8 +127,8 @@ export function useGameLifecycle(): {
 				},
 			);
 
-			// Every persisted slice, not a hand-picked few: catchup advances gacha
-			// and meta too, and a slice left behind is reverted by the next autosave.
+			// Every persisted slice. Catchup advances gacha and meta too, and a
+			// slice left behind is reverted by the next autosave.
 			const patch: Partial<GameState> = {
 				derived: recomputeDerived(rawResult),
 			};
@@ -124,29 +153,44 @@ export function useGameLifecycle(): {
 			startInterval();
 		}
 
-		function handleVisibility(): void {
-			if (document.hidden) {
-				stopInterval();
-				useGameStore.setState((prev) => ({
-					meta: { ...prev.meta, lastTickAt: Date.now() },
-				}));
-				saveGame(useGameStore.getState());
+		/** The tab is going away: stop burning battery and leave a save behind. */
+		function suspend(): void {
+			// Mid-catchup the stamp is the window being paid for.
+			if (catchingUpRef.current) return;
+			stopInterval();
+			useGameStore.setState((prev) => ({
+				meta: { ...prev.meta, lastTickAt: Date.now() },
+			}));
+			saveGame(useGameStore.getState());
+		}
+
+		/** The tab is back: pay for the absence, or just resume the loop. */
+		function resume(): void {
+			if (catchingUpRef.current) return;
+			const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
+			if (elapsed > CATCHUP_THRESHOLD_MS) {
+				runCatchup(true);
 			} else {
-				if (catchingUpRef.current) return;
-				const elapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
-				if (elapsed > CATCHUP_THRESHOLD_MS) {
-					runCatchup(true);
-				} else {
-					startInterval();
-				}
+				startInterval();
 			}
 		}
 
+		function handleVisibility(): void {
+			if (document.hidden) suspend();
+			else resume();
+		}
+
 		document.addEventListener("visibilitychange", handleVisibility);
+		// Mobile raises some subset of these and never all, so all of them are wired
+		// to the same pair. Duplicates are no-ops: `resume` re-reads the clock.
+		window.addEventListener("pagehide", suspend);
+		window.addEventListener("pageshow", resume);
+		document.addEventListener("freeze", suspend);
+		document.addEventListener("resume", resume);
 
 		const initialElapsed = Date.now() - useGameStore.getState().meta.lastTickAt;
 		if (initialElapsed > CATCHUP_THRESHOLD_MS) {
-			runCatchup(false);
+			runCatchup(true);
 		} else {
 			startInterval();
 		}
@@ -154,6 +198,10 @@ export function useGameLifecycle(): {
 		return () => {
 			stopInterval();
 			document.removeEventListener("visibilitychange", handleVisibility);
+			window.removeEventListener("pagehide", suspend);
+			window.removeEventListener("pageshow", resume);
+			document.removeEventListener("freeze", suspend);
+			document.removeEventListener("resume", resume);
 		};
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
