@@ -16,7 +16,7 @@ export function ResourceReadout({
 	note,
 }: ResourceReadoutProps) {
 	return (
-		<div className="flex items-center gap-2 font-mono text-sm max-md:shrink-0 max-md:gap-1 max-md:text-xs">
+		<div className="flex items-center gap-2 font-mono text-sm max-md:shrink-0 max-md:gap-0.5 max-md:text-xs">
 			<Icon size={20} />
 			<div>
 				<div className="text-muted text-[10px] tracking-[0.12em] uppercase">

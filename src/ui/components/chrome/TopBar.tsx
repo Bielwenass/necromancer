@@ -114,12 +114,12 @@ export function TopBar() {
 					SETTINGS
 				</button>
 
-				<div className="flex gap-[18px] pl-[22px] ml-2 border-l border-[color:var(--rule)] items-center font-mono text-[11px] text-muted">
+				<div className="max-md:hidden flex gap-[18px] pl-[22px] ml-2 border-l border-[color:var(--rule)] items-center font-mono text-[11px] text-muted">
 					<span>{dayStr}</span>
 					<span className="text-dim">T:{meta.tickCount}</span>
 				</div>
 
-				<div className="ml-auto flex gap-[22px] items-center max-md:ml-0 max-md:order-3 max-md:w-full max-md:gap-4 max-md:overflow-x-auto">
+				<div className="ml-auto flex gap-5 items-center max-md:ml-0 max-md:order-3 max-md:w-full max-md:gap-2 max-md:overflow-x-auto">
 					{resources.bones < 10_000 && (
 						<button
 							type="button"
@@ -219,8 +219,6 @@ export function TopBar() {
 							<div>
 								<div className="font-mono text-[11px] text-muted mb-3.5 leading-relaxed">
 									All progress will be lost.
-									<br />
-									The dead cannot be raised again.
 								</div>
 								<div className="flex gap-2.5">
 									<button

@@ -125,7 +125,7 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 			{/* CENTER — Detail */}
 			<div
 				className={`w-[380px] border-r border-rule flex flex-col overflow-hidden bg-[linear-gradient(180deg,#15110b_0%,#0f0c08_100%)] max-md:w-full max-md:border-r-0 ${
-					mobilePane === "detail" ? "" : "max-md:hidden"
+					mobilePane === "detail" ? "max-md:h-full" : "max-md:hidden"
 				}`}
 			>
 				{selectedRelic ? (

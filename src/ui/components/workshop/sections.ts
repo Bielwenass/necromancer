@@ -208,16 +208,16 @@ export function buildSections(
 			unlocked: true,
 			rows: arrange(skillRows(purchased, repeats, b.id)),
 		})),
-		...UNIT_TYPES.map((type) => ({
-			id: `${type}s`,
-			name: `${UNIT_LABELS[type]}s`,
-			subtitle: `Leveled stat upgrades for ${type}s.`,
-			icon: UNIT_ICONS[type],
-			unlocked: isUnitUnlocked(type, derived),
-			lockedTitle: `${UNIT_LABELS[type]}s Locked`,
-			lockedBody: "Unlock via Summoning branch.",
-			rows: unitRows(type, ws[type]),
-		})),
+		...UNIT_TYPES.filter((unit) => isUnitUnlocked(unit, derived)).map(
+			(type) => ({
+				id: `${type}s`,
+				name: `${UNIT_LABELS[type]}s`,
+				subtitle: `Leveled stat upgrades for ${type}s.`,
+				icon: UNIT_ICONS[type],
+				unlocked: true,
+				rows: unitRows(type, ws[type]),
+			}),
+		),
 		{
 			id: "crypt",
 			name: "Crypt",

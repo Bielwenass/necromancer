@@ -36,7 +36,5 @@ export interface WorkshopSection {
 	subtitle: string;
 	icon: string | ComponentType;
 	unlocked: boolean;
-	lockedTitle?: string;
-	lockedBody?: string;
 	rows: WorkshopRow[];
 }
