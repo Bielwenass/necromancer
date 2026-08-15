@@ -33,71 +33,86 @@ export const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>([
 export const UNIT_STAT_CONFIG = {
 	skeleton: {
 		hp: {
-			baseBones: 50,
-			growth: 1.22,
-			statGrowth: 1.07,
-			label: "HP",
+			label: "Health",
 			base: 40,
+			statGrowth: 1.05,
+			upgradeCost: {
+				bones: { base: 50, growth: 1.22, growthType: "exp" },
+			},
 		},
 		dmg: {
-			baseBones: 80,
-			growth: 1.25,
-			statGrowth: 1.07,
-			label: "DMG",
+			label: "Damage",
 			base: 4,
+			statGrowth: 1.05,
+			upgradeCost: {
+				bones: { base: 80, growth: 1.25, growthType: "exp" },
+			},
 		},
 		speed: {
-			baseBones: 200,
-			growth: 1.3,
-			statGrowth: 1.015,
 			label: "Speed",
 			base: 1.0,
+			statGrowth: 1.015,
+			upgradeCost: {
+				bones: { base: 200, growth: 1.32, growthType: "exp" },
+			},
 		},
 	},
 	zombie: {
 		hp: {
-			baseBones: 120,
-			growth: 1.22,
-			statGrowth: 1.075,
-			label: "HP",
+			label: "Health",
 			base: 96,
+			statGrowth: 1.07,
+			upgradeCost: {
+				bones: { base: 120, growth: 1.22, growthType: "exp" },
+				corpses: { fromLevel: 5, base: 7, growth: 1.22, growthType: "exp" },
+			},
 		},
 		dmg: {
-			baseBones: 100,
-			growth: 1.25,
-			statGrowth: 1.062,
-			label: "DMG",
+			label: "Damage",
 			base: 3,
+			statGrowth: 1.05,
+			upgradeCost: {
+				bones: { base: 50, growth: 1.25, growthType: "exp" },
+				corpses: { fromLevel: 5, base: 10, growth: 1.25, growthType: "exp" },
+			},
 		},
 		speed: {
-			baseBones: 300,
-			growth: 1.3,
-			statGrowth: 1.012,
 			label: "Speed",
 			base: 0.6,
+			statGrowth: 1.012,
+			upgradeCost: {
+				bones: { base: 300, growth: 1.3, growthType: "exp" },
+				corpses: { fromLevel: 5, base: 15, growth: 1.3, growthType: "exp" },
+			},
 		},
 	},
 	wraith: {
 		hp: {
-			baseBones: 80,
-			growth: 1.24,
-			statGrowth: 1.06,
-			label: "HP",
+			label: "Health",
 			base: 24,
+			statGrowth: 1.06,
+			upgradeCost: {
+				souls: { base: 2, growth: 1 / 4, growthType: "perLevel" },
+				dust: { fromLevel: 15, base: 1, growth: 1 / 5, growthType: "perLevel" },
+			},
 		},
 		dmg: {
-			baseBones: 150,
-			growth: 1.25,
-			statGrowth: 1.08,
-			label: "DMG",
+			label: "Damage",
 			base: 8,
+			statGrowth: 1.08,
+			upgradeCost: {
+				souls: { base: 2, growth: 1 / 3, growthType: "perLevel" },
+				dust: { fromLevel: 10, base: 1, growth: 1 / 4, growthType: "perLevel" },
+			},
 		},
 		speed: {
-			baseBones: 400,
-			growth: 1.3,
-			statGrowth: 1.018,
 			label: "Speed",
 			base: 1.5,
+			statGrowth: 1.018,
+			upgradeCost: {
+				souls: { base: 3, growth: 1, growthType: "perLevel" },
+				dust: { fromLevel: 15, base: 2, growth: 1 / 2, growthType: "perLevel" },
+			},
 		},
 	},
 } as const;

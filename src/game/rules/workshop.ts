@@ -4,7 +4,6 @@ import {
 	type CryptKey,
 	GARDEN_PLOTS,
 	type GardenPlotDef,
-	UNIT_COST_EXTRAS,
 } from "../data/workshop";
 import type { GardenPlotId, Resources, UnitType } from "../types";
 
@@ -22,33 +21,26 @@ export function unitStatCost(
 	level: number,
 ): Partial<Resources> {
 	const cfg = UNIT_STAT_CONFIG[unit][stat];
-	const curve = cfg.baseBones * cfg.growth ** level;
+	const totalCost: Partial<Resources> = {};
 
-	switch (unit) {
-		case "skeleton":
-			return { bones: Math.floor(curve) };
+	for (const [resource, cost] of Object.entries(cfg.upgradeCost)) {
+		if (level < cost.fromLevel) continue;
 
-		case "zombie": {
-			const x = UNIT_COST_EXTRAS.zombie;
-			const cost: Partial<Resources> = { bones: Math.floor(curve) };
-			if (level >= x.corpsesFromLevel) {
-				cost.corpses = Math.max(1, Math.floor(curve * x.corpsesCurveShare));
-			}
-			if (level >= x.soulsFromLevel) {
-				cost.souls = Math.floor(level / x.levelsPerSoul);
-			}
-			return cost;
+		if (cost.growthType === "exp") {
+			totalCost[resource as keyof Resources] = Math.floor(
+				cost.base * cost.growth ** level,
+			);
 		}
 
-		case "wraith": {
-			const x = UNIT_COST_EXTRAS.wraith;
-			return {
-				corpses: Math.max(1, Math.floor(curve * x.corpsesCurveShare)),
-				souls: Math.floor(level / x.levelsPerSoul) + 1,
-				dust: Math.floor(level / x.levelsPerDust) + 1,
-			};
+		if (cost.growthType === "perLevel") {
+			const fromLevel = cost.fromLevel ?? 0;
+
+			totalCost[resource as keyof Resources] =
+				Math.floor((level - fromLevel) * cost.growth) + cost.base;
 		}
 	}
+
+	return totalCost;
 }
 
 export function statAtLevel(

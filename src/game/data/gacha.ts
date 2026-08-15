@@ -39,8 +39,8 @@ export const POOL_CONFIGS: Record<PoolId, PoolConfig> = {
 		pityRarity: "epic",
 		pityInterval: 40,
 		x10Guarantee: "rare",
-		cost1: { resource: "corpses", amount: 1000 },
-		cost10: { resource: "corpses", amount: 9000 },
+		cost1: { resource: "corpses", amount: 500 },
+		cost10: { resource: "corpses", amount: 4500 },
 	},
 	forbidden: {
 		odds: [

@@ -110,7 +110,7 @@ function unitRows(
 		return {
 			id: `${unit}.${stat}`,
 			name: `${unit.charAt(0).toUpperCase() + unit.slice(1)} ${c.label}`,
-			description: `+${((c.statGrowth - 1) * 100).toFixed(1)}% ${c.label} per level (base ${c.base})`,
+			description: `+${Number(((c.statGrowth - 1) * 100).toFixed(1))}% ${c.label} per level`,
 			flavor: UNIT_FLAVOR[unit][stat],
 			icon: stat === "hp" ? "heal" : stat === "dmg" ? "aggro" : "fast",
 			level: lv,
