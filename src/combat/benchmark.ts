@@ -145,6 +145,7 @@ function summarize(results: RunResult[]): void {
 	console.log(
 		`  per tick:     ${avg((r) => r.perTickMs).toFixed(3)}ms   (accel = ${avg((r) => r.accelPctOfTotal).toFixed(0)}% of total)`,
 	);
+	console.log(`  total duration: ${avg((r) => r.wallMs).toFixed(0)}ms`);
 	console.log(
 		`  accel split:  query ${avg((r) => r.queryPct).toFixed(0)}%  neighborLoop ${avg((r) => r.neighborLoopPct).toFixed(0)}%  seekFallback ${avg((r) => r.seekFallbackPct).toFixed(0)}%  integrate ${avg((r) => r.integratePct).toFixed(0)}%`,
 	);

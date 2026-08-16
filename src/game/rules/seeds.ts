@@ -1,4 +1,5 @@
 import { mulberry32 } from "../../combat/prng";
+import type { SquadComposition } from "../types";
 
 /**
  * Deterministic seeds for the two rolls a run makes, the fight and its loot.
@@ -16,11 +17,10 @@ function hashSeed(s: string): number {
 }
 
 /** Zero counts drop, so a roster that lost its last zombie signs as one that never had one. */
-export function compositionSig(c: Record<string, number>): string {
-	return Object.keys(c)
-		.filter((k) => c[k] > 0)
-		.sort()
-		.map((k) => `${k}:${c[k]}`)
+export function compositionSig(c: SquadComposition): string {
+	return Object.entries(c)
+		.filter(([_key, count]) => count > 0)
+		.map(([key, count]) => `${key}:${count}`)
 		.join("|");
 }
 
@@ -30,7 +30,7 @@ export function compositionSig(c: Record<string, number>): string {
  */
 export function deriveFightSeed(
 	dungeonId: string,
-	composition: Record<string, number>,
+	composition: SquadComposition,
 	clearCount: number,
 ): number {
 	return hashSeed(`${dungeonId}|${compositionSig(composition)}|${clearCount}`);

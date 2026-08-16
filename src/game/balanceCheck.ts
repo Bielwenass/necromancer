@@ -23,7 +23,7 @@ import { recomputeDerived } from "./rules/derived";
 import { clearMultiplier } from "./rules/loot";
 import { makeDungeonState } from "./rules/unlocks";
 import { cryptCost, unitStatCost } from "./rules/workshop";
-import type { DungeonDef, GameState, UnitType } from "./types";
+import type { DungeonDef, GameState, SquadComposition } from "./types";
 
 let failures = 0;
 
@@ -36,13 +36,15 @@ function check(name: string, ok: boolean, detail = ""): void {
 	}
 }
 
-type Comp = Record<UnitType, number>;
-
-export function comp(skeleton: number, zombie = 0, wraith = 0): Comp {
+export function comp(
+	skeleton: number,
+	zombie = 0,
+	wraith = 0,
+): SquadComposition {
 	return { skeleton, zombie, wraith };
 }
 
-const mortalSize = (c: Comp) =>
+const mortalSize = (c: SquadComposition) =>
 	UNIT_TYPES.filter((t) => !UNDYING_TYPES.has(t)).reduce((n, t) => n + c[t], 0);
 
 interface Build {
@@ -85,7 +87,7 @@ interface FightResult {
 }
 
 function fight(
-	c: Comp,
+	c: SquadComposition,
 	def: DungeonDef,
 	state: GameState,
 	seed: number,
@@ -127,7 +129,7 @@ interface Sweep {
 }
 
 function sweep(
-	c: Comp,
+	c: SquadComposition,
 	def: DungeonDef,
 	state: GameState,
 	seeds: number,

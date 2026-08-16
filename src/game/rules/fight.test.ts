@@ -3,6 +3,7 @@ import { mulberry32 } from "../../combat/prng";
 import { DUNGEON_DEFS } from "../data/dungeons";
 import { buildScenario } from "../testing/scenario";
 import { resolveFightOutcome } from "./fight";
+import { emptyComposition } from "./units";
 
 const def = DUNGEON_DEFS["paupers-tomb"];
 const derived = buildScenario(false).derived;
@@ -11,7 +12,7 @@ const before = { skeleton: 10, zombie: 2, wraith: 3 };
 describe("a clear", () => {
 	const win = {
 		winner: "a" as const,
-		survivorsByType: { skeleton: 7, zombie: 1 },
+		survivorsByType: { skeleton: 7, zombie: 1, wraith: 0 },
 	};
 	const res = resolveFightOutcome(before, def, 4, win, derived, mulberry32(99));
 
@@ -37,7 +38,7 @@ describe("a wipe", () => {
 		before,
 		def,
 		4,
-		{ winner: "b", survivorsByType: {} },
+		{ winner: "b", survivorsByType: emptyComposition() },
 		derived,
 		mulberry32(99),
 	);
@@ -61,7 +62,7 @@ describe("a wipe", () => {
 			{ skeleton: 5, zombie: 0, wraith: 0 },
 			def,
 			0,
-			{ winner: "b", survivorsByType: {} },
+			{ winner: "b", survivorsByType: emptyComposition() },
 			derived,
 			mulberry32(1),
 		);
@@ -75,7 +76,7 @@ test("reanimation never exceeds max squad size", () => {
 		{ skeleton: 20, zombie: 0, wraith: 0 },
 		def,
 		0,
-		{ winner: "a", survivorsByType: { skeleton: 8 } },
+		{ winner: "a", survivorsByType: { skeleton: 8, zombie: 0, wraith: 0 } },
 		greedy,
 		mulberry32(3),
 	);

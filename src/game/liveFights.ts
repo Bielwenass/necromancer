@@ -7,7 +7,8 @@ import {
 import { CombatEngine } from "../combat/engine";
 import { DUNGEON_DEFS } from "./data/dungeons";
 import { TICK_MS } from "./data/pacing";
-import type { GameState } from "./types";
+import { emptyComposition } from "./rules/units";
+import type { GameState, SquadComposition } from "./types";
 
 /**
  * The fights the player is watching. React-free, so the parity tests drive the
@@ -18,7 +19,7 @@ import type { GameState } from "./types";
 export interface FinishedFight {
 	squadId: string;
 	winner: "a" | "b" | "draw";
-	survivorsByType: Record<string, number>;
+	survivorsByType: SquadComposition;
 }
 
 /**
@@ -75,7 +76,11 @@ export function stepLiveFights(
 		engine.tick(simMs);
 		const winner = engine.getWinner();
 		if (winner === null) continue;
-		finished.push({ squadId, winner, survivorsByType: engine.getCounts().a });
+		finished.push({
+			squadId,
+			winner,
+			survivorsByType: { ...emptyComposition(), ...engine.getCounts().a },
+		});
 	}
 
 	return finished;

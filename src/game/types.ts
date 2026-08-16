@@ -109,17 +109,19 @@ export type AffixEffect =
 			scale?: number;
 	  };
 
+export type SquadComposition = Record<UnitType, number>;
+
 export type CombatOutcome = {
 	winner: "a" | "b" | "draw";
-	survivorsByType: Record<string, number>;
+	survivorsByType: SquadComposition;
 };
 
 export interface Squad {
 	id: string;
 	name: string;
-	composition: Record<UnitType, number>;
+	composition: SquadComposition;
 	/** The strength the squad was raised at; only `replenishSquad` refills to it. */
-	roster: Record<UnitType, number>;
+	roster: SquadComposition;
 	targetDungeonId: string | null;
 	state: SquadState;
 	/**

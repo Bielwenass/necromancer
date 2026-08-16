@@ -18,15 +18,17 @@ import {
 	MAX_OFFLINE_MS,
 	TICK_MS,
 } from "./data/pacing";
+import { UNDYING_TYPES, UNIT_TYPES } from "./data/units";
 import { RESOURCE_KEYS, zeroResources } from "./rules/resources";
 import { compositionSig, deriveFightSeed } from "./rules/seeds";
-import { squadSize } from "./rules/units";
+import { emptyComposition, squadSize } from "./rules/units";
 import type {
 	CombatOutcome,
 	DungeonState,
 	GameState,
 	Resources,
 	Squad,
+	SquadComposition,
 } from "./types";
 
 /**
@@ -54,14 +56,15 @@ export interface CatchupOptions {
 }
 
 function isLossless(
-	input: Record<string, number>,
-	output: Record<string, number>,
+	input: SquadComposition,
+	output: SquadComposition,
 ): boolean {
-	for (const k of Object.keys(input)) {
-		const a = input[k] ?? 0;
-		if (a === 0) continue;
-		if ((output[k] ?? 0) !== a) return false;
+	for (const unit of UNIT_TYPES) {
+		if (UNDYING_TYPES.has(unit)) continue;
+
+		if (output[unit] !== input[unit]) return false;
 	}
+
 	return true;
 }
 
@@ -109,7 +112,11 @@ class HeadlessFights implements FightDriver {
 		dungeon: DungeonState,
 	): FightOutcome {
 		if (squadSize(squad.composition) === 0) {
-			return { winner: "b", survivorsByType: {}, durationTicks: 1 };
+			return {
+				winner: "b",
+				survivorsByType: emptyComposition(),
+				durationTicks: 1,
+			};
 		}
 
 		const cacheKey = `${dungeon.id}|${compositionSig(squad.composition)}`;
@@ -136,7 +143,7 @@ class HeadlessFights implements FightDriver {
 		}
 
 		const winner = (engine.getWinner() ?? "draw") as "a" | "b" | "draw";
-		const survivorsByType = winner === "a" ? engine.getCounts().a : {};
+		const survivorsByType = { ...emptyComposition(), ...engine.getCounts().a };
 
 		// `getT()` is sim time in ms; the speed multiplier converts it to wall clock.
 		const csm = state.derived.combatSpeedMultiplier || 1;

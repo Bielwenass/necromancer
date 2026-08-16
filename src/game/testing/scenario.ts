@@ -6,7 +6,7 @@ import { recomputeDerived } from "../rules/derived";
 import { travelLegTicks } from "../rules/travel";
 import { makeDungeonState } from "../rules/unlocks";
 import { gameTick } from "../tick";
-import type { GameState } from "../types";
+import type { GameState, SquadComposition } from "../types";
 
 /**
  * A necromancer strong enough to clear the opening dungeon without losses, with
@@ -115,7 +115,7 @@ function applyLiveFight(
 	state: GameState,
 	squadId: string,
 	winner: "a" | "b" | "draw",
-	survivorsByType: Record<string, number>,
+	survivorsByType: SquadComposition,
 ): GameState {
 	const current = state.squads.find((s) => s.id === squadId);
 	if (current?.state !== "fighting" || !current.targetDungeonId) return state;

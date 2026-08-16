@@ -1,5 +1,10 @@
 import { UNIT_COLORS, UNIT_TYPES } from "../game/data/units";
-import type { DungeonDef, GameState, UnitType } from "../game/types";
+import type {
+	DungeonDef,
+	GameState,
+	SquadComposition,
+	UnitType,
+} from "../game/types";
 import type { SideConfig, UnitMods } from "./types";
 
 export const COMBAT_W = 360;
@@ -53,14 +58,12 @@ export function unitMods(
 }
 
 /** Whether a squad fields all three unit types, which Group Tactics pays for. */
-export function hasAllUnitTypes(
-	composition: Record<UnitType, number>,
-): boolean {
+export function hasAllUnitTypes(composition: SquadComposition): boolean {
 	return UNIT_TYPES.every((type) => composition[type] > 0);
 }
 
 export function buildAttackerConfig(
-	composition: Record<UnitType, number>,
+	composition: SquadComposition,
 	derived: GameState["derived"],
 ): SideConfig {
 	const tactics = hasAllUnitTypes(composition)

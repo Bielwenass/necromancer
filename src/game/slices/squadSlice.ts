@@ -3,7 +3,7 @@ import { DUNGEON_DEFS } from "../data/dungeons";
 import { dungeonOccupancy } from "../rules/squads";
 import { travelLegTicks } from "../rules/travel";
 import { addComposition, replenishDelta, squadSize } from "../rules/units";
-import type { UnitType } from "../types";
+import type { SquadComposition, UnitType } from "../types";
 import { applyUnitDelta, hasUnitsAvailable, withDerived } from "./helpers";
 import type { SliceCreator } from "./types";
 
@@ -35,7 +35,7 @@ export interface SquadSlice {
 	resolveFight: (
 		squadId: string,
 		winner: "a" | "b" | "draw",
-		survivorsByType: Record<string, number>,
+		survivorsByType: SquadComposition,
 	) => void;
 }
 
