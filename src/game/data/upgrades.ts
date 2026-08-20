@@ -499,7 +499,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		tier: 3,
 		cost: { banners: 127 },
 		effects: [
-			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.6 },
+			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.2 },
 		],
 		flavor:
 			"You have learned the trick of catching what leaves the body on its way out.",
@@ -525,7 +525,7 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 		tier: 4,
 		cost: { banners: 420 },
 		effects: [
-			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.4 },
+			{ kind: "global", stat: "soulHarvestBonus", op: "add", value: 0.2 },
 			{ kind: "global", stat: "soulsYieldBonus", op: "add", value: 0.3 },
 		],
 		flavor: "The deeper the tomb, the looser its souls sit in it.",

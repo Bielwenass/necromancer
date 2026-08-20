@@ -102,7 +102,7 @@ export const UNIT_STAT_CONFIG = {
 			base: 24,
 			statGrowth: 1.06,
 			upgradeCost: {
-				souls: { base: 2, growth: 1 / 4, growthType: "perLevel" },
+				souls: { base: 2, growth: 1 / 3, growthType: "perLevel" },
 				dust: { fromLevel: 15, base: 1, growth: 1 / 5, growthType: "perLevel" },
 			},
 		},
@@ -111,7 +111,7 @@ export const UNIT_STAT_CONFIG = {
 			base: 8,
 			statGrowth: 1.08,
 			upgradeCost: {
-				souls: { base: 2, growth: 1 / 3, growthType: "perLevel" },
+				souls: { base: 2, growth: 1 / 2, growthType: "perLevel" },
 				dust: { fromLevel: 10, base: 1, growth: 1 / 4, growthType: "perLevel" },
 			},
 		},
