@@ -64,7 +64,6 @@ const UNIT_STAT_LABELS: Record<UnitStatKey, string> = {
 	berserk: "damage at zero HP",
 	revive: "HP on the one revival",
 	vanguard: "damage in the opening seconds",
-	aura: "damage per second to enemies in reach",
 	overwhelm: "damage per enemy outnumbered",
 	executioner: "damage against wounded targets",
 	spectral: "damage against unwounded targets",

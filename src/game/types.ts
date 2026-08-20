@@ -140,7 +140,8 @@ export type EnemyDef = {
 	name: string;
 	amount: number;
 	color: string;
-	stats: { hp: number; dmg: number; speed: number };
+	/** `reach` is the strike range in px, `attackRadius` when it is left out. */
+	stats: { hp: number; dmg: number; speed: number; reach?: number };
 };
 
 export interface DungeonDef {
@@ -225,8 +226,6 @@ export interface UnitDerivedStats {
 	revive: number;
 	/** Damage bonus during the opening seconds of a fight. */
 	vanguard: number;
-	/** Share of the unit's damage dealt per second to every enemy in reach. */
-	aura: number;
 	/** Damage bonus per unit of local numerical advantage. */
 	overwhelm: number;
 	/** Damage bonus against a low-HP target, scaling with HP missing. */

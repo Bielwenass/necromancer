@@ -14,10 +14,11 @@ src/game/     simulation + state. No React imports.
   slices/     store actions.
 src/combat/   battle engine. No React imports.
 src/ui/       screens and components. Reads state via useGameStore selectors.
+src/tune/     `tune.html`, a dev page for the combat model. Dev server only.
 ```
 
 **Every balance number lives in `src/game/data/`.** The one exception is
-`src/combat/config.ts`, which holds combat feel (flocking weights, collision
+`src/combat/config.ts`, which holds combat feel (steering weights, collision
 spacing, render sizes) beside the loop it tunes.
 
 `rules/` holds the pure functions over that data. One of them, `describe.ts`,
@@ -132,7 +133,8 @@ old export grants no offline catchup.
 
 ## Screens
 
-Exactly four, one per `TabId`, all in `src/ui/screens/`:
+Exactly four, one per `TabId`, all in `src/ui/screens/`. `tune.html` is a second
+Vite entry outside this frame, reachable only in dev:
 
 | Key | Screen | Notes |
 |-----|--------|-------|

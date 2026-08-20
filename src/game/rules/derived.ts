@@ -89,7 +89,6 @@ function baseUnitStats(): UnitStats {
 			berserk: 0,
 			revive: 0,
 			vanguard: 0,
-			aura: 0,
 			overwhelm: 0,
 			executioner: 0,
 			spectral: 0,

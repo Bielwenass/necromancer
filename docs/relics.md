@@ -57,7 +57,6 @@ a relic rolls at or above that rarity it gets the affix outright, into
 | Hollow Crown | Dread Command | legendary | +1 max squads |
 | Rib Cuirass | Lich Bond | legendary | skeletons revive once, at a share of max HP |
 | Plague Stone | Bloodfeast | legendary | zombie lifesteal |
-| Rot Censer | Death Aura | epic | zombies damage every enemy in reach |
 | Ghost Cinder | Vanguard Drums | epic | wraith damage in the opening seconds |
 | Mourner's Veil | Second Death | legendary | wraiths revive once, at a share of max HP |
 
@@ -91,7 +90,7 @@ rounds each magnitude the way `formatAffixValue` prints it, so the tooltip and t
 stat row above it can't disagree.
 
 Combat-facing affixes land on the combat modifier fields of `UnitDerivedStats`
-(`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `aura`, `overwhelm`,
+(`lifesteal`, `regen`, `berserk`, `revive`, `vanguard`, `overwhelm`,
 `executioner`, `spectral`, `lastStand`), which the simulation reads per unit; see
 [combat.md](combat.md#modifiers). The two enemy debuffs (`enemyHpPenalty`,
 `enemyDmgPenalty`) are applied in `buildDefenderConfig`, outside the engine.

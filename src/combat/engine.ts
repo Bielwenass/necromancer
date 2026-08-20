@@ -11,6 +11,7 @@ import {
 	leadingSide,
 	type PerfStats,
 	type SimState,
+	type StatsLevel,
 	spawnUnits,
 	tickSimulation,
 } from "./simulation";
@@ -28,21 +29,30 @@ export interface EngineStats extends PerfStats {
 	wallTimeMs: number;
 }
 
-function createEmptyStats(): EngineStats {
+function createEmptyStats(detail: boolean): EngineStats {
 	return {
+		detail,
 		numTicks: 0,
 		simTimeMs: 0,
 		wallTimeMs: 0,
-		hashBuildMs: 0,
+		gridBuildMs: 0,
 		accelMs: 0,
-		collisionMs: 0,
 		damageMs: 0,
-		queryMs: 0,
-		neighborLoopMs: 0,
-		seekFallbackMs: 0,
+		fineBuildMs: 0,
+		cellBuildMs: 0,
+		neighborMs: 0,
+		seekMs: 0,
 		integrateMs: 0,
 		neighborsVisited: 0,
-		queryCalls: 0,
+		separationPairs: 0,
+		collisionPairs: 0,
+		acquisitions: 0,
+		acquireScanned: 0,
+		contactSwaps: 0,
+		swings: 0,
+		overlapDepth: 0,
+		engagedSpeed: 0,
+		engagedUnits: 0,
 		maxNeighbors: 0,
 		unitsProcessed: 0,
 	};
@@ -61,14 +71,19 @@ export class CombatEngine {
 	private winner: Side | "draw" | null = null;
 	private nextId: number = 1;
 	private rand: () => number;
+	/** Timing is off by default: at `detail` it costs six timers per unit per tick. */
+	private statsLevel: StatsLevel;
+	private liveCounts: Record<Side, number> = { a: 0, b: 0 };
 
-	public stats: EngineStats = createEmptyStats();
+	public stats: EngineStats;
 
 	constructor(options: EngineOptions) {
 		this.width = options.width;
 		this.height = options.height;
 		this.rand =
 			options.seed !== undefined ? mulberry32(options.seed) : Math.random;
+		this.statsLevel = options.stats ?? "off";
+		this.stats = createEmptyStats(this.statsLevel === "detail");
 		this.simState = createSimState();
 		this.events = new EventQueue();
 	}
@@ -85,16 +100,24 @@ export class CombatEngine {
 		this.carryMs = 0;
 		this.winner = null;
 		this.nextId = 1;
-		this.stats = createEmptyStats();
+		this.stats = createEmptyStats(this.statsLevel === "detail");
 
 		for (const side of ["a", "b"] as Side[]) {
 			const config = this.configs[side];
 			if (!config) continue;
-			const result = spawnUnits(config, side, this.nextId, this.rand);
-			this.simState.units.push(...result.units);
-			this.nextId = result.nextId;
+			this.nextId = spawnUnits(
+				this.simState,
+				config,
+				side,
+				this.nextId,
+				this.rand,
+			);
 		}
 		finalizeSpawn(this.simState, this.rand);
+		this.liveCounts = {
+			a: getTotalUnitCount(this.simState, "a"),
+			b: getTotalUnitCount(this.simState, "b"),
+		};
 
 		this.running = true;
 	}
@@ -119,16 +142,17 @@ export class CombatEngine {
 		this.carryMs -= steps * ENGINE_DT;
 
 		const dt = ENGINE_DT / 1000;
+		const stats = this.statsLevel === "off" ? undefined : this.stats;
 		for (let i = 0; i < steps && this.winner === null; i++) {
 			this.t += ENGINE_DT;
-			tickSimulation(
+			this.liveCounts = tickSimulation(
 				this.simState,
 				dt,
 				this.events,
 				this.t,
 				this.width,
 				this.height,
-				this.stats,
+				stats,
 			);
 			this.settleFrame();
 		}
@@ -146,8 +170,8 @@ export class CombatEngine {
 		const flashMs = COMBAT_CONFIG.rendering.deathFlashMs;
 		this.deathFlashes = this.deathFlashes.filter((f) => this.t - f.t < flashMs);
 
-		const countA = getTotalUnitCount(this.simState, "a");
-		const countB = getTotalUnitCount(this.simState, "b");
+		const countA = this.liveCounts.a;
+		const countB = this.liveCounts.b;
 		if (countA <= 0 || countB <= 0) {
 			this.winner = countA > 0 ? "a" : countB > 0 ? "b" : "draw";
 		} else if (this.t >= MAX_FIGHT_MS) {
@@ -171,6 +195,7 @@ export class CombatEngine {
 			this.width,
 			this.height,
 			this.simState.units,
+			this.simState.typeNames,
 			this.configs,
 			this.deathFlashes,
 			this.t,

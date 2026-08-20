@@ -18,6 +18,16 @@ export const UNIT_COLORS: Record<UnitType, string> = {
 	wraith: "#7eb0d6",
 };
 
+/**
+ * Strike range in px. A reach past the melee scrum lets a type fight from the
+ * second rank, which is what keeps wraiths alive behind a line.
+ */
+export const UNIT_REACH: Record<UnitType, number> = {
+	skeleton: 8,
+	zombie: 8,
+	wraith: 14,
+};
+
 /** Units that come home at full count from a clear and from a wipe. */
 export const UNDYING_TYPES: ReadonlySet<UnitType> = new Set<UnitType>([
 	"wraith",

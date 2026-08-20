@@ -313,7 +313,6 @@ export const RELIC_BASES: RelicBase[] = [
 			"berserk",
 			"lastStand",
 		],
-		signatureAffixId: "deathAura",
 		glyph: "flame",
 		description: "It burns nothing, but the dead inhale and refuse to die.",
 	},
@@ -499,7 +498,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 	},
 
 	squadTravelSpeed: {
-		label: "Squad Travel Speed",
+		label: "Travel Speed",
 		unit: "%",
 		range: [5, 25],
 		effects: [{ kind: "global", stat: "squadTravelSpeedBonus", op: "add" }],
@@ -737,15 +736,6 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		effects: [{ kind: "unit", units: ["wraith"], stat: "vanguard" }],
 		description:
 			"Wraiths reach the enemy first, and the opening exchange is theirs.",
-	},
-	deathAura: {
-		label: "Death Aura",
-		unit: "%",
-		range: [5, 12],
-		minRarity: "epic",
-		effects: [{ kind: "unit", units: ["zombie"], stat: "aura" }],
-		description:
-			"Rot bleeds off your zombies into every enemy standing near them.",
 	},
 	bloodfeast: {
 		label: "Bloodfeast",

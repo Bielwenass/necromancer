@@ -104,7 +104,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 			</div>
 
 			{/* ── Right sidebar ──────────────────────────────── */}
-			<div className="w-[380px] bg-bg-panel border-l border-rule flex flex-col max-md:order-1 max-md:w-full max-md:border-l-0 max-md:border-t">
+			<div className="w-1/4 bg-bg-panel border-l border-rule flex flex-col max-md:order-1 max-md:w-full max-md:border-l-0 max-md:border-t">
 				<UnitReserves
 					units={units}
 					squads={squads}

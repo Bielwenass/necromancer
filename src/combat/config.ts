@@ -1,44 +1,61 @@
 /**
- * Combat tuning. Cell-aggregate flocking: cohesion and alignment average over a
- * 3x3 block of grid cells; separation and targeting use a fine-hash query at
- * `max(separationRadius, attackRadius)`. Tune ONE value at a time. Watch a 20v20
- * for individual behaviour, then a 500v500 for emergent blobbing.
+ * Combat tuning. One pair walk carries separation and hard contact; a target is
+ * held by id and only searched for when nobody is in contact, over a coarse grid
+ * of enemy cell counts. Tune ONE value at a time. Watch a 20v20 for individual
+ * behaviour, then a 500v500 for emergent blobbing.
  */
 export const COMBAT_CONFIG = {
 	simulation: {
-		// Px at which same-side units push apart. With `attackRadius` it sets the
-		// fine-query radius, the main per-tick cost. Range 4–12.
-		separationRadius: 6,
+		// How far the enemy search rings outward, in `steerCellSize` cells. Wide enough
+		// to span the arena or a unit steers by the global centroid until contact; the
+		// search is priced per cell, not per unit, so reaching further is cheap.
+		nearestMaxRings: 10,
+
+		// Px at which units push apart, and the walk radius: the whole per-tick cost
+		// scales with its square. Range 4–12.
+		separationRadius: 5,
 
 		// Range 20–80, competing against `maxAccel`.
-		separationWeight: 50.0,
+		separationWeight: 150,
 
 		// Enemy push. Range 5–25, below `separationWeight` or the armies never close.
-		enemySeparationWeight: 10,
+		enemySeparationWeight: 150,
 
-		// Local crowd's heading. Range 0–2. Above ~2 it overpowers seek and units mill.
-		alignmentWeight: 0.8,
+		// Cell size of the steering grid. It sets both how near "nearest enemy" really
+		// is and how many units an acquisition scans, so smaller is sharper and
+		// cheaper until the ring count needed to cross the arena tells. Range 16–50.
+		steerCellSize: 25,
 
-		// Pull toward the local center of mass.
-		// Range 0–0.3, multiplying a position error that runs to tens of px.
-		cohesionWeight: 0.05,
+		// Acceleration toward the held enemy, the centre of its cell while none is
+		// close enough to pick, or the global centroid when the rings come up empty.
+		// Capped at `maxAccel`, past which a unit is already turning as hard as it
+		// can and the dial does nothing. Range 20–`maxAccel`; at a quarter of it the
+		// armies close so slowly a fight can time out.
+		seekWeight: 50,
 
-		// Aggregate cell size; a unit's 3x3 block spans ~3x this. Range 25–80.
-		cohesionRadius: 50,
-
-		// Toward the enemy local COM, or the global centroid when the 3x3 block holds
-		// none. Range 20–100; at `maxAccel` units beeline.
-		seekWeight: 100.0,
-
-		// Share of `seekWeight` kept once an enemy is inside `attackRadius`. Range
-		// 0–0.3; above that a unit in melee jitters against the positional pass.
+		// Share of `seekWeight` kept once the target is inside reach, so the range is
+		// the whole of 0–1. Range 0–0.3: by 0.8 a unit in melee carries half again
+		// its speed and sits twice as deep in contact, and past 1 it drives through
+		// the line it is fighting.
 		engagedSeekScale: 0.1,
 
 		// Velocity drag (1/s) while engaged, the only drag term. Range 4–16.
 		engagedDamping: 8,
 
-		// Melee reach (px). Range 5–15, and >= `separationRadius`.
-		attackRadius: 6,
+		// Strike range (px) for a unit type that declares no `reach`. The walk does not
+		// price it, so widening it is free; it is what holds a target in reach through
+		// the jostle. Range 5–15, and >= `separationRadius`.
+		attackRadius: 8,
+
+		// Px within which a unit picks one enemy out of the crowd, roughly the point
+		// of arriving in the enemy's cell. Beyond it a whole cell steers at that cell
+		// and arrives as a body; committing at range fans a charge into as many
+		// threads as there are enemies and hands the defender easy kills. Range 8–25.
+		commitRadius: 16,
+
+		// Cost multiplier on an enemy cell lying behind the unit, so a line does not
+		// turn back through itself for a marginally closer pocket. 1 disables.
+		reverseBias: 3,
 
 		// Ms between blows. A blow deals `dmg × interval` at once, so overkill caps a
 		// farmed tomb at one kill per unit per interval. Range 300–1500.
@@ -55,8 +72,8 @@ export const COMBAT_CONFIG = {
 
 		defaultDamage: 1,
 
-		// Velocity retained off a wall, negated. Range 0–0.8.
-		wallRestitution: 0.5,
+		// Velocity retained off a wall, negated. Range 0–0.8; 0 holds the line there.
+		wallRestitution: 0,
 	},
 
 	// Behaviour of the relic-granted modifiers; magnitudes roll in `data/relics.ts`.
@@ -64,10 +81,6 @@ export const COMBAT_CONFIG = {
 		// `vanguard`'s window from the first tick. Range 3000–12000, several multiples
 		// of `attackIntervalMs` or spawn phase decides the bonus.
 		openingWindowMs: 6000,
-
-		// `aura` reach (px), widening the fine query in fights carrying one. Range
-		// 8–20, within ~2x `attackRadius`.
-		auraRadius: 14,
 
 		// Share of starting count a side falls below before `lastStand` pays. 0.1–0.35.
 		lastStandThreshold: 0.2,
@@ -83,11 +96,18 @@ export const COMBAT_CONFIG = {
 		radiusPerDot: 2,
 		radiusMargin: 0.5,
 
-		// Hash cell size as a multiple of the collision radius. Benchmark before moving.
-		cellSizeMultiple: 3,
+		// Total units on the field at which the footprint is full size. Past it the
+		// radius falls by the inverse square root, holding area per unit roughly
+		// constant so a crowded field stays cheap.
+		radiusScaleRefCount: 500,
 
-		// Share of an overlap pushed out per pass. Range 0.25–0.5; higher jitters more.
-		correction: 0.5,
+		// Floor on that shrink, below which dots stop resolving apart. Range 0.3–1.
+		radiusScaleMin: 0.4,
+
+		// Share of an overlap booked as a correction. Every contact books its own and
+		// they land together, so a unit in several is pushed by all of them: this sits
+		// lower than a figure applied one pair at a time. Range 0.2–0.5.
+		correction: 0.3,
 
 		// Share of a contact's closing normal velocity absorbed. Range 0–1; 0 buzzes,
 		// 1 feels glued.
@@ -105,9 +125,6 @@ export const COMBAT_CONFIG = {
 
 		// Pause on the final frame before the looping replay restarts (ms).
 		replayRestartDelayMs: 2000,
-
-		// Motion-blur trail persistence; lower = longer trails.
-		trailAlpha: 0.05,
 
 		backgroundColor: "#0A0A0F",
 	},

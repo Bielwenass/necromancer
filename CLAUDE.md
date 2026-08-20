@@ -14,8 +14,9 @@ bun run build        # tsc --noEmit && vite build
 bun test             # the suite; `bun test parity` to narrow it
 bun lint             # biome check --write: format, lint, organize imports
 bunx tsc --noEmit    # typecheck alone, the fastest feedback loop
-bunx tsx src/combat/benchmark.ts   # combat perf breakdown
+bunx tsx src/combat/benchmark.ts   # combat perf breakdown; `sweep` prices every dial
 bunx tsx src/game/balanceCheck.ts  # WIN/AUTO thresholds; takes a tier
+bun run dev  →  /tune.html         # armies, config dials, live combat metrics
 ```
 
 **Run `bun lint` and `bunx tsc --noEmit` after every change and fix everything

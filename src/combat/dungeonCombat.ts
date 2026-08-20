@@ -1,4 +1,4 @@
-import { UNIT_COLORS, UNIT_TYPES } from "../game/data/units";
+import { UNIT_COLORS, UNIT_REACH, UNIT_TYPES } from "../game/data/units";
 import type {
 	DungeonDef,
 	GameState,
@@ -45,7 +45,6 @@ export function unitMods(
 		berserk: d.berserk,
 		revive: d.revive,
 		vanguard: d.vanguard,
-		aura: d.aura,
 		overwhelm: d.overwhelm,
 		executioner: d.executioner,
 		spectral: d.spectral,
@@ -77,7 +76,11 @@ export function buildAttackerConfig(
 			return {
 				name: type,
 				amount: value,
-				stats: { ...stats, dmg: stats.dmg * tactics },
+				stats: {
+					...stats,
+					dmg: stats.dmg * tactics,
+					reach: UNIT_REACH[type],
+				},
 				color: UNIT_COLORS[type],
 				mods: unitMods(derived, type) ?? undefined,
 			};
