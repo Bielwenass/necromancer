@@ -48,14 +48,13 @@ export function DungeonCard({
 	loot: ProjectedLoot;
 	onDispatch: (id: string) => void;
 }) {
-	// Only one squad may hold a dungeon, so at most one matches; its presence is
-	// what makes the card unavailable.
+	// Only one squad may hold a dungeon, so at most one matches. A held dungeon
+	// still opens its modal, which refuses the dispatch itself.
 	const activeSquad = squads.find(
 		(s) => s.targetDungeonId === def.id && s.state !== "idle",
 	);
 
 	const locked = !ds.unlocked;
-	const held = activeSquad !== undefined;
 	const totalUnits = activeSquad ? squadSize(activeSquad.composition) : 0;
 
 	const remaining = activeSquad
@@ -78,9 +77,9 @@ export function DungeonCard({
 	return (
 		<button
 			type="button"
-			onClick={() => !locked && !held && onDispatch(def.id)}
+			onClick={() => !locked && onDispatch(def.id)}
 			className={`relative block w-full text-left h-[140px] shrink-0 border-b border-rule overflow-hidden max-md:h-auto
-        ${locked ? "opacity-[0.55] cursor-default" : held ? "cursor-default" : "cursor-pointer"}`}
+        ${locked ? "opacity-[0.55] cursor-default" : "cursor-pointer"}`}
 		>
 			<div className="relative px-8 h-full flex items-center gap-7 max-md:h-auto max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-5 max-md:py-4">
 				{/* Tier badge — border/text color are dynamic */}

@@ -80,19 +80,22 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 	};
 
 	return (
-		<Modal label={`Dispatch legion to ${def.name}`} onClose={onClose}>
+		<Modal
+			label={`${held ? "Preview" : "Dispatch legion to"} ${def.name}`}
+			onClose={onClose}
+		>
 			<div className="cornered w-[500px] bg-bg-panel border border-rule-strong p-7 max-h-[80vh] max-md:w-[calc(100vw-32px)] max-md:max-h-[85vh] max-md:overflow-y-auto max-md:p-5">
 				{/* Header */}
 				<div className="mb-5">
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">
-						DISPATCH LEGION · TIER {def.tier}
+						{held ? "TOMB PREVIEW" : "DISPATCH LEGION"} · TIER {def.tier}
 					</div>
 					<div className="display text-2xl text-bone !tracking-[0.12em] mt-[6px]">
 						{def.name}
 					</div>
 					{held && (
-						<div className="mono text-[10px] text-hp-crit tracking-[0.18em] mt-2">
-							ANOTHER LEGION HOLDS THIS TOMB
+						<div className="mono text-[10px] text-hp-warn tracking-widest mt-2">
+							YOUR LEGION ALREADY HOLDS THIS TOMB
 						</div>
 					)}
 				</div>

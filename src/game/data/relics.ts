@@ -472,7 +472,7 @@ export const AFFIX_DEFS: Record<string, AffixDefinition> = {
 		effects: [
 			{ kind: "global", stat: "soulHarvestBonus", op: "add", scale: 2 },
 		],
-		description: "Increases the chance a clear drops souls at all.",
+		description: "Increases the chance a clear drops souls.",
 	},
 	tombRobber: {
 		label: "Tomb Robber",
