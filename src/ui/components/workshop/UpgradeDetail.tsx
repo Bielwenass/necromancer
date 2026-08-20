@@ -1,6 +1,6 @@
 import { canAffordCost } from "../../../game/rules/resources";
 import type { Resources } from "../../../game/types";
-import { BuyButton } from "./BuyButton";
+import { Button } from "../common/Button";
 import { CostBlock } from "./CostBlock";
 import { isRowMaxed } from "./sections";
 import type { WorkshopRow } from "./types";
@@ -66,15 +66,18 @@ export function UpgradeDetail({
 						</div>
 					</div>
 					{cost && <CostBlock cost={cost} resources={resources} />}
-					<BuyButton
-						label={
-							canBuy
-								? (row.buyLabel?.(row.level) ?? `Upgrade ➞ LV ${row.level + 1}`)
-								: "Insufficient"
-						}
+					<Button
+						tone="ember"
+						variant="solid"
+						size="lg"
+						full
 						disabled={!canBuy}
 						onClick={() => onBuy(row)}
-					/>
+					>
+						{canBuy
+							? (row.buyLabel?.(row.level) ?? `Upgrade ➞ LV ${row.level + 1}`)
+							: "Insufficient"}
+					</Button>
 				</>
 			)}
 			{maxed && (

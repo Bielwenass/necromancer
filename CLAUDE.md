@@ -123,6 +123,10 @@ node uses `pctOfSelf`.
 - **`src/ui/components/` is organised by feature, one folder per screen**, plus
   that screen's own helpers; `common/` holds shared primitives and `chrome/` the
   app frame. **Check `common/` before hand-rolling a dialog, meter, or eyebrow.**
+- **Every clickable control is `common/Button`**, sized by `size` and coloured by
+  `tone`; a runtime accent passes straight through as `tone`, and `selected`
+  drives a toggle. A raw `<button>` is only for a whole clickable surface such as
+  a card, row, or tab.
 - Screens are thin: store selectors, local UI state, layout composition, with
   `Workshop.tsx` (~75 lines) the shape to aim for. Components take data and
   callbacks as props; reserve `useGameStore` for self-contained ones that would

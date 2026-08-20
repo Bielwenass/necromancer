@@ -1,4 +1,5 @@
 import type { UnitType } from "../../../game/types";
+import { Button } from "../common/Button";
 import { UnitDot } from "../common/UnitDot";
 import type { IconComponent } from "../icons/IconProps";
 
@@ -31,39 +32,27 @@ export function UnitReserveRow({
 				{type}
 			</span>
 
-			<button
-				type="button"
-				onClick={onSummon}
+			<Button
+				size="xs"
+				tone={color}
 				disabled={!can1}
+				onClick={onSummon}
 				title={`Summon 1 ${type} (${costFor(1)})`}
-				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
-				style={{
-					borderColor: can1 ? color : "var(--rule)",
-					color: can1 ? color : "var(--ink-faint)",
-					cursor: can1 ? "pointer" : "not-allowed",
-					opacity: can1 ? 1 : 0.5,
-				}}
 			>
 				Raise
-			</button>
+			</Button>
 
-			<button
-				type="button"
+			<Button
+				size="xs"
+				tone={color}
+				disabled={!can10}
 				onClick={() => {
 					if (can10) for (let i = 0; i < 10; i++) onSummon();
 				}}
-				disabled={!can10}
 				title={`Summon 10 ${type}s (${costFor(10)})`}
-				className="px-[10px] py-[3px] border mono text-xs tracking-[0.1em]"
-				style={{
-					borderColor: can10 ? color : "var(--rule)",
-					color: can10 ? color : "var(--ink-faint)",
-					cursor: can10 ? "pointer" : "not-allowed",
-					opacity: can10 ? 1 : 0.5,
-				}}
 			>
 				+10
-			</button>
+			</Button>
 		</div>
 	);
 }

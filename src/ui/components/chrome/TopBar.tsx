@@ -4,7 +4,7 @@ import { useGameStore } from "../../../game/store";
 import type { DerivedFlagKey, Resources } from "../../../game/types";
 import { formatRate } from "../../format";
 import { RESOURCE_KEYS, RESOURCE_META } from "../../resources";
-import { DANGER_BUTTON } from "../common/ConfirmAction";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import { SectionLabel } from "../common/SectionLabel";
 import { IconBone } from "../icons";
@@ -17,9 +17,6 @@ const ECONOMY_FLAG: Partial<Record<keyof Resources, DerivedFlagKey>> = {
 	corpses: "corpsesUnlocked",
 	souls: "soulsUnlocked",
 };
-
-const btnBase =
-	"block w-full py-2.5 px-4 border border-[color:var(--rule-strong)] text-parchm font-display text-[11px] tracking-[0.18em] bg-transparent cursor-pointer text-left uppercase transition-colors duration-150 hover:bg-bg-hover";
 
 export function TopBar() {
 	const resources = useGameStore((s) => s.resources);
@@ -90,14 +87,7 @@ export function TopBar() {
 					<span>NECROMANCER</span>
 				</div>
 
-				{/* Settings button — replaces the phase label */}
-				<button
-					type="button"
-					onClick={openSettings}
-					title="Settings"
-					className="flex items-center gap-[7px] py-1 px-3 border border-[color:var(--rule)] rounded-sm font-mono text-[10px] tracking-[0.14em] text-muted bg-transparent cursor-pointer transition-colors duration-150 hover:text-parchm hover:border-[color:var(--rule-strong)]"
-				>
-					{/* Gear icon */}
+				<Button size="sm" tone="muted" onClick={openSettings} title="Settings">
 					<svg
 						width={12}
 						height={12}
@@ -111,8 +101,8 @@ export function TopBar() {
 						<circle cx="12" cy="12" r="3" />
 						<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
 					</svg>
-					SETTINGS
-				</button>
+					Settings
+				</Button>
 
 				<div className="max-md:hidden flex gap-[18px] pl-[22px] ml-2 border-l border-[color:var(--rule)] items-center font-mono text-[11px] text-muted">
 					<span>{dayStr}</span>
@@ -121,15 +111,16 @@ export function TopBar() {
 
 				<div className="ml-auto flex gap-5 items-center max-md:ml-0 max-md:order-3 max-md:w-full max-md:gap-2 max-md:overflow-x-auto">
 					{resources.bones < 10_000 && (
-						<button
-							type="button"
+						<Button
+							size="xs"
+							tone="bone"
 							onClick={digBone}
 							title="Dig a bone"
-							className="py-[3px] px-[9px] border border-[color:var(--rule-strong)] text-bone font-mono text-[9px] tracking-[0.16em] bg-transparent cursor-pointer flex items-center gap-[5px] self-center max-md:shrink-0"
+							className="self-center max-md:shrink-0"
 						>
-							DIG
+							Dig
 							<IconBone size={14} />
-						</button>
+						</Button>
 					)}
 					{readouts.map((key) => {
 						const { label, icon } = RESOURCE_META[key];
@@ -164,13 +155,15 @@ export function TopBar() {
 							<SectionLabel className="text-sm text-parchm tracking-[0.28em]">
 								SETTINGS
 							</SectionLabel>
-							<button
-								type="button"
+							<Button
+								size="icon"
+								variant="quiet"
+								tone="muted"
 								onClick={closeSettings}
-								className="text-dim text-base leading-none py-0.5 px-1.5 cursor-pointer"
+								title="Close"
 							>
 								✕
-							</button>
+							</Button>
 						</div>
 
 						{/* Save data section */}
@@ -179,17 +172,13 @@ export function TopBar() {
 						</div>
 
 						<div className="flex flex-col gap-2 mb-5">
-							<button type="button" onClick={exportSave} className={btnBase}>
-								Export Save (JSON)
-							</button>
+							<Button full onClick={exportSave}>
+								Export save (JSON)
+							</Button>
 
-							<button
-								type="button"
-								onClick={() => fileInputRef.current?.click()}
-								className={btnBase}
-							>
-								Import Save (JSON)
-							</button>
+							<Button full onClick={() => fileInputRef.current?.click()}>
+								Import save (JSON)
+							</Button>
 
 							{importError && (
 								<div className="font-mono text-[10px] text-hp-crit pt-1.5 pb-0.5">
@@ -208,33 +197,30 @@ export function TopBar() {
 
 						{/* Reset section */}
 						{!resetConfirm ? (
-							<button
-								type="button"
-								onClick={() => setResetConfirm(true)}
-								className="block w-full py-2.5 px-4 border border-[color:rgba(196,90,62,0.35)] text-hp-crit font-display text-[11px] tracking-[0.18em] bg-transparent cursor-pointer text-left uppercase transition-colors duration-150 hover:bg-[rgba(196,90,62,0.07)]"
-							>
-								Reset Save
-							</button>
+							<Button tone="danger" full onClick={() => setResetConfirm(true)}>
+								Reset save
+							</Button>
 						) : (
 							<div>
 								<div className="font-mono text-[11px] text-muted mb-3.5 leading-relaxed">
 									All progress will be lost.
 								</div>
 								<div className="flex gap-2.5">
-									<button
-										type="button"
+									<Button
+										tone="muted"
+										className="flex-1"
 										onClick={() => setResetConfirm(false)}
-										className={`${btnBase} flex-1 text-center`}
 									>
 										Cancel
-									</button>
-									<button
-										type="button"
+									</Button>
+									<Button
+										tone="danger"
+										variant="solid"
+										className="flex-1"
 										onClick={handleReset}
-										className={`flex-1 py-2.5 px-4 border ${DANGER_BUTTON} font-display text-[11px] tracking-[0.18em] cursor-pointer text-center uppercase transition-colors duration-150 hover:bg-[rgba(196,90,62,0.16)]`}
 									>
 										Reset
-									</button>
+									</Button>
 								</div>
 							</div>
 						)}

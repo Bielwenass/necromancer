@@ -90,7 +90,9 @@
 .rc-back {
 	position: absolute;
 	inset: 0;
-	border-radius: 13px;
+	/* In cqw like the rest of the layout, so a grid tile rounds off as much as a
+	   pull card does and the SVG frame's own rx stays in step. */
+	border-radius: 4.6cqw;
 	transform: translateZ(0.01px);
 	-webkit-backface-visibility: hidden;
 	backface-visibility: hidden;

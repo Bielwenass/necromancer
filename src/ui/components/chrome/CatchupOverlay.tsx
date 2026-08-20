@@ -1,5 +1,6 @@
 import type { CatchupState } from "../../../game/useGameLifecycle";
 import { RESOURCE_KEYS, RESOURCE_META } from "../../resources";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 
 interface CatchupOverlayProps {
@@ -54,13 +55,9 @@ export function CatchupOverlay({ catchup, onDismiss }: CatchupOverlayProps) {
 			</div>
 
 			{catchup.done && (
-				<button
-					type="button"
-					onClick={onDismiss}
-					className="px-7 py-2 border border-bone text-bone bg-transparent cursor-pointer font-display text-xs tracking-[0.22em]"
-				>
-					CONTINUE
-				</button>
+				<Button size="lg" tone="bone" onClick={onDismiss}>
+					Continue
+				</Button>
 			)}
 		</Modal>
 	);

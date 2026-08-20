@@ -1,6 +1,7 @@
 import { squadSize } from "../../../game/rules/units";
 import type { DungeonDef, Squad } from "../../../game/types";
 import { formatTime } from "../../format";
+import { Button } from "../common/Button";
 import { SQUAD_STATE_GLYPH, squadColor } from "./squadDisplay";
 
 interface SquadRowProps {
@@ -71,35 +72,26 @@ export function SquadRow({
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
 						{squad.state === "idle" && refillCount > 0 && (
-							<button
-								type="button"
+							<Button
+								size="xs"
 								onClick={onReplenish}
 								title="Draft from the reserves back up to full strength"
-								className="px-2 py-0.5 border border-rule-strong text-parchm mono text-[10px] tracking-[0.1em]"
 							>
-								REFILL ×{refillCount}
-							</button>
+								Refill ×{refillCount}
+							</Button>
 						)}
 						{squad.state === "idle" && (
-							<button
-								type="button"
-								onClick={onDisband}
-								className="px-2 py-0.5 border border-rule-strong text-hp-crit mono text-[10px] tracking-[0.1em]"
-							>
-								DISBAND
-							</button>
+							<Button size="xs" tone="danger" onClick={onDisband}>
+								Disband
+							</Button>
 						)}
 						{/* A returning squad is already on its way home, so recalling it
 						    only means "stay there" — pointless unless it would redeploy. */}
 						{squad.state !== "idle" &&
 							(squad.state !== "returning" || willRedeploy) && (
-								<button
-									type="button"
-									onClick={onRecall}
-									className="px-2 py-0.5 border border-rule-strong text-dim mono text-[10px] tracking-[0.1em]"
-								>
-									RECALL
-								</button>
+								<Button size="xs" tone="muted" onClick={onRecall}>
+									Recall
+								</Button>
 							)}
 					</div>
 				</div>

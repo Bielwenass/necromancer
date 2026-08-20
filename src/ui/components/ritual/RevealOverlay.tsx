@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { Relic } from "../../../game/types";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import { RelicCard } from "../reliquary/RelicCard";
 
@@ -72,22 +73,14 @@ export function RevealOverlay({
 
 			<div className="flex gap-3 mt-8 z-[1]">
 				{!allRevealed && (
-					<button
-						type="button"
-						onClick={skipAll}
-						className="px-8 py-3 border border-rule-strong display text-xs tracking-[0.22em] text-muted"
-					>
-						SKIP ALL
-					</button>
+					<Button size="lg" tone="muted" onClick={skipAll}>
+						Skip all
+					</Button>
 				)}
 				{allRevealed && (
-					<button
-						type="button"
-						onClick={onClose}
-						className="px-8 py-3 border border-coin display text-xs tracking-[0.28em] text-coin bg-[rgba(212,168,87,0.06)]"
-					>
-						COLLECT
-					</button>
+					<Button size="lg" tone="coin" variant="solid" onClick={onClose}>
+						Collect
+					</Button>
 				)}
 			</div>
 		</Modal>

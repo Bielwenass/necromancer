@@ -1,6 +1,7 @@
 import { RELIC_BASES, SLOT_LABELS } from "../../../game/data/relics";
 import { dustValue } from "../../../game/rules/relics";
 import type { Relic, SlotId } from "../../../game/types";
+import { Button } from "../common/Button";
 import { ConfirmAction } from "../common/ConfirmAction";
 import { RelicCard } from "./RelicCard";
 
@@ -88,7 +89,7 @@ export function RelicDetail({
 					onConfirm={onConfirmSacrifice}
 					onCancel={onCancelSacrifice}
 					label={`Sacrifice (+${dust} dust)`}
-					buttonClassName="flex-1 py-[10px] display text-xs tracking-[0.22em] uppercase"
+					className="flex-1"
 				/>
 			</div>
 
@@ -103,20 +104,16 @@ export function RelicDetail({
 							// A sealed slot still shows, so the tree makes visible sense.
 							const locked = !unlockedSlots.includes(slotId);
 							return (
-								<button
-									type="button"
+								<Button
 									key={slotId}
+									size="sm"
+									tone="muted"
 									disabled={locked}
 									onClick={() => onEquip(slotId)}
 									title={locked ? "Sealed — open it in the upgrade tree" : ""}
-									className={`px-[10px] py-1 border mono text-sm tracking-wide ${
-										locked
-											? "border-rule text-dim opacity-50 cursor-not-allowed"
-											: "border-rule-strong text-muted"
-									}`}
 								>
 									{SLOT_LABELS[slotId]}
-								</button>
+								</Button>
 							);
 						})}
 					</div>

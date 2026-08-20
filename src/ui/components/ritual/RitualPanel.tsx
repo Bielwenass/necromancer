@@ -115,7 +115,6 @@ export function RitualPanel({ poolId }: { poolId: PoolId }) {
 					Icon={ResourceIcon}
 					onClick={() => doPull(10)}
 					wide
-					tint={meta.tint}
 					badge="+1 BONUS"
 				/>
 			</div>

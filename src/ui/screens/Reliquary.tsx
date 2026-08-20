@@ -3,6 +3,7 @@ import { dustValue, getRelicSlotType } from "../../game/rules/relics";
 import { useGameStore } from "../../game/store";
 import type { Rarity, RelicSlotType, SlotId } from "../../game/types";
 import type { TabId } from "../components/chrome/TabBar";
+import { Button } from "../components/common/Button";
 import { EmptyState } from "../components/common/EmptyState";
 import { Screen } from "../components/common/Screen";
 import { SectionLabel } from "../components/common/SectionLabel";
@@ -97,18 +98,16 @@ export function Reliquary({ onTabChange }: ReliquaryProps) {
 						{ id: "inventory", label: "Inventory" },
 					] as const
 				).map(({ id, label }) => (
-					<button
+					<Button
 						key={id}
-						type="button"
+						tone="coin"
+						variant="solid"
+						selected={mobilePane === id}
 						onClick={() => setMobilePane(id)}
-						className={`flex-1 py-2.5 font-display text-[11px] tracking-[0.18em] uppercase border-r border-rule last:border-r-0 ${
-							mobilePane === id
-								? "text-coin bg-[rgba(212,168,87,0.06)]"
-								: "text-muted"
-						}`}
+						className="flex-1 border-0 border-r border-rule last:border-r-0"
 					>
 						{label}
-					</button>
+					</Button>
 				))}
 			</div>
 

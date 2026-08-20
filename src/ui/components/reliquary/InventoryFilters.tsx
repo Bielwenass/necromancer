@@ -2,10 +2,10 @@ import { RARITY_ORDER } from "../../../game/data/relics";
 import { UNIT_COLORS } from "../../../game/data/units";
 import type { Rarity, RelicSlotType } from "../../../game/types";
 import { rarityColor } from "../../theme";
+import { Button } from "../common/Button";
 import { ConfirmAction } from "../common/ConfirmAction";
 import { IconCrypt, IconSkeleton, IconWraith, IconZombie } from "../icons";
 import type { IconComponent } from "../icons/IconProps";
-import { FilterChip } from "./FilterChip";
 
 const SLOT_FILTERS: {
 	id: RelicSlotType;
@@ -56,16 +56,16 @@ export function InventoryFilters({
 				{SLOT_FILTERS.map(({ id, color, Icon }) => {
 					const active = filterSlot === id;
 					return (
-						<FilterChip
+						<Button
 							key={id}
-							label={id}
-							color={color}
-							active={active}
-							icon={
-								<Icon size={10} color={active ? color : "var(--ink-muted)"} />
-							}
+							size="xs"
+							tone={color}
+							selected={active}
 							onClick={() => onFilterSlot(active ? null : id)}
-						/>
+						>
+							<Icon size={10} color={active ? color : "var(--ink-muted)"} />
+							{id}
+						</Button>
 					);
 				})}
 			</div>
@@ -75,13 +75,15 @@ export function InventoryFilters({
 					RARITY
 				</span>
 				{RARITY_FILTERS.map((r) => (
-					<FilterChip
+					<Button
 						key={r}
-						label={r}
-						color={rarityColor(r)}
-						active={filterRarity === r}
+						size="xs"
+						tone={rarityColor(r)}
+						selected={filterRarity === r}
 						onClick={() => onFilterRarity(filterRarity === r ? null : r)}
-					/>
+					>
+						{r}
+					</Button>
 				))}
 			</div>
 
@@ -105,7 +107,7 @@ export function InventoryFilters({
 								{sacrificeCount === 1 ? "" : "S"}?
 							</span>
 						}
-						buttonClassName="mono text-[11px] px-2 py-0.5 cursor-pointer tracking-[0.12em] uppercase"
+						size="xs"
 					/>
 				</div>
 			)}

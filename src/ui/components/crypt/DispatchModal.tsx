@@ -12,6 +12,7 @@ import {
 import { useGameStore } from "../../../game/store";
 import type { UnitType } from "../../../game/types";
 import { UNIT_COLORS, UNIT_LABELS } from "../../theme";
+import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import { EnemyPreview } from "./EnemyPreview";
 import { compositionLabel } from "./squadDisplay";
@@ -134,27 +135,23 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 											</div>
 										</div>
 										{refillCount > 0 && (
-											<button
-												type="button"
+											<Button
+												size="sm"
 												onClick={() => replenishSquad(squad.id)}
 												title="Draft from the reserves back up to full strength"
-												className="px-3 py-[6px] border border-rule-strong text-parchm cursor-pointer display text-[10px] tracking-[0.2em]"
 											>
-												REFILL ×{refillCount}
-											</button>
+												Refill ×{refillCount}
+											</Button>
 										)}
-										<button
-											type="button"
-											onClick={() => handleSendIdle(squad.id)}
+										<Button
+											size="sm"
+											tone="coin"
+											variant="solid"
 											disabled={held}
-											className={`px-4 py-[6px] border display text-[10px] tracking-[0.2em] ${
-												held
-													? "border-rule text-dim cursor-not-allowed"
-													: "border-coin bg-coin/5 text-coin cursor-pointer"
-											}`}
+											onClick={() => handleSendIdle(squad.id)}
 										>
-											SEND ⇢
-										</button>
+											Send ⇢
+										</Button>
 									</div>
 								);
 							})}
@@ -219,27 +216,19 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 
 				{/* Footer buttons */}
 				<div className="flex gap-[10px]">
-					<button
-						type="button"
-						onClick={onClose}
-						className="flex-1 py-3 border border-rule-strong display text-xs tracking-[0.22em] uppercase text-muted"
-					>
+					<Button size="lg" tone="muted" className="flex-1" onClick={onClose}>
 						Cancel
-					</button>
-					<button
-						type="button"
-						onClick={handleCreate}
+					</Button>
+					<Button
+						size="lg"
+						tone="coin"
+						variant="solid"
+						className="flex-[2]"
 						disabled={!canCreate}
-						className="flex-[2] py-3 border display text-xs tracking-[0.22em] uppercase"
-						style={{
-							borderColor: canCreate ? "var(--c-coin)" : "var(--rule)",
-							color: canCreate ? "var(--c-coin)" : "var(--ink-dim)",
-							background: canCreate ? "rgba(212,168,87,0.06)" : "transparent",
-							cursor: canCreate ? "pointer" : "not-allowed",
-						}}
+						onClick={handleCreate}
 					>
-						Form &amp; Dispatch
-					</button>
+						Form &amp; dispatch
+					</Button>
 				</div>
 			</div>
 		</Modal>

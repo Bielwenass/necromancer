@@ -1,5 +1,6 @@
 import { isUndying } from "../../../game/rules/units";
 import type { UnitType } from "../../../game/types";
+import { Button } from "../common/Button";
 import { UnitDot } from "../common/UnitDot";
 
 export function UnitCountStepper({
@@ -41,42 +42,33 @@ export function UnitCountStepper({
 				{available} available
 			</span>
 			<div className="flex items-center gap-2">
-				<button
-					type="button"
-					onClick={() => onAdjust(-1)}
+				<Button
+					size="icon"
+					tone="bone"
 					disabled={!canDecrease}
-					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center max-md:!w-9 max-md:!h-9"
-					style={{
-						color: canDecrease ? "var(--ink-bone)" : "var(--ink-faint)",
-					}}
+					onClick={() => onAdjust(-1)}
 				>
 					−
-				</button>
+				</Button>
 				<span className="mono text-sm text-bone min-w-[20px] text-center">
 					{count}
 				</span>
-				<button
-					type="button"
-					onClick={() => onAdjust(1)}
+				<Button
+					size="icon"
+					tone="bone"
 					disabled={!canIncrease}
-					className="!w-6 !h-6 !border !border-rule-strong !text-base flex items-center justify-center max-md:!w-9 max-md:!h-9"
-					style={{
-						color: canIncrease ? "var(--ink-bone)" : "var(--ink-faint)",
-					}}
+					onClick={() => onAdjust(1)}
 				>
 					+
-				</button>
-				<button
-					type="button"
-					onClick={() => onAdjust(available - count)}
+				</Button>
+				<Button
+					size="sm"
+					tone="bone"
 					disabled={!canIncrease}
-					className="!w-12 !h-6 !border !border-rule-strong !text-sm flex items-center justify-center max-md:!w-14 max-md:!h-9"
-					style={{
-						color: canIncrease ? "var(--ink-bone)" : "var(--ink-faint)",
-					}}
+					onClick={() => onAdjust(available - count)}
 				>
 					Max
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

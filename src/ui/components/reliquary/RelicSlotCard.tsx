@@ -1,4 +1,5 @@
 import type { Relic } from "../../../game/types";
+import { Button } from "../common/Button";
 import { RelicCard } from "./RelicCard";
 
 export function RelicSlotCard({
@@ -38,16 +39,19 @@ export function RelicSlotCard({
 				onClick={onSelect}
 			/>
 			{selected && (
-				<button
-					type="button"
+				<Button
+					size="icon"
+					variant="quiet"
+					tone="muted"
+					title="Unequip"
 					onClick={(e) => {
 						e.stopPropagation();
 						onUnequip();
 					}}
-					className="absolute top-1 right-[6px] mono text-[9px] text-muted z-10 bg-transparent border-0 cursor-pointer p-0"
+					className="absolute top-0.5 right-0.5 z-10 size-5 text-[10px]"
 				>
 					✕
-				</button>
+				</Button>
 			)}
 		</div>
 	);
