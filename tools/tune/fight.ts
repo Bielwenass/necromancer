@@ -3,12 +3,12 @@ import {
 	COMBAT_H,
 	COMBAT_W,
 	DEFENDER_SPAWN,
-} from "../combat/dungeonCombat";
-import { CombatEngine } from "../combat/engine";
-import type { SideConfig } from "../combat/types";
-import { UNIT_STAT_CONFIG, UNIT_TYPES } from "../game/data/units";
-import type { UnitType } from "../game/types";
-import { UNIT_COLORS } from "../ui/theme";
+} from "../../src/combat/dungeonCombat";
+import { CombatEngine } from "../../src/combat/engine";
+import type { SideConfig } from "../../src/combat/types";
+import { UNIT_STAT_CONFIG, UNIT_TYPES } from "../../src/game/data/units";
+import type { UnitType } from "../../src/game/types";
+import { UNIT_COLORS } from "../../src/ui/theme";
 
 export type Army = Record<UnitType, number>;
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ConfigDial } from "../combat/dials";
+import type { ConfigDial } from "../dials";
 import { NumberField } from "./NumberField";
 
 interface DialPanelProps {

@@ -14,8 +14,13 @@ src/game/     simulation + state. No React imports.
   slices/     store actions.
 src/combat/   battle engine. No React imports.
 src/ui/       screens and components. Reads state via useGameStore selectors.
-src/tune/     `tune.html`, a dev page for the combat model. Dev server only.
+tools/        dev surfaces. Never shipped, never imported by src/.
 ```
+
+`tools/` may import `src/`; `src/` may never import `tools/`, which Biome enforces.
+It holds the combat tuning page, the card lab, the balance harness and the perf
+bench; each page is its own Vite entry, so none of them touches the game app. Only
+`index.html` is a build input, so none of it ships.
 
 **Every balance number lives in `src/game/data/`.** The one exception is
 `src/combat/config.ts`, which holds combat feel (steering weights, collision
@@ -34,7 +39,7 @@ shared primitives (`Screen`, `Modal`, `ConfirmAction`, `Meter`, `StatRow`,
 layer, since the canvas can't read a CSS variable), `format.ts`, `resources.ts`.
 
 The React-free boundary is load-bearing: it lets the simulation run headlessly in
-offline catchup, in `src/combat/benchmark.ts`, and under `bun test`.
+offline catchup, in `tools/bench/`, and under `bun test`.
 
 ## Tick pipeline
 
@@ -133,8 +138,8 @@ old export grants no offline catchup.
 
 ## Screens
 
-Exactly four, one per `TabId`, all in `src/ui/screens/`. `tune.html` is a second
-Vite entry outside this frame, reachable only in dev:
+Exactly four, one per `TabId`, all in `src/ui/screens/`. The `tools/` pages are
+further Vite entries outside this frame, reachable only in dev:
 
 | Key | Screen | Notes |
 |-----|--------|-------|

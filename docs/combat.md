@@ -9,12 +9,12 @@ outcomes.
 | `combat/simulation.ts` | Hot loop: steering, separation, targeting, damage, integration |
 | `combat/grid.ts` | `BucketGrid`: counting-sort neighbour cells, rebuilt per tick |
 | `combat/config.ts` | Tuning constants, annotated with usable ranges |
-| `combat/dials.ts` | Every numeric leaf of `COMBAT_CONFIG`, for the sweep and the tuning page |
 | `combat/renderer.ts` | Canvas draw (dots, death flashes) |
 | `combat/dungeonCombat.ts` | Arena size, player colors, `buildAttackerConfig`/`buildDefenderConfig` |
 | `combat/prng.ts` | `mulberry32`, seeded determinism |
-| `combat/benchmark.ts` | Headless perf harness (`bunx tsx src/combat/benchmark.ts`) |
-| `src/tune/` | `tune.html`: armies, dials and live metrics, outside the game app |
+| `tools/dials.ts` | Every numeric leaf of `COMBAT_CONFIG`, for the sweep and the tuning page |
+| `tools/bench/benchmark.ts` | Headless perf harness (`bunx tsx tools/bench/benchmark.ts`) |
+| `tools/tune/` | Armies, dials and live metrics, on its own page outside the game app |
 
 ## How a fight resolves
 
@@ -210,12 +210,12 @@ what the next round has to attack.
 Timing is off unless asked for. `EngineOptions.stats` is `"off"` in the live game
 and in catchup; `"phase"` costs a handful of timers a tick, `"detail"` six per unit
 per tick, and the work counters (pairs, picks, swings) ride the same switch.
-`bunx tsx src/combat/benchmark.ts` prints all of it: phase and grid splits, what
+`bunx tsx tools/bench/benchmark.ts` prints all of it: phase and grid splits, what
 the walk saw against what it acted on, and the targeting and contact workloads.
 
 Tune one `config.ts` value at a time: watch a 20v20 where individual behaviour is
-legible, then sanity-check 500v500 for emergent blob behaviour. `tune.html` drives
-both by hand with the metrics beside them; the benchmark's `sweep` prices every
+legible, then sanity-check 500v500 for emergent blob behaviour. The tuning page
+drives both by hand with the metrics beside them; the benchmark's `sweep` prices every
 dial at 0.1× and 10×.
 
 ## Offline catchup

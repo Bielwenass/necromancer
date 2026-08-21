@@ -1,4 +1,4 @@
-import { COMBAT_CONFIG } from "./config";
+import { COMBAT_CONFIG } from "../src/combat/config";
 
 export interface ConfigDial {
 	/** Dotted path into `COMBAT_CONFIG`, e.g. `simulation.seekWeight`. */

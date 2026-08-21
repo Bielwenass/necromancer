@@ -90,9 +90,7 @@ export function DispatchModal({ dungeonId, onClose }: DispatchModalProps) {
 					<div className="mono text-[9px] text-dim tracking-[0.18em]">
 						{held ? "TOMB PREVIEW" : "DISPATCH LEGION"} · TIER {def.tier}
 					</div>
-					<div className="display text-2xl text-bone !tracking-[0.12em] mt-[6px]">
-						{def.name}
-					</div>
+					<div className="display text-2xl text-bone mt-[6px]">{def.name}</div>
 					{held && (
 						<div className="mono text-[10px] text-hp-warn tracking-widest mt-2">
 							YOUR LEGION ALREADY HOLDS THIS TOMB

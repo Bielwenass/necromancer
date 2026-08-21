@@ -1,5 +1,5 @@
-import { collisionRadius } from "../combat/simulation";
-import { ENGINE_DT } from "../game/data/pacing";
+import { collisionRadius } from "../../src/combat/simulation";
+import { ENGINE_DT } from "../../src/game/data/pacing";
 import { type Army, armyTotal, createFight } from "./fight";
 
 export interface BurstResult {

@@ -14,9 +14,10 @@ bun run build        # tsc --noEmit && vite build
 bun test             # the suite; `bun test parity` to narrow it
 bun lint             # biome check --write: format, lint, organize imports
 bunx tsc --noEmit    # typecheck alone, the fastest feedback loop
-bunx tsx src/combat/benchmark.ts   # combat perf breakdown; `sweep` prices every dial
-bunx tsx src/game/balanceCheck.ts  # WIN/AUTO thresholds; takes a tier
-bun run dev  →  /tune.html         # armies, config dials, live combat metrics
+bunx tsx tools/bench/benchmark.ts      # combat perf breakdown; `sweep` prices every dial
+bunx tsx tools/balance/balanceCheck.ts # simulated run: pacing, WIN/AUTO; takes a tier
+bun run dev  →  /tools/tune/           # armies, config dials, live combat metrics
+bun run dev  →  /tools/cardlab/        # relic card visuals, off the store
 ```
 
 **Run `bun lint` and `bunx tsc --noEmit` after every change and fix everything
@@ -24,15 +25,17 @@ they report.** Those and `bun test` are the gates.
 
 Tests are `*.test.ts` beside the code they cover, fixtures in `src/game/testing/`.
 `parity.test.ts` must pass after any change to the tick, catchup, loot, or fight
-rules; `balanceCheck.ts` after any change to `data/dungeons.ts`, `data/units.ts`,
-or the combat model, given a tier while iterating and run whole at the end.
+rules; `balanceCheck.ts` takes a long time - run only after extensive changes to `data/` or the combat model, given
+a tier while iterating and run whole at the end. It simulates a run rather than
+assuming a build, so a price is as much its input as a stat line is.
 
 ## Code
 
 - Biome owns formatting. Never hand-format against it, never reformat untouched
   code, and leave `biome.json` alone: when a rule doesn't fit, write a narrow
-  `// biome-ignore lint/<rule>: <reason>`. `--unsafe` rewrites semantics; read
-  that diff first.
+  `// biome-ignore lint/<rule>: <reason>`. Its one override that is policy rather
+  than formatting is the `src/**` ban on importing `tools/`. `--unsafe` rewrites
+  semantics; read that diff first.
 - `strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`
   are on; hence `void x` and `_`-prefixed params where a binding is kept.
 - **Prefer a general system to a special case.** A member of a set the code knows
@@ -58,6 +61,15 @@ Balance numbers stay in `src/game/data/`, never copied into docs or UI.
 `src/ui/**` and `App.tsx`. The UI reads state through `useGameStore` selectors and
 calls store actions. Inside `src/game/`, `data/` imports nothing but `./types`, and
 `rules/` holds pure functions over it, free of the store.
+
+**`tools/` is not part of the app.** It may import `src/`; `src/` may never import
+it, which Biome enforces. Nothing there ships: only `index.html` is a build input,
+and each tool page is its own Vite entry.
+
+**Do not read `tools/` unless the task is about a tool.** Nothing in it drives game
+behaviour, so it answers no question about the game and only crowds the context.
+Changing a signature `tools/` consumes is the one case that pulls it in: fix the
+call there, and let `bunx tsc --noEmit` find it rather than going looking.
 
 ## Simulation
 

@@ -23,8 +23,8 @@ economy feeding it exists.
 
 Passive income is **garden-only**:
 `bonesPerTick = (Σ plot baseYield × level) / TICKS_PER_SECOND × bonesPassiveMult`.
-`bonesPassiveMult` is the product of the upgrades that multiply it, Bone Garden and
-Apotheosis.
+`bonesPassiveMult` is the product of the upgrades that multiply it, currently
+Apotheosis alone.
 
 `GARDEN_PLOTS` holds four plots. All grow **bones** and differ in the resource that
 buys them: a plot's id is that resource (`garden.souls`), it unlocks and upgrades
@@ -245,6 +245,9 @@ Three branches, 6 tiers each, ending in a capstone. Each owns a question:
 | `flag` | a boolean in `derived` |
 | `slot` | opens a relic slot |
 
+The Ritual and Reliquary tabs are two such flags: both sit on the bar inert until
+First Rites (`n1`) opens them.
+
 `recomputeDerived` folds them with one applier, so **there is no per-node code to
 forget**: a node with no effect is a type error. Relic affixes carry the same shape
 in `AFFIX_DEFS` (`data/relics.ts`), except that the magnitude comes from the roll.
@@ -252,7 +255,8 @@ in `AFFIX_DEFS` (`data/relics.ts`), except that the magnitude comes from the rol
 Costs are a `Partial<Resources>`, priced through the same `canAffordCost` /
 `applyCost` as every other purchase, and climb steeply per tier: a tier-1 node is a
 handful of clears, a capstone is a campaign. The board is sized so the finite tree
-completes late in tier 4, and `balanceCheck` section 7 asserts both ends of that.
+completes late in tier 4, and `balanceCheck`'s pacing pass asserts both ends of
+that against the banners a simulated run actually earns.
 One node carries `repeatGrowth` and can be bought over and over at a rising price,
 the tree being finite and a long run not.
 

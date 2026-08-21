@@ -33,6 +33,26 @@
 	},
 	"overrides": [
 		{
+			"includes": ["src/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["**/tools/**"],
+										"message": "src/ must not import tools/; the dependency runs one way."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
 			"includes": ["**/*.css"],
 			"linter": {
 				"rules": {

@@ -8,17 +8,17 @@
  * COMBAT_CONFIG at 0.1x and 10x, one at a time, to price each dial.
  */
 
-import { ENGINE_DT, MAX_HEADLESS_TICKS } from "../game/data/pacing";
-import { UNIT_STAT_CONFIG } from "../game/data/units";
-import { type ConfigDial, combatDials } from "./dials";
 import {
 	ATTACKER_SPAWN,
 	COMBAT_H,
 	COMBAT_W,
 	DEFENDER_SPAWN,
-} from "./dungeonCombat";
-import { CombatEngine } from "./engine";
-import type { SideConfig, UnitMods } from "./types";
+} from "../../src/combat/dungeonCombat";
+import { CombatEngine } from "../../src/combat/engine";
+import type { SideConfig, UnitMods } from "../../src/combat/types";
+import { ENGINE_DT, MAX_HEADLESS_TICKS } from "../../src/game/data/pacing";
+import { UNIT_STAT_CONFIG } from "../../src/game/data/units";
+import { type ConfigDial, combatDials } from "../dials";
 
 const SKELETON = UNIT_STAT_CONFIG.skeleton;
 

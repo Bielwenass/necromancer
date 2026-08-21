@@ -17,10 +17,10 @@ const TONES = {
 
 /** Small sizes read in mono, large ones in display; letterspacing tracks size. */
 const SIZES = {
-	xs: "min-h-6 px-2 py-0.5 gap-1 font-mono text-[11px] tracking-[0.12em]",
-	sm: "min-h-7 px-3 py-1.5 gap-1.5 font-mono text-[11px] tracking-[0.14em]",
-	md: "min-h-9 px-4 py-2.5 gap-2 font-display text-[11px] tracking-[0.18em]",
-	lg: "min-h-11 px-8 py-3 gap-2.5 font-display text-xs tracking-[0.22em]",
+	xs: "min-h-6 px-2 py-0.5 gap-1 font-mono text-[11px] tracking-[0.1em]",
+	sm: "min-h-7 px-3 py-1.5 gap-1.5 font-mono text-[11px] tracking-[0.12em]",
+	md: "min-h-9 px-4 py-2.5 gap-2 font-display text-[11px] tracking-[0.16em]",
+	lg: "min-h-11 px-8 py-3 gap-2.5 font-display text-xs tracking-[0.2em]",
 	icon: "size-7 p-0 font-mono text-base tracking-normal",
 } as const;
 

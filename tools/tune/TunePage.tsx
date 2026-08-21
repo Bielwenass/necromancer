@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { COMBAT_CONFIG } from "../combat/config";
-import { combatDials } from "../combat/dials";
-import { COMBAT_H, COMBAT_W } from "../combat/dungeonCombat";
+import { COMBAT_CONFIG } from "../../src/combat/config";
+import { COMBAT_H, COMBAT_W } from "../../src/combat/dungeonCombat";
+import { combatDials } from "../dials";
 import { ArmyPanel } from "./ArmyPanel";
 import { DialPanel } from "./DialPanel";
 import { type Army, armyTotal, createFight } from "./fight";

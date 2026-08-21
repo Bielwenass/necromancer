@@ -50,7 +50,7 @@ export function InventoryFilters({
 	return (
 		<div className="flex flex-col gap-1.5 items-end max-md:items-start">
 			<div className="flex gap-2 items-center max-md:flex-wrap">
-				<span className="mono text-[11px] text-dim tracking-[0.14em] w-12 text-right">
+				<span className="mono text-[11px] text-dim tracking-widest w-12 text-right">
 					TYPE
 				</span>
 				{SLOT_FILTERS.map(({ id, color, Icon }) => {
@@ -71,7 +71,7 @@ export function InventoryFilters({
 			</div>
 
 			<div className="flex gap-2 items-center max-md:flex-wrap">
-				<span className="mono text-[11px] text-dim tracking-[0.14em] w-12 text-right">
+				<span className="mono text-[11px] text-dim tracking-widest w-12 text-right">
 					RARITY
 				</span>
 				{RARITY_FILTERS.map((r) => (
@@ -101,7 +101,7 @@ export function InventoryFilters({
 							</>
 						}
 						message={
-							<span className="mono text-[11px] text-hp-crit tracking-[0.12em]">
+							<span className="mono text-[11px] text-hp-crit tracking-widest">
 								SACRIFICE {sacrificeCount}{" "}
 								{filtered ? "FILTERED" : "UNEQUIPPED"} RELIC
 								{sacrificeCount === 1 ? "" : "S"}?

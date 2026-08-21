@@ -1,6 +1,6 @@
-import { UNIT_TYPES } from "../game/data/units";
-import type { UnitType } from "../game/types";
-import { UNIT_COLORS } from "../ui/theme";
+import { UNIT_TYPES } from "../../src/game/data/units";
+import type { UnitType } from "../../src/game/types";
+import { UNIT_COLORS } from "../../src/ui/theme";
 import { type Army, armyTotal } from "./fight";
 import { NumberField } from "./NumberField";
 
