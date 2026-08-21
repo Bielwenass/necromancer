@@ -1,6 +1,6 @@
-import type { Resources } from "../../../game/types";
-import { RESOURCE_META } from "../../resources";
-import type { IconComponent } from "../icons/IconProps";
+import type { Resources } from "../game/types";
+import type { IconComponent } from "./components/icons/IconProps";
+import { RESOURCE_META } from "./resources";
 
 export interface CostLine {
 	key: string;

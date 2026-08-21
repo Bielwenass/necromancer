@@ -52,8 +52,8 @@ export function statAtLevel(
 
 /**
  * Squad size bought so far. Its gain stays sub-exponential on purpose: a squad's
- * contribution to a fight is nearly the square of its size (`balanceCheck`
- * measures power ∝ squad^1.9), so a geometric gain would swamp everything else.
+ * contribution to a fight climbs faster than its head count, at the exponent
+ * `balanceCheck` measures, so a geometric gain would swamp everything else.
  */
 export function squadSizeFromLevel(level: number): number {
 	const { perLevelBase, levelsPerStep } = CRYPT_CONFIG.squadSize;

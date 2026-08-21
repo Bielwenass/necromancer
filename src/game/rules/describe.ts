@@ -81,6 +81,8 @@ const FLAG_LABELS: Record<DerivedFlagKey, string> = {
 	wraithsUnlocked: "Unlocks wraiths",
 	corpsesUnlocked: "Clears start dropping corpses",
 	soulsUnlocked: "Clears start dropping souls",
+	ritualUnlocked: "Unlocks the Ritual",
+	reliquaryUnlocked: "Unlocks the Reliquary",
 	autoDeploy: "Enables auto-deploy",
 	phylactery: "Grants a free banner Ritual pull on a timer",
 };

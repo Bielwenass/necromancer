@@ -148,9 +148,9 @@ export function DungeonCard({
 				</div>
 
 				{/* Squad status */}
-				<div className="shrink-0 min-w-[200px] text-right max-md:min-w-0 max-md:w-full max-md:text-left">
+				<div className="shrink-0 min-w-fit md:text-right max-md:min-w-0 max-md:w-full">
 					{activeSquad ? (
-						<div>
+						<div className="max-md:flex justify-between">
 							<div className="flex items-center justify-end gap-2.5 mb-[7px] max-md:justify-start">
 								<span className="display text-parchm tracking-wider">
 									{activeSquad.name}

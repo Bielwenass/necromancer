@@ -174,24 +174,30 @@ function gardenRows(garden: WorkshopState["garden"]): WorkshopRow[] {
 	});
 }
 
+const UNIT_SUBTITLES: Record<UnitType, string> = {
+	skeleton: "Drill the bone until it holds a line.",
+	zombie: "Feed the rot, then point it downhill.",
+	wraith: "Sharpen what is barely there.",
+};
+
 const BRANCHES: { id: string; name: string; subtitle: string; icon: string }[] =
 	[
 		{
 			id: "summoning",
 			name: "Summoning",
-			subtitle: "One-time summon enhancements.",
+			subtitle: "What answers the call, and how much of it.",
 			icon: "army",
 		},
 		{
 			id: "command",
 			name: "Command",
-			subtitle: "One-time battlefield enhancements.",
+			subtitle: "What the risen do once the field is in sight.",
 			icon: "auto",
 		},
 		{
 			id: "necromancy",
 			name: "Necromancy",
-			subtitle: "One-time dark arts enhancements.",
+			subtitle: "The arts themselves: what the dead yield, and what you keep.",
 			icon: "soul",
 		},
 	];
@@ -212,7 +218,7 @@ export function buildSections(
 			(type) => ({
 				id: `${type}s`,
 				name: `${UNIT_LABELS[type]}s`,
-				subtitle: `Leveled stat upgrades for ${type}s.`,
+				subtitle: UNIT_SUBTITLES[type],
 				icon: UNIT_ICONS[type],
 				unlocked: true,
 				rows: unitRows(type, ws[type]),
@@ -221,7 +227,7 @@ export function buildSections(
 		{
 			id: "crypt",
 			name: "Crypt",
-			subtitle: "Infinite upgrades for your crypt.",
+			subtitle: "The hall itself: how many rise, and how far they walk.",
 			icon: "domain",
 			unlocked: true,
 			rows: cryptRows(ws.crypt),
@@ -229,7 +235,7 @@ export function buildSections(
 		{
 			id: "garden",
 			name: "Bone Garden",
-			subtitle: "Every plot grows bone. Each is tended with its own resource.",
+			subtitle: "Every plot grows bone, and each is fed something different.",
 			icon: "aura",
 			unlocked: true,
 			rows: gardenRows(ws.garden),

@@ -421,15 +421,17 @@ export const UPGRADE_NODES: UpgradeNode[] = [
 	{
 		id: "n1",
 		branch: "necromancy",
-		name: "Bone Garden",
+		name: "First Rites",
 		tier: 1,
 		cost: { banners: 7 },
 		effects: [
-			{ kind: "global", stat: "bonesPassiveMult", op: "mult", value: 1.25 },
+			{ kind: "flag", flag: "ritualUnlocked" },
+			{ kind: "flag", flag: "reliquaryUnlocked" },
 		],
-		flavor: "Bone sown as seed corn. Plant a little, and reap without a spade.",
+		flavor:
+			"A circle chalked, a vault unbarred. The arts have somewhere to happen now.",
 		prerequisites: [],
-		icon: "surge",
+		icon: "circle",
 	},
 	{
 		id: "n2",

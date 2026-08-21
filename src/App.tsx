@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useGameLifecycle } from "./game/useGameLifecycle";
 import { CatchupOverlay } from "./ui/components/chrome/CatchupOverlay";
-import { TAB_KEYS, type TabId } from "./ui/components/chrome/TabBar";
+import { type TabId, useTabs } from "./ui/components/chrome/TabBar";
 import { Crypt } from "./ui/screens/Crypt";
 import { Reliquary } from "./ui/screens/Reliquary";
 import { Ritual } from "./ui/screens/Ritual";
@@ -10,6 +10,7 @@ import { Workshop } from "./ui/screens/Workshop";
 export default function App() {
 	const { catchup, dismissCatchup } = useGameLifecycle();
 	const [activeTab, setActiveTab] = useState<TabId>("crypt");
+	const tabs = useTabs();
 
 	useEffect(() => {
 		const handleKey = (e: KeyboardEvent) => {
@@ -20,12 +21,12 @@ export default function App() {
 				dismissCatchup();
 				return;
 			}
-			const tab = TAB_KEYS[e.key];
-			if (tab) setActiveTab(tab);
+			const tab = tabs.find((t) => t.shortcutKey === e.key);
+			if (tab && !tab.locked) setActiveTab(tab.id);
 		};
 		window.addEventListener("keydown", handleKey);
 		return () => window.removeEventListener("keydown", handleKey);
-	}, [catchup?.done, dismissCatchup]);
+	}, [catchup?.done, dismissCatchup, tabs]);
 
 	return (
 		<div className="w-full h-full bg-bg-canvas relative">

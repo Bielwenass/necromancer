@@ -135,10 +135,18 @@ function applyLiveFight(
 	return { ...state, squads: draft.squads, dungeons: draft.dungeons };
 }
 
+/**
+ * Passive income lands one tick at a time live and in a single multiply offline,
+ * so a rate that is not a binary fraction drifts in the last bits.
+ */
+const round = (n: number) => Math.round(n * 1e6) / 1e6;
+
 /** The world minus `lastTickAt` (a wall clock) and `derived` (a projection). */
 export function worldOf(state: GameState): Record<string, unknown> {
 	return {
-		resources: state.resources,
+		resources: Object.fromEntries(
+			Object.entries(state.resources).map(([k, v]) => [k, round(v)]),
+		),
 		squads: state.squads,
 		dungeons: state.dungeons,
 		gacha: state.gacha,

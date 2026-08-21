@@ -1,8 +1,6 @@
-import { canAffordCost } from "../../../game/rules/resources";
 import { summonCost } from "../../../game/rules/summoning";
 import { isUnitUnlocked, UNIT_TYPES } from "../../../game/rules/units";
 import type { GameState, Squad, Units, UnitType } from "../../../game/types";
-import { formatCost } from "../../format";
 import { UNIT_COLORS } from "../../theme";
 import { UNIT_ICONS } from "../icons";
 import { UnitReserveRow } from "./UnitReserveRow";
@@ -33,7 +31,11 @@ export function UnitReserves({
 			<div className="mono text-[11px] text-dim tracking-[0.14em] mb-2.5">
 				UNIT RESERVES
 			</div>
-			<div className="flex flex-col gap-2">
+			{/* Shared columns, each only as wide as its widest cell, so the rows
+			    line up without any of them stretching. Rows lay themselves out
+			    against this width, the sidebar being a quarter of the screen on
+			    desktop and the whole of it on a phone. */}
+			<div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2.5 gap-y-2 [container-type:inline-size]">
 				{rows.map((type) => (
 					<UnitReserveRow
 						key={type}
@@ -41,11 +43,9 @@ export function UnitReserves({
 						count={units[type]}
 						icon={UNIT_ICONS[type]}
 						color={UNIT_COLORS[type]}
-						canSummon={(v) =>
-							canAffordCost(summonCost(type, v, summonState), resources)
-						}
-						onSummon={() => onSummon(type, 1)}
-						costFor={(v) => formatCost(summonCost(type, v, summonState))}
+						resources={resources}
+						costFor={(v) => summonCost(type, v, summonState)}
+						onSummon={(v) => onSummon(type, v)}
 					/>
 				))}
 			</div>

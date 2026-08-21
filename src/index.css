@@ -203,6 +203,11 @@
 .bar-tabs .tab:hover {
 	color: var(--ink-parchm);
 }
+.bar-tabs .tab:disabled,
+.bar-tabs .tab:disabled:hover {
+	color: var(--ink-dim);
+	cursor: default;
+}
 .bar-tabs .tab.active {
 	color: var(--ink-bone);
 	background: linear-gradient(

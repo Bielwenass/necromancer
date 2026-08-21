@@ -131,7 +131,7 @@ export type StatKey = "hp" | "dmg" | "speed";
 
 export const SUMMON_COSTS: Record<UnitType, Partial<Resources>> = {
 	skeleton: { bones: 10 },
-	zombie: { bones: 5, corpses: 1 },
+	zombie: { corpses: 1 },
 	wraith: { bones: 20, souls: 1 },
 };
 

@@ -72,6 +72,8 @@ export type DerivedFlagKey =
 	| "wraithsUnlocked"
 	| "corpsesUnlocked"
 	| "soulsUnlocked"
+	| "ritualUnlocked"
+	| "reliquaryUnlocked"
 	| "autoDeploy"
 	| "phylactery";
 
@@ -276,6 +278,9 @@ export interface GameState {
 		/** Whether a clear drops the resource at all. Both start closed. */
 		corpsesUnlocked: boolean;
 		soulsUnlocked: boolean;
+		/** Whether the tab can be opened; it sits on the bar inert until then. */
+		ritualUnlocked: boolean;
+		reliquaryUnlocked: boolean;
 		autoDeploy: boolean;
 		/** Grants periodic free banner-pool pulls. */
 		phylactery: boolean;

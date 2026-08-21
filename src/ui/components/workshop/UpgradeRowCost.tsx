@@ -1,6 +1,6 @@
 import type { Resources } from "../../../game/types";
+import { costLines } from "../../cost";
 import { formatNumber } from "../../format";
-import { costLines } from "./cost";
 import type { WorkshopRow } from "./types";
 import { WorkshopRowIcon } from "./WorkshopRowIcon";
 

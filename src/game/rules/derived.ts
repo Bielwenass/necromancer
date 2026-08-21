@@ -176,6 +176,8 @@ export function recomputeDerived(state: GameState): GameState["derived"] {
 		wraithsUnlocked: false,
 		corpsesUnlocked: false,
 		soulsUnlocked: false,
+		ritualUnlocked: false,
+		reliquaryUnlocked: false,
 		autoDeploy: false,
 		phylactery: false,
 	};
