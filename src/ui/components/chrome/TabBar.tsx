@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { UPGRADE_NODES } from "../../../game/data/upgrades";
 import { useGameStore } from "../../../game/store";
 import type { DerivedFlagKey } from "../../../game/types";
 import { IconCrypt, IconReliquary, IconRitual, IconWorkshop } from "../icons";
@@ -37,6 +38,12 @@ const TABS: {
 	},
 ];
 
+/** The node that opens a gated tab, so the seal names its own key. */
+const opener = (flag: DerivedFlagKey) =>
+	UPGRADE_NODES.find((n) =>
+		n.effects.some((e) => e.kind === "flag" && e.flag === flag),
+	)?.name;
+
 export function useTabs() {
 	const derived = useGameStore((s) => s.derived);
 	return useMemo(
@@ -53,10 +60,11 @@ export function TabBar({ active, onTabChange }: TabBarProps) {
 			{tabs.map((t) => {
 				const isActive = t.id === active;
 				const color = t.locked
-					? "var(--ink-dim)"
+					? "var(--ink-faint)"
 					: isActive
 						? "var(--c-coin)"
 						: "var(--ink-muted)";
+				const seal = t.flag ? opener(t.flag) : undefined;
 				return (
 					<button
 						type="button"
@@ -64,10 +72,13 @@ export function TabBar({ active, onTabChange }: TabBarProps) {
 						disabled={t.locked}
 						className={`tab ${isActive ? " active" : ""}`}
 						onClick={() => onTabChange(t.id)}
+						title={t.locked && seal ? `Sealed until ${seal}` : undefined}
 					>
 						<t.Icon size={24} color={color} />
 						<span className="text-lg max-md:text-xs/normal">{t.label}</span>
-						<span className="key max-md:hidden">{t.shortcutKey}</span>
+						<span className="key max-md:hidden">
+							{t.locked ? "SEALED" : t.shortcutKey}
+						</span>
 					</button>
 				);
 			})}

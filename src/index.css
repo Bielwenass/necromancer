@@ -207,6 +207,7 @@
 .bar-tabs .tab:disabled:hover {
 	color: var(--ink-dim);
 	cursor: default;
+	background: var(--bg-inset);
 }
 .bar-tabs .tab.active {
 	color: var(--ink-bone);
@@ -234,6 +235,10 @@
 	padding: 1px 4px;
 	margin-left: 4px;
 	letter-spacing: 0;
+}
+.bar-tabs .tab:disabled .key {
+	color: var(--ink-dim);
+	letter-spacing: 0.1em;
 }
 
 /* ── stage between top + tabs ────────────────────────────────── */
