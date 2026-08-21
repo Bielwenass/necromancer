@@ -142,7 +142,7 @@ export function Crypt({ onTabChange }: CryptProps) {
 						{squads.length === 0 && (
 							<EmptyState
 								className="p-7 text-center"
-								textClassName="mono text-xs text-dim"
+								textClassName="mono text-xs text-hp-warn"
 							>
 								NO SQUADS · CLICK A DUNGEON
 							</EmptyState>
